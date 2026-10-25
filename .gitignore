@@ -1,0 +1,10 @@
+.DS_Store
+._*
+*.dSYM/
+build-manifest.json
+*.c
+*.cpp
+*.h
+*.hpp
+*.m
+*.mm
