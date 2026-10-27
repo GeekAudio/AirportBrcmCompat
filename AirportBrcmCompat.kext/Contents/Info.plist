@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AirportBrcmBaselineBuild</key>
+	<string>25G332-Baseline019</string>
 	<key>AirportBrcmDevelopmentStatus</key>
-	<string>NativeEventPipe-Test018-ChannelFlags-Experimental</string>
+	<string>25G332-Baseline019-ControlRX-Diagnostics</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
@@ -17,9 +19,9 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>org.geekaudio.AirportBrcmCompat</key>
