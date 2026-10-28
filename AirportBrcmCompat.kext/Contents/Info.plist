@@ -2,10 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>AirportBrcmBaselineBuild</key>
-	<string>25G332-Baseline019</string>
+	<key>AirportBrcmBaselineTrace</key>
+	<string>Disabled</string>
+	<key>AirportBrcmBaselineTraceConfigured</key>
+	<integer>0</integer>
+	<key>AirportBrcmBuildFlavor</key>
+	<string>RELEASE</string>
+	<key>AirportBrcmControlRxWindowsConfigured</key>
+	<integer>0</integer>
 	<key>AirportBrcmDevelopmentStatus</key>
-	<string>25G332-Baseline019-ControlRX-Diagnostics</string>
+	<string>Test022-SAE-Subset-DualProfile-Candidate</string>
+	<key>AirportBrcmDualProfileMode</key>
+	<integer>1</integer>
+	<key>AirportBrcmKernelProfiles</key>
+	<string>25G241:1291D44A-C0CD-3AC7-A9E4-CA2749B33959;25G332:28267FD5-3E1E-3686-8A1C-E73E2466FCFB</string>
+	<key>AirportBrcmSaeCompatConfigured</key>
+	<integer>1</integer>
+	<key>AirportBrcmScanMultipleCompatConfigured</key>
+	<integer>1</integer>
+	<key>AirportBrcmSupportedBuilds</key>
+	<string>25G241,25G332</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "tag": "v1.0.1-rc1",
+  "prerelease": true,
+  "version": "1.0.1",
+  "supported_builds": [
+    "25G241",
+    "25G332"
+  ],
+  "variants": {
+    "RELEASE": {
+      "binary_sha256": "e35e7b1fd1196a1957555dce0b0958ad4915be10cf8a92402bae427d61b9039f",
+      "uuid": "AD9570CD-9B65-3926-A85F-A9A0E66D24CF",
+      "compiler_debug_macro": false,
+      "baseline_trace": false,
+      "control_rx_windows": false,
+      "separate_boot_tested": false
+    },
+    "DEBUG": {
+      "binary_sha256": "6cf7a9aa7f1c4fcc08b99b71d12742cdbdabf31374a1a0f88a36842710aa7e37",
+      "uuid": "1EE4C5D6-22E2-3E92-9B51-22BC01CD6391",
+      "compiler_debug_macro": true,
+      "baseline_trace": true,
+      "control_rx_windows": true,
+      "separate_boot_tested": false
+    }
+  }
+}

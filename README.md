@@ -1,57 +1,35 @@
 # AirportBrcmCompat
 
-博通 BCM43602 的 Wi-Fi、AirDrop 和接力兼容驱动。通过 EFI 加载，无需运行 OCLP，不修改系统卷。核心仅提供二进制。
+博通 BCM43602 的 Wi-Fi、AirDrop 和接力兼容驱动，通过 EFI 加载，不修改系统卷。核心仅提供二进制。
 
-当前分支提供 macOS 26.7.2（25G332）专用的 1.0.1 / Baseline019 测试候选，已通过离线构建与签名检查，实机 Wi-Fi 和双向 AirDrop 待验证。候选保留有限的 PSF/MIF 数值诊断，不记录地址、名称或文件内容。下方 1.0 下载仍是已验证的 25G241 稳定版；正式 1.0.1 Release 尚未发布。
+当前版本 **1.0.1-rc1，预发布**。增加 25G241／25G332 精确版本兼容、即时热点扫描请求适配，以及有限的 SAE 认证兼容。
 
-## 支持情况
+## 下载
 
-| 项目 | 已验证环境 |
+| 文件 | 用途 |
 | --- | --- |
-| 系统 | macOS 26.7.1（25G241）/ Darwin 25.6.0，Intel x86_64 |
-| 网卡 | BCM943602CDP / BCM43602，Wi-Fi 接口名必须为 `en1` |
-| 功能 | Wi-Fi、私人 Wi-Fi 地址、接力、AirDrop 双向传送 |
+| [RELEASE 核心](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0.1-rc1/AirportBrcmCompat-1.0.1-rc1-RELEASE.zip) | 日常使用候选，不编译 PSF/MIF 分窗诊断 |
+| [DEBUG 核心](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0.1-rc1/AirportBrcmCompat-1.0.1-rc1-DEBUG.zip) | DEBUG 编译，含有限的 PSF/MIF 分窗诊断 |
+| [依赖与配置示例](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0.1-rc1/AirportBrcmCompat-1.0.1-rc1-Dependencies-Bluetooth-Examples.zip) | 定制无线依赖、两种 Lilu、BlueToolFixup、AMFIPass 和最简配置片段 |
 
-其他系统版本、网卡和长期睡眠唤醒尚未验证。
+两种核心只安装一个。配套包的 Common/Kexts 全部配套放入 EFI/OC/Kexts，再选 RELEASE 或 DEBUG 目录中的 Lilu。已有同名 kext 时替换，避免重复加载。
 
-## 下载文件
+将 Examples 中的对应配置片段合并到自己的 config.plist，保留本机其他配置。以前打过 OCLP 无线根补丁的先撤销补丁；Wi-Fi 接口需为 en1。三个定制旧无线依赖不能换成原版同名文件。
 
-| 下载 | 内容 |
+蓝牙所在的 USB 端口必须设为内建（Internal，255）。
+
+## 支持与验证
+
+| 项目 | 范围 |
 | --- | --- |
-| [核心包 1.0](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0/AirportBrcmCompat-1.0.zip) | AirportBrcmCompat.kext、配置片段、教程 |
-| [配套依赖](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0/AirportBrcmCompat-Dependencies-1.0.zip) | 下表四个驱动，首次安装需一起下载 |
+| 架构／网卡 | Intel x86_64，BCM943602CDP / BCM43602；蓝牙 BCM20703A2 |
+| 精确兼容判断 | 25G241 和 25G332，各自匹配内核 UUID；其他构建拒绝安装 hook |
+| 本次功能基线 Test023r2 | 25G332 下 Wi-Fi 已连接；双向 AirDrop 各完成一次实际收件，32 KiB 回传文件 SHA-256 一致 |
+| 即时热点历史基线 Test021r2 | 曾在重启 sharingd 后以 WPA2 路径连接，en1 上下行各 64 KiB、HTTP 200 |
+| 尚待验证 | 两种分发编译版本分别重启、旧 25G241 新版回归、新 SAE 握手、长期稳定性及完整睡眠／重连边界 |
 
-| 依赖 | 版本 |
-| --- | --- |
-| Lilu.kext | 1.7.3 |
-| IOLegacyWFamily.kext | 1.0，定制版 |
-| IO80211FamilyLegacy.kext | 1200.12.2b1，定制版 |
-| AirPortBrcmNIC.kext | 1400.1.1，定制版 |
+SAE 仅接受已核对的密码载荷子集：selected auth=4096、cipher=10、密码 8–63 字节、PMK 长度 32，策略掩码保留原值；不把 WPA2 成功算成 SAE 成功。
 
-三个定制依赖必须配套使用，不能换成原版同名驱动。[文件校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0/SHA256SUMS.txt) · [依赖来源和许可](NOTICE.md)
+配套依赖版本：Lilu 1.7.3、IOLegacyWFamily 1.0、IO80211FamilyLegacy 1200.12.2b1、AirPortBrcmNIC 1400.1.1、BlueToolFixup 2.7.3、AMFIPass 1.4.1。来源与许可见 [NOTICE](NOTICE.md)，合并说明见 [Examples](Examples/README.md)。
 
-## 安装步骤
-
-1. 以前打过 OCLP 无线根补丁的，先撤销补丁。
-2. 将核心和依赖共五个 kext 放入 `EFI/OC/Kexts`。已有 Lilu 就替换为配套版本。
-3. 将 `OpenCore.fragment.plist` 合并到自己的 `config.plist`，不要覆盖整份配置。按以下顺序加载：
-
-   ```text
-   Lilu → AirportBrcmCompat → IOLegacyWFamily → IO80211FamilyLegacy → AirPortBrcmNIC
-   ```
-
-4. 屏蔽系统 `IO80211Family`，保留系统 `IOSkywalkFamily`。关闭旧方案的 Skywalk 屏蔽项，移除重复的旧无线驱动和其他无线兼容桥。
-5. 按下表检查配置，保留原有硬件驱动。AirDrop 和接力需要蓝牙正常工作。重启后检查 Wi-Fi，并用小文件双向测试 AirDrop。
-
-## 实测配置
-
-| 项目 | 值 |
-| --- | --- |
-| OpenCore | 1.0.8 |
-| DisableLinkeditJettison | `true` |
-| SecureBootModel | `Disabled` |
-| csr-active-config | `430A0000` |
-| boot-args | `amfi=0x80 amfi_get_out_of_my_way=0x1 ipc_control_port_options=0` |
-| AMFIPass | 保留原有 1.4.1 |
-
-这是已测组合，并非逐项精简后的最低要求。核心无需额外启动参数；蓝牙驱动按自己的硬件配置。
+[下载校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.0.1-rc1/SHA256SUMS.txt) · [旧 25G241 稳定版 1.0](https://github.com/GeekAudio/AirportBrcmCompat/releases/tag/v1.0)

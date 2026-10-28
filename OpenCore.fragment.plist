@@ -11,6 +11,8 @@
 				<string>x86_64</string>
 				<key>BundlePath</key>
 				<string>Lilu.kext</string>
+				<key>Comment</key>
+				<string>Lilu: choose matching RELEASE or DEBUG dependency</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -21,14 +23,32 @@
 				<string></string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
+				<string>AMFIPass.kext</string>
 				<key>Comment</key>
-				<string>Lilu</string>
+				<string>AMFIPass: retained tested environment dependency</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/AMFIPass</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
 			</dict>
 			<dict>
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
 				<string>AirportBrcmCompat.kext</string>
+				<key>Comment</key>
+				<string>AirportBrcmCompat</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -39,14 +59,32 @@
 				<string>25.6.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
+				<string>BlueToolFixup.kext</string>
 				<key>Comment</key>
-				<string>AirportBrcmCompat</string>
+				<string>Broadcom Bluetooth: tested native-firmware device</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/BlueToolFixup</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string>21.0.0</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
 			</dict>
 			<dict>
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
 				<string>IOLegacyWFamily.kext</string>
+				<key>Comment</key>
+				<string>IOLegacyWFamily</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -57,14 +95,14 @@
 				<string>25.6.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
-				<key>Comment</key>
-				<string>IOLegacyWFamily</string>
 			</dict>
 			<dict>
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
 				<string>IO80211FamilyLegacy.kext</string>
+				<key>Comment</key>
+				<string>IO80211FamilyLegacy</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -75,14 +113,14 @@
 				<string>25.6.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
-				<key>Comment</key>
-				<string>IO80211FamilyLegacy</string>
 			</dict>
 			<dict>
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
 				<string>AirPortBrcmNIC.kext</string>
+				<key>Comment</key>
+				<string>AirPortBrcmNIC</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -93,8 +131,6 @@
 				<string>25.6.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
-				<key>Comment</key>
-				<string>AirPortBrcmNIC</string>
 			</dict>
 		</array>
 		<key>Block</key>
@@ -108,22 +144,6 @@
 				<true/>
 				<key>Identifier</key>
 				<string>com.apple.iokit.IO80211Family</string>
-				<key>MaxKernel</key>
-				<string>25.6.0</string>
-				<key>MinKernel</key>
-				<string>25.6.0</string>
-				<key>Strategy</key>
-				<string>Exclude</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>x86_64</string>
-				<key>Comment</key>
-				<string>Wireless compatibility</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Identifier</key>
-				<string>com.apple.iokit.IOSkywalkFamily</string>
 				<key>MaxKernel</key>
 				<string>25.6.0</string>
 				<key>MinKernel</key>
