@@ -2,9 +2,10 @@
 ._*
 *.dSYM/
 build-manifest.json
-*.c
-*.cpp
-*.h
-*.hpp
-*.m
-*.mm
+__pycache__/
+*.py[cod]
+/build/
+/vendor/
+/research/
+*.ips
+*.log

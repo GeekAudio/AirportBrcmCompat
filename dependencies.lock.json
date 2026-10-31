@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "MacKernelSDK": {
+    "repository": "https://github.com/acidanthera/MacKernelSDK.git",
+    "commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164"
+  },
+  "Lilu": {
+    "repository": "https://github.com/acidanthera/Lilu.git",
+    "commit": "0249c3a918c68a43891350f35fded615b1575776"
+  }
+}

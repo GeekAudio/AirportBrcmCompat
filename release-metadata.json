@@ -13,16 +13,14 @@
       "uuid": "AD9570CD-9B65-3926-A85F-A9A0E66D24CF",
       "compiler_debug_macro": false,
       "baseline_trace": false,
-      "control_rx_windows": false,
-      "separate_boot_tested": false
+      "control_rx_windows": false
     },
     "DEBUG": {
       "binary_sha256": "6cf7a9aa7f1c4fcc08b99b71d12742cdbdabf31374a1a0f88a36842710aa7e37",
       "uuid": "1EE4C5D6-22E2-3E92-9B51-22BC01CD6391",
       "compiler_debug_macro": true,
       "baseline_trace": true,
-      "control_rx_windows": true,
-      "separate_boot_tested": false
+      "control_rx_windows": true
     }
   }
 }
