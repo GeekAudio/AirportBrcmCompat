@@ -125,6 +125,184 @@ def parse_nm_defined_addresses(text: str) -> dict[str, dict[int, set[str]]]:
     return by_image
 
 
+def parse_kernel_collection_symbols(path: pathlib.Path) -> tuple[
+        dict[str, dict[str, set[int]]], dict[str, set[str]], dict[str, set[str]]]:
+    """Read fileset-member nlists directly, avoiding nm's MH_FILESET relocation bug.
+
+    Some Apple/Xcode nm builds reject BootKC's outer MH_FILESET DYSYMTAB
+    relocation metadata before visiting its members.  The member LC_SYMTABs
+    are the authoritative source for this offline audit, so parse their
+    container-relative or member-relative offsets with the same bounded
+    parser used by the kernel-contract verifier.
+    """
+    path = pathlib.Path(path)
+    with path.open("rb") as stream:
+        data = mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ)
+        try:
+            outer = kernel_reader.parse_header(data, 0, str(path))
+            if outer["filetype"] != kernel_reader.MH_FILESET:
+                raise ValueError(f"{path}: expected MH_FILESET")
+            entries = [kernel_reader.parse_fileset_entry(raw)
+                       for command, raw, _ in outer["commands"]
+                       if command == kernel_reader.LC_FILESET_ENTRY]
+            if not entries:
+                raise ValueError(f"{path}: no fileset entries")
+            entry_ids = [entry["id"] for entry in entries]
+            if any(not name for name in entry_ids):
+                raise ValueError(f"{path}: empty fileset ID")
+            if len(set(entry_ids)) != len(entry_ids):
+                duplicates = sorted({name for name in entry_ids if entry_ids.count(name) > 1})
+                raise ValueError(f"{path}: duplicate fileset IDs: {duplicates}")
+            definitions: dict[str, dict[str, set[int]]] = {}
+            strong: dict[str, set[str]] = {}
+            weak: dict[str, set[str]] = {}
+            for entry in entries:
+                label = entry["id"]
+                image = _inner_member_layout(data, entry, label)
+                symtab = image["symtab"]
+                count = symtab["nsyms"]
+                if count > 20_000_000 or symtab["strsize"] > 512 * 1024 * 1024:
+                    raise ValueError(f"{label}: unreasonable LC_SYMTAB bounds")
+                linkedit_segments = [segment for segment in image["segments"]
+                                     if segment["name"] == "__LINKEDIT"]
+                if len(linkedit_segments) != 1:
+                    raise ValueError(f"{label}: expected one __LINKEDIT segment")
+                linkedit = linkedit_segments[0]
+                if (linkedit["fileoff"] > len(data) or
+                        linkedit["filesize"] > len(data) - linkedit["fileoff"]):
+                    raise ValueError(f"{label}: __LINKEDIT exceeds kernel-collection bounds")
+                candidates = []
+                candidate_errors = []
+                for origin, adjustment in (("container-absolute", 0),
+                                           ("member-relative", image["header_offset"])):
+                    nlist_offset = symtab["symoff"] + adjustment
+                    string_offset = symtab["stroff"] + adjustment
+                    table_size = count * 16
+                    if (nlist_offset < 0 or table_size > len(data) - nlist_offset or
+                            string_offset < 0 or symtab["strsize"] > len(data) - string_offset):
+                        continue
+                    if (nlist_offset < linkedit["fileoff"] or
+                            table_size > linkedit["fileoff"] + linkedit["filesize"] - nlist_offset or
+                            string_offset < linkedit["fileoff"] or
+                            symtab["strsize"] > linkedit["fileoff"] + linkedit["filesize"] - string_offset):
+                        continue
+                    strings = data[string_offset:string_offset + symtab["strsize"]]
+                    parsed_symbols = []
+                    valid_external = 0
+                    candidate_error = None
+                    for index in range(count):
+                        strx, n_type, n_sect, n_desc, value = struct.unpack_from(
+                            "<IBBHQ", data, nlist_offset + index * 16)
+                        if n_type & 0xE0:
+                            continue
+                        if not (n_type & 0x01):
+                            continue
+                        if not strx or strx >= len(strings):
+                            candidate_error = f"{label}: external symbol has invalid string index {strx}"
+                            break
+                        end = strings.find(b"\0", strx)
+                        if end < 0:
+                            candidate_error = f"{label}: external symbol string is unterminated"
+                            break
+                        try:
+                            symbol = strings[strx:end].decode("ascii")
+                        except UnicodeDecodeError:
+                            candidate_error = f"{label}: external symbol name is not ASCII"
+                            break
+                        if not symbol:
+                            candidate_error = f"{label}: external symbol name is empty"
+                            break
+                        symbol_type = n_type & 0x0E
+                        if symbol_type == 0x0E:  # N_SECT
+                            if not 0 < n_sect <= len(image["sections"]):
+                                candidate_error = f"{label}: N_SECT symbol {symbol} has invalid section {n_sect}"
+                                break
+                            section = image["sections"][n_sect - 1]
+                            # A symbol may name the exact end of a section
+                            # (for example, *_table_end), and zero-sized
+                            # sections can carry a boundary marker at addr.
+                            if (value < section["addr"] or
+                                    value - section["addr"] > section["size"]):
+                                # The Mach-O main-header pseudo-symbol is
+                                # conventionally assigned section 1 while its
+                                # value points at the start of __TEXT, before
+                                # the first file-backed __text section.
+                                header_symbol = (symbol == "__mh_execute_header" and
+                                                 section["segment"] == "__TEXT" and
+                                                 any(segment["name"] == "__TEXT" and
+                                                     segment["vmaddr"] == value
+                                                     for segment in image["segments"]))
+                                # Fileset kernel nlists retain this historical
+                                # boundary symbol's N_SECT ordinal (__LAST,__last)
+                                # even though its value is the start of the
+                                # generated __LINKINFO,__symbolsets section.
+                                kernel_symbolsets_marker = (
+                                    symbol == "_last_kernel_symbol" and
+                                    section["segment"] == "__LAST" and
+                                    section["name"] == "__last" and
+                                    section["size"] == 0 and
+                                    any(item["segment"] == "__LINKINFO" and
+                                        item["name"] == "__symbolsets" and
+                                        item["addr"] == value
+                                        for item in image["sections"]))
+                                if not (header_symbol or kernel_symbolsets_marker):
+                                    candidate_error = f"{label}: N_SECT symbol {symbol} lies outside section {n_sect}"
+                                    break
+                        elif symbol_type == 0x02:  # N_ABS
+                            if n_sect != 0:
+                                candidate_error = f"{label}: N_ABS symbol {symbol} has nonzero section"
+                                break
+                        elif symbol_type in (0x00, 0x0C):  # N_UNDF or N_PBUD
+                            if n_sect != 0:
+                                candidate_error = f"{label}: undefined symbol {symbol} has nonzero section"
+                                break
+                        elif symbol_type == 0x0A:  # N_INDR: value is another string index, not an address
+                            alias_end = strings.find(b"\0", value) if value < len(strings) else -1
+                            if value == 0 or alias_end <= value:
+                                candidate_error = f"{label}: N_INDR symbol {symbol} has invalid alias string"
+                                break
+                            try:
+                                alias = strings[value:alias_end].decode("ascii")
+                            except UnicodeDecodeError:
+                                candidate_error = f"{label}: N_INDR symbol {symbol} alias is not ASCII"
+                                break
+                            if not alias:
+                                candidate_error = f"{label}: N_INDR symbol {symbol} has empty alias"
+                                break
+                            if n_sect != 0:
+                                candidate_error = f"{label}: N_INDR symbol {symbol} has nonzero section"
+                                break
+                        else:
+                            candidate_error = f"{label}: unsupported external n_type 0x{n_type:02x} for {symbol}"
+                            break
+                        parsed_symbols.append((symbol, symbol_type, n_desc, value))
+                        valid_external += 1
+                    if candidate_error:
+                        candidate_errors.append(f"{origin}: {candidate_error}")
+                        continue
+                    if valid_external == 0:
+                        candidate_errors.append(f"{origin}: no valid external symbols")
+                        continue
+                    candidates.append((valid_external, origin, parsed_symbols))
+                if not candidates:
+                    detail = "; ".join(candidate_errors) or "both LC_SYMTAB offsets lie outside __LINKEDIT"
+                    raise ValueError(f"{label}: no valid LC_SYMTAB interpretation: {detail}")
+                if len(candidates) > 1:
+                    raise ValueError(f"{label}: ambiguous LC_SYMTAB address mode")
+                _, _, parsed_symbols = candidates[0]
+                module_defs = definitions.setdefault(label, {})
+                module_strong = strong.setdefault(label, set())
+                module_weak = weak.setdefault(label, set())
+                for symbol, symbol_type, n_desc, value in parsed_symbols:
+                    if symbol_type in (0x00, 0x0C):  # N_UNDF / N_PBUD imports
+                        (module_weak if n_desc & 0x0040 else module_strong).add(symbol)
+                    elif symbol_type in (0x02, 0x0E):  # N_ABS / N_SECT definitions only
+                        module_defs.setdefault(symbol, set()).add(value)
+            return definitions, strong, weak
+        finally:
+            data.close()
+
+
 def _inner_member_layout(data: mmap.mmap, entry: dict, label: str) -> dict:
     """Parse a KC member's segment/section layout without assuming MH_EXECUTE."""
     parsed = kernel_reader.parse_header(data, entry["fileoff"], label)
@@ -213,11 +391,11 @@ def verify_kxld_inherited_slots(kc_path: pathlib.Path, nm: str,
             if not cache_bases:
                 raise ValueError("BootKC kernel has no mapped segments")
             cache_base = min(cache_bases)
-            nm_images = parse_nm_defined_addresses(_nm(nm, "-m", kc_path))
+            nm_images, _, _ = parse_kernel_collection_symbols(kc_path)
             network_symbols = nm_images.get("com.apple.iokit.IONetworkingFamily", {})
+            kernel_symbols = nm_images.get("com.apple.kernel", {})
             vtable_name = "__ZTV20IOEthernetController"
-            vtable_addresses = [address for address, names in network_symbols.items()
-                                if vtable_name in names]
+            vtable_addresses = sorted(network_symbols.get(vtable_name, set()))
             if len(vtable_addresses) != 1:
                 raise ValueError("expected one IONetworkingFamily IOEthernetController vtable")
             vtable = vtable_addresses[0]
@@ -230,6 +408,8 @@ def verify_kxld_inherited_slots(kc_path: pathlib.Path, nm: str,
                 raise ValueError("IOEthernetController vtable exceeds one readable const section")
             section = table_sections[0]
             methods = {}
+            retained_reserved = {}
+            unverified = {}
             for imported, slot in INHERITED_RESERVED_IMPORTS.items():
                 location = vtable + 16 + slot * 8
                 file_offset = section["fileoff"] + location - section["addr"]
@@ -241,13 +421,61 @@ def verify_kxld_inherited_slots(kc_path: pathlib.Path, nm: str,
                 if cache_level != 0 or (encoded >> 63):
                     raise ValueError("unexpected cache pointer encoding for inherited slot")
                 address = cache_base + target
-                names = network_symbols.get(address, set())
+                names = {name for name, values in network_symbols.items()
+                         if address in values}
                 candidates = sorted(name for name in names
                                     if name.startswith("__ZN19IONetworkController") or
                                     name.startswith("__ZN20IOEthernetController"))
+                if len(candidates) == 1 and candidates[0] == imported:
+                    # A retained reserved slot is ABI-preserved when the old
+                    # import names the exact current parent vtable target.
+                    # Capture its bounded stub bytes and handler for evidence;
+                    # this slot is reserved ABI padding, never a callable KPI.
+                    text_sections = [item for item in network["sections"]
+                                     if item["segment"] == "__TEXT" and
+                                     item["name"] == "__text" and
+                                     item["addr"] <= address < item["addr"] + item["size"]]
+                    index_match = re.search(
+                        r"RESERVED(?:IONetworkController|IOEthernetController)(\d+)Ev$",
+                        imported)
+                    reserved_index = int(index_match.group(1)) if index_match else -1
+                    stub = b""
+                    handler = 0
+                    if len(text_sections) == 1:
+                        text_section = text_sections[0]
+                        text_offset = text_section["fileoff"] + address - text_section["addr"]
+                        stub = bytes(data[text_offset:text_offset + 22])
+                        if len(stub) == 22 and stub[17] == 0xE9:
+                            handler = address + 22 + struct.unpack_from("<i", stub, 18)[0]
+                    is_reserved_stub = (
+                        reserved_index >= 0 and len(stub) == 22 and
+                        stub[:4] == bytes.fromhex("554889e5") and
+                        stub[4:7] == b"\x48\x8d\x3d" and
+                        stub[11:12] == b"\xbe" and
+                        struct.unpack_from("<I", stub, 12)[0] == reserved_index and
+                        stub[16:18] == b"\x5d\xe9" and
+                        handler in kernel_symbols.get("__ZNK11OSMetaClass14reservedCalledEi", set()))
+                    if is_reserved_stub:
+                        retained_reserved[imported] = {
+                            "slot": slot,
+                            "symbol": imported,
+                            "target": hex(address),
+                            "stub_length_bytes": len(stub),
+                            "stub_bytes_hex": stub.hex(),
+                            "reservedCalled_target": hex(handler),
+                            "reservedCalled_index": reserved_index,
+                            "meaning": "ABI-preserved reserved virtual slot; reservedCalled is not a callable KPI",
+                        }
+                        continue
                 if (len(candidates) != 1 or "_RESERVED" in candidates[0] or
                         candidates[0] != INHERITED_PARENT_METHODS[slot]):
-                    raise ValueError(f"KC parent slot {slot} is not the verified non-pad implementation")
+                    unverified[imported] = {
+                        "slot": slot,
+                        "target": hex(address),
+                        "symbols": candidates,
+                        "expected": INHERITED_PARENT_METHODS[slot],
+                    }
+                    continue
                 text_ranges = [(segment["vmaddr"], segment["vmaddr"] + segment["vmsize"])
                                for segment in network["segments"]
                                if segment["name"] == "__TEXT" and segment["initprot"] & 0x4]
@@ -255,14 +483,17 @@ def verify_kxld_inherited_slots(kc_path: pathlib.Path, nm: str,
                     raise ValueError(f"KC parent slot {slot} target is outside executable text")
                 methods[imported] = {"slot": slot, "symbol": candidates[0],
                                      "address": hex(address)}
-            return {"verified": True, "parent_vtable": vtable_name,
-                    "cache_base": hex(cache_base), "inherited_import_count": len(methods),
+            return {"verified": not unverified, "parent_vtable": vtable_name,
+                    "cache_base": hex(cache_base),
+                    "inherited_import_count": len(methods) + len(retained_reserved),
                     "classes": {name: {"class": INHERITED_CLASSES[name][0],
                                        "parent": INHERITED_CLASSES[name][1]}
                                 for name in INHERITED_CLASSES},
                     "old_vtable_slots": old_slot_maps,
                     "resolved_methods": methods,
-                    "resolution_rule": "XNU KXLD patches unresolved child vtable imports to the same non-pad parent vtable slot"}
+                    "retained_reserved_slots": retained_reserved,
+                    "unverified_parent_slots": unverified,
+                    "resolution_rule": "Only an exact non-pad implementation in the current parent vtable counts as a proven inherited method; exported reserved pads are reported but not treated as a method match"}
         finally:
             data.close()
 
@@ -508,9 +739,10 @@ def audit(legacy_root: pathlib.Path, collections: list[tuple[str, pathlib.Path]]
         kc_path = kc_path.resolve()
         kxld_inherited = verify_kxld_inherited_slots(kc_path, nm, old)
         inherited_symbols = set(kxld_inherited["resolved_methods"])
-        mach = _nm(nm, "-m", kc_path)
-        images, kc_strong, kc_weak = parse_nm_mach(mach)
-        kc_exports = set().union(*images.values()) if images else defined_symbols(nm, kc_path)
+        image_symbols, image_strong_imports, image_weak_imports = \
+            parse_kernel_collection_symbols(kc_path)
+        images = {image: set(symbols) for image, symbols in image_symbols.items()}
+        kc_exports = set().union(*images.values()) if images else set()
         native_wireless = images.get("com.apple.iokit.IO80211Family", set())
         native_wireless_metas = class_meta_symbols(native_wireless)
         native_wireless_overlap = old_class_metas & native_wireless_metas

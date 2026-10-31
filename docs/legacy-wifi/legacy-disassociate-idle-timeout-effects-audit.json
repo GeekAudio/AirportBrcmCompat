@@ -1,0 +1,239 @@
+{
+  "scope": "Static trace of pinned legacy child state-zero association-timeout routes through bounded event handling and queue handoff",
+  "offline_only": true,
+  "samples": [
+    {
+      "name": "AirPortBrcm4331.bin",
+      "sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e"
+    },
+    {
+      "name": "AppleAirPortBrcm43224.bin",
+      "sha256": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165"
+    }
+  ],
+  "4331": {
+    "timeout": "_wlc_assoc_timeout @0xade7e reads state at 0xadf19; state 0 branch @0xadf37 tail-jumps to _wlc_auth_complete @0xadf64 with status 2.",
+    "auth_complete": "_wlc_auth_complete @0xae0a8 reads state at 0xae14e; only states 7/9 enter specialized branch @0xae160. State 0 enters generic event branch @0xae40d, emits event code 3 with result field 2 through _wlc_bss_mac_event @0xae43a, then returns. No assoc-state write or _wlc_join_bss_start call on this path.",
+    "event_layer": "_wlc_bss_mac_event @0x259e9 forwards to _wlc_bss_mac_rxframe_event @0x4eebb. The caller at 0x4efd4 targets symbol _wl_event_sync @0x16c10. For event code 3, the pinned compare and JNE at 0x16c1a take the mismatch return epilogue at 0x16c3c; the caller then proceeds to enqueue at 0x4eff1. The event-code-3 path is guarded; the 0x20 willRoam branch and later event consumers are outside this check.",
+    "type_dependency": "The timeout and auth-complete state-zero branches do not read assoc type; type AS_IDLE does not change the observed event-and-return behavior.",
+    "event_sync_guard": {
+      "callee_symbol": "_wl_event_sync",
+      "callee_offset": "0x16c10",
+      "caller_symbol": "_wlc_bss_mac_rxframe_event",
+      "caller_call_instruction": "0x4efd4",
+      "caller_target_binding": "Runtime Admission independently resolves _wl_event_sync as a named child-image route symbol at 0x16c10; the verifier checks its Mach-O nlist visibility, and the caller internal branch is pinned to that address.",
+      "guarded_code_ranges": [
+        {
+          "span": [
+            "0x16c10",
+            "0x16c1c"
+          ],
+          "raw_sha256": "2aca105f542c69b3d6c61bb97b990e560cc370916973950b744632dbc2842b4e",
+          "purpose": "entry comparison and conditional branch"
+        },
+        {
+          "span": [
+            "0x16c3c",
+            "0x16c43"
+          ],
+          "raw_sha256": "2f9d25a4f4bcc4e7df719764b589d57e53a780ca7d5d5980f311bd7b5d887694",
+          "purpose": "mismatch return epilogue"
+        }
+      ],
+      "conditional_branch": {
+        "instruction": "0x16c1a",
+        "opcode": "0x75 (jne)",
+        "target": "0x16c3c"
+      },
+      "checked_input": "event code 3 takes the mismatch return path before event queue insertion",
+      "excluded": "The event-code-0x20 willRoam branch and relocated call are not part of this guard; higher-level event consumers are not checked."
+    }
+  },
+  "43224": {
+    "timeout": "_wlc_assoc_timeout @0x5eb02 reads state at 0x5eb5f; state 0 branch @0x5eb7f calls _wlc_bss_mac_event @0x5ebf3 with event code 3 and field +8 equal to 2.",
+    "event_layer": "_wlc_bss_mac_event @0x7f4ca allocates/fills event, calls _wlc_event_if, then enqueues at 0x7f5bb. _wlc_eventq_enq @0xa558e links it and may schedule queue processing with _wl_add_timer at 0xa55fd.",
+    "type_dependency": "The timeout state-zero branch does not read assoc type, change association state, or call join from this route."
+  },
+  "bounded_result": "For both pinned children, the examined state-zero timeout route emits or queues event code 3 with detail field 2 and does not restart association inside the guarded child path. The 4331 code-3 input takes the guarded _wl_event_sync mismatch return before queue insertion. This does not establish later consumer behavior, absence of queued/pending callbacks, or global reconnect quiescence, and does not independently validate the runtime idle no-op implementation.",
+  "minimum_runtime_guard_functions": {
+    "4331": [
+      {
+        "symbol": "_wlc_assoc_change_state",
+        "span": [
+          "0xad25f",
+          "0xad420"
+        ],
+        "purpose": "state dword layout +0x0c"
+      },
+      {
+        "symbol": "_wlc_bsscfg_down",
+        "span": [
+          "0x5de67",
+          "0x5e0aa"
+        ],
+        "purpose": "type +0x08 / state +0x0c checks and AS_IDLE assertion"
+      },
+      {
+        "symbol": "_wlc_assoc_timeout",
+        "span": [
+          "0xade7e",
+          "0xae0a8"
+        ],
+        "purpose": "state-zero dispatch"
+      },
+      {
+        "symbol": "_wlc_auth_complete",
+        "span": [
+          "0xae0a8",
+          "0xae54c"
+        ],
+        "purpose": "state-zero event branch; no join path"
+      },
+      {
+        "symbol": "_wlc_bss_mac_event",
+        "span": [
+          "0x259e9",
+          "0x25a1d"
+        ],
+        "purpose": "event wrapper"
+      },
+      {
+        "symbol": "_wlc_bss_mac_rxframe_event",
+        "span": [
+          "0x4eebb",
+          "0x4eff6"
+        ],
+        "purpose": "event construction and queue handoff"
+      },
+      {
+        "symbol": "_wlc_eventq_enq",
+        "span": [
+          "0x811d3",
+          "0x81247"
+        ],
+        "purpose": "queue insertion/scheduling behavior"
+      }
+    ],
+    "43224": [
+      {
+        "symbol": "_wlc_assoc_change_state",
+        "span": [
+          "0x57347",
+          "0x573bb"
+        ],
+        "purpose": "state dword layout +0x379c"
+      },
+      {
+        "symbol": "_wlc_bsscfg_down",
+        "span": [
+          "0x8ffa6",
+          "0x900d5"
+        ],
+        "purpose": "type +0x3798 / state +0x379c checks and AS_IDLE assertion"
+      },
+      {
+        "symbol": "_wlc_assoc_timeout",
+        "span": [
+          "0x5eb02",
+          "0x5ec84"
+        ],
+        "purpose": "state-zero event branch"
+      },
+      {
+        "symbol": "_wlc_bss_mac_event",
+        "span": [
+          "0x7f4ca",
+          "0x7f5ec"
+        ],
+        "purpose": "event construction and queue handoff"
+      },
+      {
+        "symbol": "_wlc_eventq_enq",
+        "span": [
+          "0xa558e",
+          "0xa5602"
+        ],
+        "purpose": "queue insertion/scheduling behavior"
+      }
+    ]
+  },
+  "existing_setter_guards_and_skip_predicates": {
+    "4331": {
+      "symbol": "__ZN16AirPort_Brcm433115setDISASSOCIATEEP8OSObject",
+      "span": [
+        "0xda90",
+        "0xdb4a"
+      ],
+      "skip_predicate": "cfg+0x0a==0 && cfg+0x0b==0"
+    },
+    "43224": {
+      "symbol": "__ZN17AirPort_Brcm4322415setDISASSOCIATEEP16IO80211Interface",
+      "span": [
+        "0x98bc",
+        "0x992a"
+      ],
+      "skip_predicate": "wlc+0x3b==0 && wlc+0x2f==0"
+    }
+  },
+  "event_queue_guard_note": "The selected _wlc_eventq_enq bodies pin the in-child queue operation. The 4331 guard additionally pins only the event-code-3 mismatch return through _wl_event_sync. The 0x20 willRoam branch and event consumers are excluded; do not claim no later reconnect or callback.",
+  "unknowns": [
+    "Whether higher-level event consumers react by initiating a separate reconnect.",
+    "Whether a callback is actually queued in the specific candidate idle snapshot; the static field conjunction does not reveal timer queue state."
+  ],
+  "production_changes": false,
+  "guard_boundary": "These are static prerequisite guards only. They do not prove runtime idle no-op behavior, no event queueing, no pending callbacks, or absence of later reconnect behavior. The 4331 _wl_event_sync 0x20 willRoam branch is explicitly outside the checked code ranges.",
+  "idle_setibss_guard": {
+    "setter": "__ZN17AirPort_Brcm4322415setDISASSOCIATEEP16IO80211Interface",
+    "caller_instruction": "0x98f0",
+    "target_symbol": "__ZN17AirPort_Brcm432247setIBSSEb",
+    "target_offset": "0x4d3a",
+    "guarded_function_span": [
+      "0x4d3a",
+      "0x4e42"
+    ],
+    "raw_sha256": "f2dcc22c06603d337d68408c04291f87bb4feb1a7135f3c3a8296957655bb481",
+    "abi": {
+      "entry": "RDI=controller this, SIL=IBSS boolean",
+      "return": "int32 status in EAX"
+    },
+    "internal_calls": [
+      {
+        "instruction": "0x4d90",
+        "target": "0x66a26",
+        "symbol": "_wlc_down"
+      },
+      {
+        "instruction": "0x4d9a",
+        "target": "0x4b9c",
+        "symbol": "__ZN17AirPort_Brcm432245setAPEb"
+      },
+      {
+        "instruction": "0x4db6",
+        "target": "0x67ab4",
+        "symbol": "_wlc_set"
+      },
+      {
+        "instruction": "0x4de3",
+        "target": "0x67ab4",
+        "symbol": "_wlc_set"
+      },
+      {
+        "instruction": "0x4dfb",
+        "target": "0x6b11c",
+        "symbol": "_wlc_get"
+      },
+      {
+        "instruction": "0x4e1d",
+        "target": "0x67ab4",
+        "symbol": "_wlc_set"
+      },
+      {
+        "instruction": "0x4e2c",
+        "target": "0x3fe2",
+        "symbol": "_wl_up"
+      }
+    ],
+    "observed_false_and_nonzero_flag_path": "When bool input is false and wlc+0x263a is nonzero, clears controller+0x590 and returns status 0 without entering the reconfiguration calls listed above.",
+    "boundary": "Static function/call-target guard only; runtime predicate sampling remains the caller responsibility."
+  }
+}

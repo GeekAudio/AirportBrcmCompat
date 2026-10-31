@@ -67,7 +67,7 @@ class LiluCompatibilityTests(unittest.TestCase):
                 self.assertIn(symbol, patcher)
         self.assertIn('CompatibilityVersion {parseModuleVersion("1.2.0")}', api)
         self.assertRegex(patcher, r'static_assert\(sizeof\(KextInfo\)\s*==')
-        for name, value in (('Sonoma', 23), ('Sequoia', 24), ('Tahoe', 25)):
+        for name, value in (('Monterey', 21), ('Sonoma', 23), ('Sequoia', 24), ('Tahoe', 25)):
             self.assertRegex(kernel_versions, rf'\b{name}\s*=\s*{value}\b')
 
         config = re.search(r'struct PluginConfiguration\s*\{(.*?)\n\};', startup, re.S)

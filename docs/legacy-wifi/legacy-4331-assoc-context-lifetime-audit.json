@@ -1,0 +1,77 @@
+{
+  "scope": "Read-only direct-code lifetime audit of 4331 cfg+0x320 association context",
+  "binary": {
+    "path": "build/research/oclp-legacy/elcap-analysis-inputs/AirPortBrcm4331.bin",
+    "sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e"
+  },
+  "disassembly": {
+    "path": "build/research/oclp-legacy/elcap-analysis-inputs/4331-setSCAN_REQ_MULTIPLE.asm",
+    "sha256": "87a20506c6a2e622aa3896dd105d858e6ca3bdb589c55372fb2fbdb194085e21"
+  },
+  "context": {
+    "cfg_pointer_offset": "0x320",
+    "allocation_size": "0x60",
+    "allocation": {
+      "function": "_wlc_bsscfg_malloc",
+      "range": "[0xb47e9,0xb49a9)",
+      "allocation_call": "0xb4809",
+      "pointer_store": "0xb4816",
+      "zero_allocator": "_wlc_calloc [0xb47bc,0xb47e8)"
+    },
+    "sta_init": {
+      "function": "_wlc_bsscfg_sta_init",
+      "range": "[0x5f02f,0x5f1fe)",
+      "context_load": "0x5f043",
+      "in_place_zero": "_bzero(context,0x60) at 0x5f077",
+      "pointer_replaced_or_freed": false
+    },
+    "sta_deinit": {
+      "function": "_wlc_bsscfg_sta_deinit",
+      "range": "[0x5ee50,0x5eff8)",
+      "context_load": "0x5ee60",
+      "frees_nested_resources": true,
+      "frees_context_allocation": false,
+      "clears_cfg_pointer": false
+    },
+    "reinit": {
+      "function": "_wlc_bsscfg_reinit",
+      "range": "[0x5f1fe,0x5f2bd)",
+      "sta_deinit_call": "0x5f22a",
+      "sta_init_call": "0x5f285",
+      "context_pointer_replaced": false,
+      "context_bytes_may_be_reset_in_place": true
+    },
+    "release": {
+      "function": "_wlc_bsscfg_mfree",
+      "range": "[0xb49a9,0xb4c43)",
+      "context_load": "0xb49e5",
+      "context_free": "osl_mfree(context,0x60) at 0xb4a3b",
+      "cfg_pointer_clear": "0xb4a40 (after free)",
+      "direct_callers": [
+        {"caller": "_wlc_bsscfg_malloc", "call": "0xb499a", "reason": "allocation failure cleanup"},
+        {"caller": "_wlc_bsscfg_free", "call": "0x5e90a", "reason": "heap cfg destruction"},
+        {"caller": "_wlc_detach_mfree", "call": "0xb5209", "reason": "WLC detach cleanup"}
+      ]
+    }
+  },
+  "result": {
+    "independent_context_free_while_cfg_live_observed": false,
+    "pointer_replaced_during_sta_reinit_observed": false,
+    "context_contents_mutated_during_sta_reinit": true,
+    "idle_read_requires_checked_workloop_gate": true,
+    "main_memory_fence_must_cover_complete_cfg_mfree_cfg_free_and_wlc_stop": true
+  },
+  "workloop_gate_evidence": {
+    "runtime_dispatch_source": "src/legacy_wifi_compat/legacy_install.cpp:309-322 checks same controller/interface WorkLoop and loop->inGate() before Runtime dispatch",
+    "cache_binding_source": "legacy_install.cpp:170-192 checks manager/controller/interface/timer use the same WorkLoop and inGate()",
+    "4331_event_timer": "_wlc_eventq_attach 0x80e79 registers _wlc_timer_cb and calls _wl_init_timer at 0x80edc; association timer initialization is _wlc_bsscfg_sta_init 0x5f0c1-0x5f0db",
+    "4331_timer_helper": "_wl_init_timer 0x55a4 obtains controller WorkLoop via vtable +0x688, then adds IOTimerEventSource via +0x140",
+    "43224_cross_check": "_wl_init_timer 0xe7d6 uses the same slots; eventq attach registers _wlc_process_eventq and invokes timer helper at 0xa5254-0xa52b7"
+  },
+  "limits": [
+    "Bounded to the pinned 4331 binary and retained symbolized assembly.",
+    "Direct listing scan is not a full indirect-call graph.",
+    "The main memory epoch does not track in-place _wlc_bsscfg_sta_init/_wlc_bsscfg_reinit writes; idle state reads depend on WorkLoop gate serialization."
+  ],
+  "production_changes": false
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "airport-brcm-compat.native-current-assurance-history.v1",
+  "read_only": true,
+  "production_or_test_changes": false,
+  "kernel_code_executed": false,
+  "driver_loaded": false,
+  "sample": {
+    "path": "/System/Library/KernelCollections/BootKernelExtensions.kc",
+    "os": "Tahoe 26.7.2",
+    "build": "25G332",
+    "sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+    "member": "com.apple.iokit.IO80211Family"
+  },
+  "state": {
+    "field": "IO80211BSSBeacon BSS-data +0x53a bit 0",
+    "fresh_allocation": "initWithChanSpec allocates 0x698 bytes through IOMallocTypeImpl/Z_ZERO; bit starts 0",
+    "parser": "setBeaconDataEx writes the bit only for a valid matching CCX subtype 0x0b, body length >=5; byte +6 bit 7 is the value; last valid match wins",
+    "absence": "No unconditional reset at parser entry; no valid match leaves the existing bit unchanged",
+    "fresh_absent": "Disabled, when fresh-object provenance and complete parse are proven",
+    "reused_absent": "Preserves prior bit; Unknown if the object's history is not owned/observed"
+  },
+  "current_bss_path": {
+    "WCLNetManager_updateBss": {
+      "address": "0x2191924",
+      "call_updateOrAddBeacon": "0x21919cd",
+      "returned_beacon_saved_in": "r12"
+    },
+    "WCLNetManager_setCurrentBSS": {
+      "address": "0x219397c",
+      "call_from_updateBss": "0x2191a80",
+      "argument": "returned beacon pointer in r12"
+    },
+    "WCLBssManager_setCurrentBSS": {
+      "address": "0x218cf44",
+      "effect": "stores the passed beacon pointer in current-BSS slot and forwards same pointer to IO80211BssManager"
+    }
+  },
+  "cache_reuse_path": {
+    "WCLScanCacheStore_updateOrAddBeaconInternal": "passes factory block to IO80211ScanCacheStore::updateOrAddBeacon",
+    "IO80211ScanCacheStore_updateOrAddBeacon": "first calls updateScanCache; factory is used only when no cached match is returned",
+    "IO80211ScanCacheStore_updateScanCache": {
+      "address": "0x22d3804",
+      "reuse": "removeAndReturnObjectBasedOnFilter returns an existing cached beacon, which is passed as receiver to setBeaconDataFromMsg at 0x22d389e",
+      "data_block": "existing object is updated in place; no new BSS-data allocation or +0x53a reset in this path"
+    },
+    "fresh_factory": "WCLBSSBeacon::fromBeaconData -> IO80211BSSBeacon::initWithChanSpec -> setBeaconDataFromMsg"
+  },
+  "implementation_boundary": {
+    "minimum_owned_history": "For this Tahoe native object, track exact beacon object lifetime/generation. Initialize Disabled only on proven fresh zeroed data; update to the last valid matching CCX value when native parsing writes it; preserve prior value when no valid match writes; bind the exact pointer returned by updateOrAddBeacon to current BSS.",
+    "legacy_portability_boundary": "Tahoe IO80211BSSBeacon/WCLBSSBeacon pointers are not OCLP El Cap child current-record or scan-cache node pointers. A portable legacy history needs separate proof of legacy node create/update/match/evict lifecycle and exact current-record binding; not established here.",
+    "unknown_cases": [
+      "object predates bridge observation",
+      "missed or unguarded parser update",
+      "object address reused without generation/retirement proof",
+      "current pointer not tied to the observed cache/update path",
+      "legacy child cache/current-record lifecycle not proven by Tahoe native object evidence"
+    ],
+    "claim_limit": "Static Tahoe evidence does not prove every association transition or supply an already-installed bridge lifecycle hook; it does not map these object addresses to OCLP El Cap objects; absent CCX is not globally false."
+  },
+  "functions": [
+    {"name":"IO80211BSSBeacon::initWithChanSpec","address":"0x22db658","size":794,"sha256":"eb39a48f4c5b8bb572d355f4fe0fe2655de9dd7e316e298b5acb3196384eebb3"},
+    {"name":"WCLBSSBeacon::fromBeaconData","address":"0x218c9a2","size":202,"sha256":"aded9dcac9eaeeba88e30588e92359d3582cd332c5359c5ac6e588129c16fb0e"},
+    {"name":"IO80211BSSBeacon::setBeaconDataFromMsg","address":"0x22d910e","size":884,"sha256":"70eef871f93f23e12c08fead093f8afffc9a2336de56951d7dedbb31c47cd44c"},
+    {"name":"IO80211BSSBeacon::setBeaconDataEx","address":"0x22d9632","size":6006,"sha256":"78d979afccbd0ff6a5142e94857915b32be3c5b4f2d33a3a511a41ecef9b84b2"},
+    {"name":"IO80211ScanCacheStore::updateOrAddBeacon","address":"0x22d3674","size":386,"sha256":"e0ca83d1cd226dea9dd491f52e07e169e0a8dbca4d8d93106ae1dd8dae4cd0c6"},
+    {"name":"IO80211ScanCacheStore::updateScanCache","address":"0x22d3804","size":452,"sha256":"a8466f35eba3073e7555b6edacd2b1b0941b852961d14f584908b2c56a963c5c"},
+    {"name":"updateScanCache filter block","address":"0x22d3b7e","size":152,"sha256":"6155522baa70430ac92e63c9cb0003cbaaeecfd02209d97b10a9f23d2dec382c"},
+    {"name":"WCLScanCacheStore::updateOrAddBeacon","address":"0x2353fca","size":190,"sha256":"3b14f7a037ce95c402d1eb18373aa80f7ec42d9b443b4bfe7599357bf86b16f8"},
+    {"name":"WCLScanCacheStore::updateOrAddBeaconInternal","address":"0x2354088","size":231,"sha256":"a6f5c59d6aa41648701577c570a1e74af3d4c437cc8b1f386498cc3226a414b8"},
+    {"name":"WCLNetManager::updateBss","address":"0x2191924","size":712,"sha256":"22edc9a694f982596f8e6505af309406470c5d3c2b2888b611d5b4d6e85ed94d"},
+    {"name":"WCLNetManager::setCurrentBSS","address":"0x219397c","size":1714,"sha256":"511d1e7240e129b6f72456090a500d4b64f972484f95a42d78eec3ecc66b3460"},
+    {"name":"WCLBssManager::setCurrentBSS","address":"0x218cf44","size":70,"sha256":"987fc1887ae79bd7778e90c7764c1b7799f1a135653022334ff9ea159bc90cfb"},
+    {"name":"IO80211BSSBeacon::isNwAssuranceEnabledInCCXIE","address":"0x22dd922","size":18,"sha256":"dbd7aa5a9c7367d5a9379533e66a17477266b445f28982ced857efd9e38a6987"}
+  ]
+}

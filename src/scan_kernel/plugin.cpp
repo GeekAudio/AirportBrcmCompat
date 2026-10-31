@@ -8,6 +8,7 @@
 #include "kernel_identity.hpp"
 #include "runtime_build_guard.hpp"
 #include "association_compat.hpp"
+#include "../legacy_wifi_compat/legacy_install.hpp"
 #if defined(AIRPORT_BRCM_SCAN_MULTIPLE)
 #include "scan_multiple_compat.hpp"
 #endif
@@ -55,6 +56,14 @@ KernelPatcher::KextInfo watched[] {
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
     {"com.apple.driver.AirPort.BrcmNIC",brcmPaths,arrsize(brcmPaths),{true}},
 #endif
+};
+const char *elcapPaths[]={"/System/Library/Extensions/IO80211ElCap.kext/Contents/MacOS/IO80211ElCap"};
+const char *brcm4331Paths[]={"/System/Library/Extensions/IO80211ElCap.kext/Contents/PlugIns/AirPortBrcm4331.kext/Contents/MacOS/AirPortBrcm4331"};
+const char *brcm43224Paths[]={"/System/Library/Extensions/IO80211ElCap.kext/Contents/PlugIns/AppleAirPortBrcm43224.kext/Contents/MacOS/AppleAirPortBrcm43224"};
+KernelPatcher::KextInfo elcapWatched[] {
+    {"com.apple.iokit.IO80211ElCap",elcapPaths,arrsize(elcapPaths),{true}},
+    {"com.apple.driver.AirPort.Brcm4331",brcm4331Paths,arrsize(brcm4331Paths),{true}},
+    {"com.apple.driver.AirPortBrcm43224",brcm43224Paths,arrsize(brcm43224Paths),{true}}
 };
 bool systemVerified=false,providerVerified=false,legacyVerified=false,routingAttempted=false;
 bool scanPairInstalled=false,associationAttempted=false,associationInstalled=false;
@@ -460,6 +469,7 @@ void init() {
         ScanDiagnostics::record(ScanDiagnostics::BuildGuard,identity);
         if (identity || profile!=ScanKernelIdentity::Profile::Structural) {
             watched[0].switchOff();watched[1].switchOff();
+            for (auto &image:elcapWatched) image.switchOff();
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
             watched[2].switchOff();
 #endif
@@ -468,6 +478,7 @@ void init() {
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,
             ScanCompat::runtimeBuildState(profile));
         systemVerified=true;
+        LegacyWiFi::Installer::kernelReady(patcher);
         tryInstall(patcher);
         tryInstallAssociation(patcher);
 #if defined(AIRPORT_BRCM_SCAN_MULTIPLE)
@@ -482,6 +493,13 @@ void init() {
     });
     lilu.onKextLoadForce(watched,arrsize(watched),
         [](void *,KernelPatcher &p,size_t i,mach_vm_address_t a,size_t s) { loaded(p,i,a,s); });
+    lilu.onKextLoadForce(elcapWatched,arrsize(elcapWatched),
+        [](void *,KernelPatcher &p,size_t i,mach_vm_address_t a,size_t s) {
+            using namespace LegacyWiFi::Installer;
+            if (i==elcapWatched[0].loadIndex) observe(p,ImageKind::Provider,i,a,s);
+            else if (i==elcapWatched[1].loadIndex) observe(p,ImageKind::Broadcom4331,i,a,s);
+            else if (i==elcapWatched[2].loadIndex) observe(p,ImageKind::Broadcom43224,i,a,s);
+        });
 }
 const char *off[]={"-brcmcompatoff"};
 const char *debug[]={"-brcmcompatdbg"};
@@ -489,5 +507,5 @@ const char *debug[]={"-brcmcompatdbg"};
 PluginConfiguration ADDPR(config) {
     xStringify(PRODUCT_NAME),parseModuleVersion(xStringify(MODULE_VERSION)),LiluAPI::AllowNormal,
     off,arrsize(off),debug,arrsize(debug),nullptr,0,
-    KernelVersion::Sonoma,static_cast<KernelVersion>(KernelPatcher::KernelAny),init
+    KernelVersion::Monterey,static_cast<KernelVersion>(KernelPatcher::KernelAny),init
 };

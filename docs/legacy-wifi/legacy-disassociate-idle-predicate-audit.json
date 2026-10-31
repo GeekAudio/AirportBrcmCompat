@@ -1,0 +1,68 @@
+{
+  "scope": "Read-only static audit of candidate idle predicates and abort substitute for legacy SET22",
+  "offline_only": true,
+  "samples": [
+    {
+      "name": "AirPortBrcm4331.bin",
+      "sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e"
+    },
+    {
+      "name": "AppleAirPortBrcm43224.bin",
+      "sha256": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165"
+    }
+  ],
+  "candidate_idle_fields": {
+    "4331": {
+      "primary_sta_owner_required": true,
+      "cfg_ap_byte_offset": "0x0a",
+      "cfg_associated_byte_offset": "0x0b",
+      "assoc_context_pointer_offset": "0x320",
+      "assoc_type_dword_offset": "0x08",
+      "assoc_state_dword_offset": "0x0c",
+      "idle_type_value": 0,
+      "idle_state_value": 0,
+      "evidence": [
+        "SET22 predicate at 0xda90",
+        "_wlc_bsscfg_down state read at 0x5deaf and AS_IDLE assertion at 0x5dfa4",
+        "_wlc_assoc_change_state reads/writes context+0x0c at 0xad25f..0xad2a9"
+      ]
+    },
+    "43224": {
+      "primary_sta_owner_required": true,
+      "wlc_ap_byte_offset": "0x2f",
+      "sta_associated_byte_offset": "0x10e8",
+      "assoc_type_dword_offset": "0x3798",
+      "assoc_state_dword_offset": "0x379c",
+      "idle_type_value": 0,
+      "idle_state_value": 0,
+      "set22_gate": "wlc+0x3b != 0 && wlc+0x2f == 0",
+      "evidence": [
+        "_wlc_bsscfg_down state check at 0x90042 and AS_IDLE assertion at 0x9005d",
+        "_wlc_assoc_change_state reads/writes +0x379c at 0x57347..0x573af",
+        "SET22 predicate at 0x98bc"
+      ]
+    }
+  },
+  "state_zero_timeout_path_needing_semantic_resolution": [
+    {
+      "child": "4331",
+      "timeout_timer_init": "0x5f0c1..0x5f0db initializes _wlc_assoc_timeout",
+      "timeout_state_zero_path": "0xadef19 -> 0xadf37 -> 0xadf64 (_wlc_auth_complete)",
+      "abort_state_zero_path": "0xaeaea..0xaeb0a returns before nonzero-state cancellation and cleanup"
+    },
+    {
+      "child": "43224",
+      "timeout_timer_init": "0x5d9e2..0x5d9f8 initializes _wlc_assoc_timeout",
+      "timeout_state_zero_path": "0x5eb5f -> 0x5eb7f..0x5ebf3 (_wlc_bss_mac_event)",
+      "abort_state_zero_path": "0x5ca04 zero-state early return before nonzero-state cancellation"
+    }
+  ],
+  "interpretation_boundary": "The focused follow-up shows both examined state-zero timeout paths emit/queue event code 3 with detail value 2 and do not themselves retry/re-associate. This supports a driver-level idempotent no-op for those bounded child paths. It does not prove no event is pending or that a higher-level event consumer cannot initiate a separate reconnect. See legacy-disassociate-idle-timeout-effects-audit.md.",
+  "disable_as_abort": {
+    "safe_substitute": false,
+    "4331": "_wlc_bsscfg_disable calls bsscfg_down, association/disassociation updates, timer deletion, clears cfg-up state, and may clear SCB state; return is cleanup aggregate, not callback-drain token.",
+    "43224": "_wlc_bsscfg_disable calls bsscfg_down, association/disassociation updates, timer deletion, clears cfg state, and may clear SCB state; no documented association-completion indication or callback-drain wait is established."
+  },
+  "remaining_proof": "No static field in these samples exposes queued timer state or proves how an external event consumer reacts. The verified result is limited to no automatic retry/re-association inside the examined child state-zero timeout paths.",
+  "production_changes": false
+}

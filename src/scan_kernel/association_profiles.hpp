@@ -8,6 +8,8 @@
 #include <sys/errno.h>
 
 namespace AssociationProfiles {
+constexpr size_t Monterey12Size=580;
+constexpr size_t Ventura13Size=592;
 constexpr size_t Sonoma14Size=856;
 constexpr size_t Sequoia15Size=900;
 constexpr size_t SharedNativeSize=908;
@@ -44,9 +46,15 @@ inline uint32_t read32(const uint8_t *p) {
 // 0x40, and all extensions 508..855 are rejected unless zero. Sonoma's
 // producer contains no PRIVATE_MAC_ADDRESS property contract, so bit 0x08 at
 // 464 is neither interpreted nor stripped; the same prefix byte is retained.
-inline ProfileResult convertSonoma14(const uint8_t *source,size_t sourceSize,
-                                      uint8_t *legacy,size_t legacySize) {
-    if (!source || !legacy || sourceSize!=Sonoma14Size ||
+inline bool legacyHeaderSize(size_t size) {
+    return size==Monterey12Size || size==Ventura13Size || size==Sonoma14Size;
+}
+// The inspected 12.7.2, 13.7.2 and 14.8.9 producers share this exact prefix,
+// including 16-bit auth fields. Only their independently observed total
+// lengths are admitted; a smaller/larger future shape is not inferred.
+inline ProfileResult convertLegacyHeader(const uint8_t *source,size_t sourceSize,
+                                         uint8_t *legacy,size_t legacySize) {
+    if (!source || !legacy || !legacyHeaderSize(sourceSize) ||
         legacySize!=LegacyAssociationSize ||
         overlap(source,sourceSize,legacy,legacySize)) return {EINVAL,0};
 
@@ -82,12 +90,17 @@ inline ProfileResult convertSonoma14(const uint8_t *source,size_t sourceSize,
         if (!psk) return {EOPNOTSUPP,64};
         if (allowed!=0 && allowed!=4 && allowed!=0x40000004U) return {EOPNOTSUPP,504};
     }
-    for (size_t j=LegacyPrefixSize;j<Sonoma14Size;j++)
+    for (size_t j=LegacyPrefixSize;j<sourceSize;j++)
         if (source[j]) return {EOPNOTSUPP,static_cast<uint32_t>(j)};
 
     memset(legacy,0,LegacyAssociationSize);
     memcpy(legacy,source,LegacyPrefixSize);
     return {0,0};
+}
+inline ProfileResult convertSonoma14(const uint8_t *source,size_t sourceSize,
+                                      uint8_t *legacy,size_t legacySize) {
+    if (sourceSize!=Sonoma14Size) return {EINVAL,0};
+    return convertLegacyHeader(source,sourceSize,legacy,legacySize);
 }
 
 // Sequoia 15's Apple80211Associate2 emits 900 bytes and zero-initializes the

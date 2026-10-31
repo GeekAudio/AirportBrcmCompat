@@ -1,0 +1,79 @@
+{
+  "scope": "Read-only static audit of the pinned El Cap SET22 command-skip branches, no-op idle checks, and outer WorkLoop gate admission.",
+  "runtime_or_hardware_validation": false,
+  "samples": [
+    {
+      "child": "Brcm4331",
+      "path": "build/research/oclp-legacy/elcap-analysis-inputs/AirPortBrcm4331.bin",
+      "sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e",
+      "setter": "__ZN16AirPort_Brcm433115setDISASSOCIATEEP8OSObject",
+      "range": ["0xda90", "0xdb4a"],
+      "skip_path": {
+        "cfg_find_call": "0xdac5",
+        "cfg_find_return_pc": "0xdaca",
+        "command_0x34_call": "0xdaee",
+        "skip_branch": "0xdaf3",
+        "local_helper_calls": [
+          {"address": "0xdafd", "target": "OSMetaClassBase::safeMetaCast"},
+          {"address": "0xdb37", "target": "_bzero", "bytes": 6}
+        ],
+        "return": "0xdb48",
+        "sleep_or_gate_release_in_post_lookup_skip": false,
+        "notes": "Post-CfgFind skip block writes local authentication state and clears six local bytes. _IOSleep is used elsewhere in the image, not in this setter block. getVirtIf is before CfgFind and excluded from this branch-specific claim."
+      }
+    },
+    {
+      "child": "Brcm43224",
+      "path": "build/research/oclp-legacy/elcap-analysis-inputs/AppleAirPortBrcm43224.bin",
+      "sha256": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165",
+      "setter": "__ZN17AirPort_Brcm4322415setDISASSOCIATEEP16IO80211Interface",
+      "setter_range": ["0x98bc", "0x992a"],
+      "skip_branch": "0x98eb",
+      "skip_helpers": [
+        {"address": "0x98f0", "target": "__ZN17AirPort_Brcm432247setIBSSEb", "argument": "false"},
+        {"address": "0x991c", "target": "_bzero", "bytes": 6}
+      ],
+      "set_ibss": {
+        "range": ["0x4d3a", "0x4e42"],
+        "mode_byte": "wlc+0x263a",
+        "mode_byte_width": 1,
+        "mode_identity": "WLC_SET_INFRA command 0x14 handler stores requested boolean to byte wlc+0x263a; nonzero is infrastructure mode in this sample.",
+        "false_argument_early_return_condition": "wlc+0x263a != 0 (any nonzero; not exactly 1)",
+        "false_argument_early_return_effect": "clear controller+0x590, then return without calls to _wlc_down, setAP, _wlc_set, _wlc_get, or _wl_up",
+        "reconfiguration_condition": "wlc+0x263a == 0",
+        "reconfiguration_effects": [
+          "if byte [controller+0x420 pointer]+0x20 is nonzero, call _wlc_down at 0x4d90",
+          "call setAP(false)",
+          "call _wlc_set(0x14, 1) to set WLC_SET_INFRA",
+          "conditionally call _wlc_set(0x92)",
+          "call _wlc_get(0xf5)",
+          "conditionally call _wlc_set(0xf4, 1)",
+          "if previously-up byte was nonzero, call _wl_up at 0x4e2c"
+        ],
+        "guard_needed_for_idle_success": "Require wlc+0x263a != 0 before native setter, after setter, and after outer provider return."
+      }
+    }
+  ],
+  "outer_gate": {
+    "source": "src/legacy_wifi_compat/legacy_install.cpp",
+    "lines": [309, 322],
+    "condition": "controller and interface share WorkLoop and loop->inGate() is true before runtime dispatch",
+    "lease_recheck": "legacy_install.cpp:174-182 verifies controller/interface/timer WorkLoop and inGate"
+  },
+  "current_source_snapshot": {
+    "file": "src/legacy_wifi_compat/disassociate_kernel.cpp",
+    "reviewed_functions": ["readNativeIdle", "completeNativeIdle", "dispatchSetter", "dispatchFindCFG", "perform"],
+    "infra_predicate_present_at_review": true,
+    "infra_predicate": "readNativeIdle requires byte [wlc+0x263a] != 0; readNativeIdle is called before setter, after setter, and after outer provider return.",
+    "source_review": "Predicate placement and repeated checks reviewed read-only; this agent did not run tests or a build."
+  },
+  "remaining_semantic_boundary": "perform's idle-success branch skips CacheKernel::prune even when flush is present. This report certifies the local skip predicate and gate safety only; it does not claim flush metadata was consumed or all native FSM states are equivalent. See build/research/disassociate-empty-state-semantics.md.",
+  "unclosed_indirect_paths_excluded_from_accepted_idle_case": [
+    "43224 zero-infrastructure reconfiguration path reaches _wlc_down, _wl_del_timer and a Timer::delTimer timerSource virtual call at vtable slot +0x218, WLC ioctl handlers, and possibly _wl_up.",
+    "This audit does not claim every such unrelated indirect callee preserves WorkLoop gate ownership; the idle predicate must exclude that path."
+  ],
+  "references": {
+    "child_verifier": "tools/verify_legacy_disassociate_contracts.py",
+    "broadcom_wlioctl_header": "https://github.com/spotify/linux/blob/master/drivers/staging/brcm80211/include/wlioctl.h"
+  }
+}

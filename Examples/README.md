@@ -12,8 +12,9 @@
 | `AirPortBrcmNIC-Sonoma-Sequoia.kext` | Darwin 23–24 |
 | `AirPortBrcmNIC-Tahoe.kext` | Darwin 25 起 |
 
-保留自己的 ACPI、SMBIOS、磁盘、显卡和 USB 配置。核心、公共依赖及屏蔽条目从 Darwin 23 开始，
-NIC 条目按上表互斥选择。核心仍按实际接口决定是否启用适配，版本范围不是全部小版本的兼容证明。
+保留自己的 ACPI、SMBIOS、磁盘、显卡和 USB 配置。核心条目从 Darwin 21 开始，现代公共依赖及屏蔽条目从 Darwin 23 开始，
+NIC 条目按上表互斥选择。旧卡须使用独立生成的 ElCap 依赖片段，不能与本页的现代 NIC 片段合并。
+核心按实际接口决定是否启用适配，具体状态见项目兼容说明。
 片段保留 DisableLinkeditJettison=true。版本字段含义见 [OpenCore 配置文档](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf)。
 
 DEBUG 调试参数为 `-brcmcompatdbg`，追加到已有 boot-args。分享日志前先脱敏。

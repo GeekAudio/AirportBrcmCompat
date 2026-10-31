@@ -1,0 +1,53 @@
+{
+  "schema": "airport-brcm-compat.legacy-assurance-cache-current-binding.v1",
+  "read_only": true,
+  "production_or_test_changes": false,
+  "kernel_executed": false,
+  "finding": "No exact pointer, scan-operation token, or generation binds a provider scan-cache node to either old child current-BSS record. Content equality by BSSID/SSID/identity is not object provenance.",
+  "inputs": {
+    "provider": {
+      "sha256": "8ecd8f8a027d93205a493518c50a772f520ee774d2fa4d24b564dc67722c54b0",
+      "uuid": "B6A43EDC-47E9-3DB8-9887-812D1C77F38C"
+    },
+    "4331": {"sha256":"c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e"},
+    "43224": {"sha256":"fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165"}
+  },
+  "provider_cache": {
+    "scanDone": "allocates provider-owned 0xc0 node, copies 0x98 apple80211_scan_result header, then owns a separate IE-tail copy",
+    "child_result": "scanComplete/scanConvertResult allocates and fills a separate apple80211_scan_result; getSCAN_RESULT copies/returns that child result to provider",
+    "updateCache": "BSSID duplicate key; may replace node while request refs keep detached nodes alive",
+    "registry_scope": "CacheKernel allocation registry proves exact provider node/IE ownership only"
+  },
+  "child_current_bss": {
+    "4331": {
+      "current_record": "*(cfg+0x318), heap 0xa0 record",
+      "association_source": "_wlc_assoc_scan_complete BSSinit call at 0xb25d2 receives selected child target copy",
+      "bodyless_refresh": "_wlc_recvctl parser call 0x46c7b, BSSinit call 0x46cdb; exact staged raw-body capture can bind to current record"
+    },
+    "43224": {
+      "current_record": "wlc+0x2f8, inline 0x98 record",
+      "association_source": "_wlc_assoc_scan_complete BSSinit call at 0x57e75 receives selected child target copy"
+    }
+  },
+  "missing_relation": [
+    "No provider node source pointer flows into child _wlc_BSSinit current-record target",
+    "No shared scan generation/request identifier appears across GET_SCAN_RESULT and _wlc_assoc_scan_complete",
+    "Provider node copies result fields and IE into own allocations; BSSinit separately copies child BSS record/body",
+    "BSSID or network identity equality cannot distinguish same object from stale or later observation"
+  ],
+  "minimum_supported_route": {
+    "history_owner": "child current-record snapshot registry keyed by exact WLC/config/current-record identity and non-reused generation",
+    "publish": "capture exact association source before BSSinit; publish only after exact destination commit/fingerprint verification",
+    "4331_refresh": "stage raw frame at exact recvctl parser and consume only at its matching BSSinit transaction",
+    "invalidate": "all audited current-record mutators/free/teardown paths",
+    "provider_cache_use": "enumerate/prune candidate nodes only after exact provider ownership proof; never promote a matching node to current history",
+    "unknown_boundary": "unproven source/commit/writer/generation remains NetworkAssurance::Unknown"
+  },
+  "reports_reused": [
+    "build/research/legacy-cache-allocation-provenance-audit.md/.json",
+    "build/research/legacy-selective-cache-lifetime-audit.md",
+    "build/research/legacy-current-bss-internal-audit.md/.json",
+    "build/research/legacy-bssinit-source-body-fallback-audit.md/.json",
+    "build/research/current-bss-ie-provenance-audit.md/.json"
+  ]
+}

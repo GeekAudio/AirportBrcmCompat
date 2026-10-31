@@ -367,6 +367,12 @@ int verifyMappedIfnetTargets(const uint8_t *bytes,uintptr_t base,size_t imageSiz
     if (status==KernelContracts::Status::Passed) return 0;
     return context.rangeStatus?context.rangeStatus:EOPNOTSUPP;
 }
+bool readIfnetSemanticKernelEvidence(uintptr_t address,uint8_t *destination,size_t size,
+                                     bool executable,void *opaque) {
+    auto *budget=static_cast<ScanKernelIdentity::SemanticEvidenceBudget *>(opaque);
+    return ScanKernelIdentity::copyRunningKernelEvidence(
+        address,destination,size,executable,budget)==0;
+}
 int prepareIfnetContract(KernelPatcher &patcher,uintptr_t callback,
                          KernelContracts::IfnetIoctlPlan &contract) {
     using namespace KernelContracts;
@@ -397,8 +403,28 @@ int prepareIfnetContract(KernelPatcher &patcher,uintptr_t callback,
     const int mapped=verifyMappedIfnetTargets(bytes,callback,IfnetIoctlContractBytes);
     if (mapped) return mapped;
     const auto status=validateIfnetCurrent(bytes,IfnetIoctlContractBytes,callback,
-                                         relocations,IfnetRelocationCount,contract);
-    return status==Status::Passed?0:EOPNOTSUPP;
+                                          relocations,IfnetRelocationCount,contract);
+    if (status==Status::Passed) return 0;
+    // Unknown layouts may use the semantic route only after exact saved-layout
+    // digests miss. Every normalized anonymous displacement is backed by a
+    // bounded read of its code/string target and independent content checks.
+    if (status!=Status::FingerprintMismatch) return EOPNOTSUPP;
+    RelocationSpec dynamicSpecs[IfnetCurrentDynamicRelocationCount] {};
+    if (!copyIfnetCurrentDynamicRelocationSpecs(dynamicSpecs,IfnetCurrentDynamicRelocationCount))
+        return EOPNOTSUPP;
+    Relocation dynamicRelocations[IfnetCurrentDynamicRelocationCount] {};
+    const int dynamicResolved=resolveKernelRelocations(patcher,bytes,callback,dynamicSpecs,
+        IfnetCurrentDynamicRelocationCount,dynamicRelocations);
+    if (dynamicResolved) return dynamicResolved;
+    const uintptr_t panicTarget=resolveKernelSymbol(patcher,IfnetSemanticPanicSymbol);
+    if (!panicTarget) return EOPNOTSUPP;
+    const int panicRange=ScanKernelIdentity::verifyRunningKernelCodeRange(panicTarget,1);
+    if (panicRange) return panicRange;
+    ScanKernelIdentity::SemanticEvidenceBudget evidenceBudget;
+    const auto dynamicStatus=validateIfnetCurrentSemantic(bytes,IfnetIoctlContractBytes,callback,
+        dynamicRelocations,IfnetCurrentDynamicRelocationCount,panicTarget,
+        readIfnetSemanticKernelEvidence,&evidenceBudget,contract);
+    return dynamicStatus==Status::Passed?0:EOPNOTSUPP;
 }
 }
 

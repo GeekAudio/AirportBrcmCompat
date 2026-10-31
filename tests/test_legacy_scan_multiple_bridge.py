@@ -29,6 +29,91 @@ static void init(uint8_t *p) {
         put32(channel,1);put32(channel+4,36+i);put32(channel+8,0x100+i);
     }
 }
+static void initNativeProfile(uint8_t *p,size_t size,uint32_t channels) {
+    memset(p,0,size);
+    put32(p,1); put32(p+4,2); put32(p+8,2);
+    put32(p+0x0c,1); put32(p+0x10,3); memcpy(p+0x14,"abc",3);
+    put32(p+0x34,1); put32(p+0x38,3); memcpy(p+0x3c,"def",3);
+    put32(p+NativeBSSIDCount,1);
+    for (size_t i=0;i<6;i++) p[NativeBSSIDArray+i]=static_cast<uint8_t>(0xa0+i);
+    put32(p+NativeScanType,1); put32(p+NativePhyMode,3);
+    put32(p+NativeDwellTime,1200); put32(p+NativeRestTime,47);
+    put32(p+NativeChannelCount,channels);
+    for (uint32_t i=0;i<channels;i++) {
+        uint8_t *channel=p+NativeChannels+size_t(i)*ChannelStride;
+        put32(channel,1); put32(channel+4,36+i); put32(channel+8,0x100+i);
+    }
+}
+static void olderNativeProfiles() {
+    NativeLayout layout{};
+    assert(nativeLayoutForSize(Monterey12Size,layout));
+    assert(layout.profile==NativeProfile::Monterey12 && layout.size==0x820 &&
+           layout.channelCapacity==128 && layout.channelsEnd==0x814 &&
+           layout.flagsOffset==0x818 && !layout.hasTimestamp);
+    assert(nativeLayoutForSize(Ventura13Size,layout));
+    assert(layout.profile==NativeProfile::Ventura13 && layout.size==0x14e0 &&
+           layout.channelCapacity==400 && layout.channelsEnd==0x14d4 &&
+           layout.flagsOffset==0x14d8 && !layout.hasTimestamp);
+    assert(nativeLayoutForSize(NativeSize,layout));
+    assert(layout.profile==NativeProfile::Current25 && layout.channelCapacity==400 &&
+           layout.flagsOffset==0x14d8 && layout.timestampOffset==0x14e0 &&
+           layout.hasTimestamp);
+    assert(!nativeLayoutForSize(0x14e1,layout));
+
+    uint8_t native12[Monterey12Size],native13[Ventura13Size];
+    uint8_t old[ElCapSize];
+    initNativeProfile(native12,sizeof(native12),2);
+    memset(old,0x6d,sizeof(old));
+    assert(!convertToElCap(native12,sizeof(native12),old,sizeof(old)).error);
+    assert(get32(old)==1 && get32(old+4)==2 && get32(old+8)==2);
+    assert(!memcmp(old+0x0c,native12+0x0c,2*SSIDStride));
+    assert(get32(old+ElCapBSSIDCount)==1 &&
+           !memcmp(old+ElCapBSSIDArray,native12+NativeBSSIDArray,6));
+    assert(get32(old+ElCapScanType)==1 && get32(old+ElCapPhyMode)==3 &&
+           get32(old+ElCapRestTime)==47 && get32(old+ElCapChannelCount)==2);
+    assert(!memcmp(old+ElCapChannels,native12+NativeChannels,2*ChannelStride));
+
+    // Ventura keeps the same decoded prefix, but its source reserves 400
+    // channel entries. The ElCap target accepts only its proven 128-channel
+    // subset and never silently drops the rest.
+    initNativeProfile(native13,sizeof(native13),128);
+    memset(old,0x6d,sizeof(old));
+    assert(!convertToElCap(native13,sizeof(native13),old,sizeof(old)).error);
+    assert(get32(old+ElCapChannelCount)==128);
+    initNativeProfile(native13,sizeof(native13),129);
+    assert(!validateNativeShape(native13,sizeof(native13)).error);
+    memset(old,0x6d,sizeof(old));
+    const Result tooManyTargetChannels=convertToElCap(
+        native13,sizeof(native13),old,sizeof(old));
+    assert(tooManyTargetChannels.error==EOPNOTSUPP &&
+           tooManyTargetChannels.field==NativeChannelCount);
+    for (uint8_t byte:old) assert(byte==0x6d);
+    initNativeProfile(native13,sizeof(native13),400);
+    assert(!validateNativeShape(native13,sizeof(native13)).error);
+    assert(convertToElCap(native13,sizeof(native13),old,sizeof(old)).error==EOPNOTSUPP);
+
+    // Monterey's producer only materializes 128 channels. Both the request
+    // profile limit and the older driver's target limit are enforced.
+    initNativeProfile(native12,sizeof(native12),128);
+    assert(!convertToElCap(native12,sizeof(native12),old,sizeof(old)).error);
+    initNativeProfile(native12,sizeof(native12),129);
+    memset(old,0x6d,sizeof(old));
+    const Result tooManyMontereyChannels=convertToElCap(
+        native12,sizeof(native12),old,sizeof(old));
+    assert(tooManyMontereyChannels.error==EINVAL &&
+           tooManyMontereyChannels.field==NativeChannelCount);
+    for (uint8_t byte:old) assert(byte==0x6d);
+
+    initNativeProfile(native12,sizeof(native12),0);
+    native12[Monterey12Flags]=1;
+    assert(convertToElCap(native12,sizeof(native12),old,sizeof(old)).error==EOPNOTSUPP);
+    initNativeProfile(native12,sizeof(native12),0);
+    native12[Monterey12ChannelsEnd]=1;
+    assert(convertToElCap(native12,sizeof(native12),old,sizeof(old)).error==EOPNOTSUPP);
+    initNativeProfile(native13,sizeof(native13),0);
+    native13[Ventura13Flags+7]=1;
+    assert(convertToElCap(native13,sizeof(native13),old,sizeof(old)).error==EOPNOTSUPP);
+}
 static void validMapping() {
     uint8_t native[NativeSize],copy[NativeSize],old[ElCapSize];
     init(native);memcpy(copy,native,sizeof(native));memset(old,0x7b,sizeof(old));
@@ -90,7 +175,7 @@ static void invalidBuffers() {
     assert(convertToElCap(native,NativeSize,old,ElCapSize-1).error==EINVAL);
     assert(convertToElCap(native,NativeSize,native,ElCapSize).error==EINVAL);
 }
-int main(){validMapping();maximumRepresentable();rejectsWithoutPartialWrite();invalidBuffers();}
+int main(){olderNativeProfiles();validMapping();maximumRepresentable();rejectsWithoutPartialWrite();invalidBuffers();}
 '''
 
 

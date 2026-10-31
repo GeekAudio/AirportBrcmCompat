@@ -12,10 +12,11 @@ enum : uint32_t { UUIDEmpty=0, UUIDWriting=1, UUIDVerified=2, UUIDRejected=3 };
 volatile uint32_t identityState=UUIDEmpty;
 uint8_t cachedUUID[16] {};
 
-// This private XNU reader has the same signature in Darwin 23/24/25. Resolve
-// it at runtime; absence or inconsistent symbol addresses disables admission.
-// No framework-private C++ object is allocated or read. Both ranges are wired:
-// the kernel image and IOMalloc storage (or this thread's kernel stack).
+// This private XNU reader has the same signature in the inspected XNU sources
+// and kernel samples. Resolve it at runtime; absence or inconsistent symbol
+// addresses disables admission. Identity checks read the kernel image into
+// owned IOMalloc/stack storage. The separate object-copy API below additionally
+// requires its caller to establish wired allocation ownership and lifetime.
 using ReadWiredMemory = vm_size_t (*)(vm_offset_t, vm_offset_t, vm_size_t);
 constexpr size_t MaxHeaderBytes=64U*1024U;
 constexpr uint64_t MaxProbeBytes=1024U*1024U;
@@ -321,5 +322,31 @@ int32_t verifyRunningKernelCodeRange(uintptr_t address,uint64_t needed) {
 
 int32_t verifyRunningKernelReadableRange(uintptr_t address,uint64_t needed) {
     return verifyRunningKernelRange(address,needed,VM_PROT_READ);
+}
+
+int32_t copyRunningKernelEvidence(uintptr_t address,void *destination,size_t size,
+                                  bool executable,SemanticEvidenceBudget *budget) {
+    if (!budget || !destination || !size || size>MaxSemanticEvidenceRead ||
+        size>UINT32_MAX/2U || budget->remaining<static_cast<uint32_t>(size*2U)) return 6;
+    // verifyRunningKernelRange performs a bounded no-fault probe of this exact
+    // range; readExact then copies the bytes into caller-owned wired storage.
+    // Charge both passes before touching the target so a failed read cannot be
+    // retried without consuming the admission's shared budget.
+    budget->remaining-=static_cast<uint32_t>(size*2U);
+    const int32_t range=executable ? verifyRunningKernelCodeRange(address,size) :
+                                     verifyRunningKernelReadableRange(address,size);
+    if (range) return range;
+    return readExact(address,destination,size)?0:6;
+}
+
+bool copyOwnedWiredMemory(uintptr_t address,void *destination,size_t size) {
+    const uintptr_t output=reinterpret_cast<uintptr_t>(destination);
+    if (__atomic_load_n(&identityState,__ATOMIC_ACQUIRE)!=UUIDVerified ||
+        !address || !destination || !size || size>MaxOwnedWiredRead ||
+        address>UINTPTR_MAX-size || output>UINTPTR_MAX-size) return false;
+    // Overlap is outside the no-fault reader's copy contract. Check both
+    // ranges before it can modify a destination or inspect a source mapping.
+    if (address<=output ? output-address<size : address-output<size) return false;
+    return readExact(address,destination,size);
 }
 }

@@ -13,7 +13,7 @@ inline bool extendedRequestSize(size_t n) {
     return n==NativeSize || n==AssociationProfiles::Sequoia15Size;
 }
 inline bool supportedRequestSize(size_t n) {
-    return extendedRequestSize(n) || n==AssociationProfiles::Sonoma14Size;
+    return extendedRequestSize(n) || AssociationProfiles::legacyHeaderSize(n);
 }
 struct Result { int error; uint32_t field; };
 inline Result refused(uint32_t field,int error=EOPNOTSUPP) { return {error,field}; }
@@ -256,7 +256,7 @@ inline int handle(API &api,void *c,void *i,void *v,void *infra,ScanCompat::Reque
     if (!buffer.bytes) return ENOMEM;
     int error=api.copyIn(c,r->userData,buffer.bytes,r->length);
     if (error) return error;
-    const bool compact=r->length==AssociationProfiles::Sonoma14Size;
+    const bool compact=AssociationProfiles::legacyHeaderSize(r->length);
     const uint8_t *native=buffer.bytes;
     if (r->length==AssociationProfiles::Sequoia15Size) {
         auto *normalized=buffer.bytes+NativeSize+LegacySize;
@@ -279,7 +279,7 @@ inline int handle(API &api,void *c,void *i,void *v,void *infra,ScanCompat::Reque
     PrivateMAC::NativeRequest privatePlan;
     Result result {};
     if (compact) {
-        const auto profile=AssociationProfiles::convertSonoma14(
+        const auto profile=AssociationProfiles::convertLegacyHeader(
             native,r->length,buffer.bytes+NativeSize,LegacySize);
         result={profile.error,profile.field};
     } else {

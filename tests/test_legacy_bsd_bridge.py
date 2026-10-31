@@ -99,7 +99,7 @@ static void liveHandler(){
  assert(ScanCompat::read16(user+0x8a)==7);
  for(size_t i=0;i<7;i++)assert(user[0x8c+i]==0x71);
  mutateOnCopyOut=false;
- req.length=ScanCompat::OldSize;assert(S::handle(api,controller,interface,vif,&req,true)==71);
+ req.length=S::KernelHeaderSize;assert(S::handle(api,controller,interface,vif,&req,true)==71);
  assert(originalCalls==1);
  req.length=ScanCompat::NativeSize;resultError=EBUSY;
  assert(S::handle(api,controller,interface,vif,&req,true)==EBUSY);

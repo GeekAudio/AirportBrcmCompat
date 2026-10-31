@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+import plistlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -140,6 +141,18 @@ class BuildToolchainCLI(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'standalone candidate mode'):
                     builder.configure_build_mode(self.parse(*options))
 
+    def test_release_and_debug_examples_enable_core_from_monterey_first(self):
+        for flavor in ('RELEASE', 'DEBUG'):
+            path = Path(__file__).resolve().parents[1] / 'Examples' / f'config-WiFi-{flavor}.example.plist'
+            config = plistlib.loads(path.read_bytes())
+            entries = config['Kernel']['Add']
+            self.assertEqual(entries[0]['BundlePath'], 'AirportBrcmCompat.kext')
+            self.assertEqual(entries[0]['ExecutablePath'], 'Contents/MacOS/AirportBrcmCompat')
+            self.assertEqual(entries[0]['MinKernel'], '21.0.0')
+            self.assertEqual(entries[1]['BundlePath'], 'IOLegacyWFamily.kext')
+            self.assertEqual(entries[1]['MinKernel'], '23.0.0')
+            self.assertEqual(config['Kernel']['Block'][0]['MinKernel'], '23.0.0')
+
     def test_component_review_modes_keep_current_version_without_install_claims(self):
         components = builder.configure_build_mode(self.parse('--event-pipe-components-review'))
         self.assertEqual(components['mode'], 'component-review')
@@ -155,7 +168,7 @@ class BuildToolchainCLI(unittest.TestCase):
         info = builder.bundle_info()
         info.update(builder.automatic_compatibility_info_metadata(True, True))
         manifest = builder.apply_automatic_compatibility_manifest({
-            'minimum_darwin_kernel_version': '23.0.0',
+            'minimum_darwin_kernel_version': '21.0.0',
             'ready_for_install': True,
             'runtime_validated': False,
             'awdl_backend_active': False,
@@ -174,7 +187,7 @@ class BuildToolchainCLI(unittest.TestCase):
 
         self.assertEqual(info['AirportBrcmAutomaticCompatibility'], 1)
         self.assertIn('ABIContractProbes', info['AirportBrcmKernelIdentityPolicy'])
-        self.assertEqual(info['AirportBrcmMinimumDarwinKernelVersion'], '23.0.0')
+        self.assertEqual(info['AirportBrcmMinimumDarwinKernelVersion'], '21.0.0')
         self.assertEqual(info['AirportBrcmRequestSchemaPolicy'], 'StrictFailClosed')
         self.assertEqual(info['AirportBrcmStrictRequestSchemas'],
                          ['scan-multiple-set86-v1', 'sae-password-carrier-subset-v1'])
@@ -183,9 +196,9 @@ class BuildToolchainCLI(unittest.TestCase):
         self.assertTrue(info['AirportBrcmControlRxWindowsConfigured'])
         self.assertIn('unknown UUID alone never admits', policy['kernel_admission'])
         self.assertIn('strict-fail-closed', policy['request_schema_policy'])
-        self.assertEqual(policy['minimum_darwin_kernel_version'], '23.0.0')
+        self.assertEqual(policy['minimum_darwin_kernel_version'], '21.0.0')
         self.assertEqual(manifest['validation_scope'], 'offline')
-        self.assertEqual(manifest['minimum_darwin_kernel_version'], '23.0.0')
+        self.assertEqual(manifest['minimum_darwin_kernel_version'], '21.0.0')
         self.assertEqual(manifest['scan_multiple_nonzero_min_timestamp'], 'refuse')
         self.assertEqual(manifest['compiled_features'], {
             'automatic_kernel_abi_probe_gate': True,
@@ -194,6 +207,8 @@ class BuildToolchainCLI(unittest.TestCase):
             'scan_multiple_set86_adapter': True,
             'sae_password_carrier_subset': True,
             'awdl_event_pipeline_and_routes': True,
+            'elcap_request_and_bsd_event_bridge': True,
+            'elcap_43224_owned_scan_sequence': True,
             'baseline_control_rx_trace': True,
             'control_rx_observation_windows': True,
         })

@@ -35,11 +35,13 @@ inline uint16_t read16(const void *p) { uint16_t x; memcpy(&x,p,sizeof(x)); retu
 inline uint32_t read32(const void *p) { uint32_t x; memcpy(&x,p,sizeof(x)); return x; }
 inline void write16(void *p,uint16_t x) { memcpy(p,&x,sizeof(x)); }
 
-// On error the native buffer is unchanged. Native-only tail and input padding
-// are preserved. No uninitialized Legacy padding is copied to userspace.
-inline int convert(uint8_t *native, size_t nativeSize, const uint8_t *old, size_t oldSize) {
-    const size_t limit=resultIECapacity(nativeSize);
-    if (!native || !old || !limit || oldSize != OldSize) return EINVAL;
+namespace Detail {
+// Only the two typed entry points below select an output shape. Keep the
+// shared prefix codec independent from which kernel provider supplied it.
+inline int convertResult(uint8_t *native,size_t nativeSize,size_t limit,
+                         const uint8_t *old,size_t oldSize) {
+    if (!native || !old || (limit!=OldIECapacity && limit!=NativeIECapacity) ||
+        nativeSize<IEOffset || limit>nativeSize-IEOffset || oldSize!=OldSize) return EINVAL;
     const auto capacity=read16(native+0x8a), actual=read16(old+0x8a);
     if (read32(native)!=1 || capacity>limit) return EINVAL;
     if (read32(old)!=1 || old[0x22]>15 || old[0x60]>32 || actual>OldIECapacity) return EOVERFLOW;
@@ -51,6 +53,19 @@ inline int convert(uint8_t *native, size_t nativeSize, const uint8_t *old, size_
     memset(native+IEOffset,0,limit);
     memcpy(native+IEOffset,old+IEOffset,copied);
     return 0;
+}
+}
+// On error the native buffer is unchanged. Native-only tail and input padding
+// are preserved. No uninitialized Legacy padding is copied to userspace.
+inline int convert(uint8_t *native, size_t nativeSize, const uint8_t *old, size_t oldSize) {
+    return Detail::convertResult(native,nativeSize,resultIECapacity(nativeSize),old,oldSize);
+}
+// Monterey/Ventura userland uses the same inline 1164-byte result shape as
+// the modern legacy provider. IO80211ElCap still needs pointer-to-inline
+// conversion before using this path. This does not change modern dispatch.
+inline int convertFixedResult(uint8_t *native,size_t nativeSize,const uint8_t *old,size_t oldSize) {
+    if (nativeSize!=OldSize) return EINVAL;
+    return Detail::convertResult(native,nativeSize,OldIECapacity,old,oldSize);
 }
 
 // The final bool means a 64-bit user request, not a kernel address-space caller.

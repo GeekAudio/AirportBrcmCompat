@@ -204,7 +204,33 @@ static void sonoma14GuardPages(){
  assert(!munmap(srcMap,page*3)&&!munmap(outMap,page*3));
 }
 
-int main(){normalization();converterContract();invalidArguments();guardPages();
+static void olderProducerHeaders(){
+ const size_t sizes[]={Monterey12Size,Ventura13Size};
+ uint8_t source[Sonoma14Size],output[LegacyAssociationSize],before[LegacyAssociationSize];
+ for(size_t n:sizes){
+  validSonomaRequest(source);put16(source+6,1);
+  assert(!convertLegacyHeader(source,n,output,sizeof(output)).error);
+  assert(!memcmp(source,output,LegacyPrefixSize));
+  assert(output[6]==1); // Native chosen auth remains unchanged.
+  for(size_t offset=LegacyPrefixSize;offset<n;offset++){
+   validSonomaRequest(source);source[offset]=1;memset(output,0x73,sizeof(output));
+   memcpy(before,output,sizeof(before));
+   auto r=convertLegacyHeader(source,n,output,sizeof(output));
+   assert(r.error==EOPNOTSUPP&&r.field==offset&&!memcmp(output,before,sizeof(output)));
+  }
+  const size_t page=size_t(sysconf(_SC_PAGESIZE));
+  auto *mapping=static_cast<uint8_t*>(mmap(nullptr,page*2,PROT_NONE,MAP_ANON|MAP_PRIVATE,-1,0));
+  assert(mapping!=MAP_FAILED&&!mprotect(mapping,page,PROT_READ|PROT_WRITE));
+  validSonomaRequest(source);memcpy(mapping+page-n,source,n);
+  assert(!mprotect(mapping,page,PROT_READ));
+  assert(!convertLegacyHeader(mapping+page-n,n,output,sizeof(output)).error);
+  assert(!munmap(mapping,page*2));
+ }
+ const size_t unknown[]={548,579,581,591,593,855,857};
+ for(size_t n:unknown)assert(convertLegacyHeader(source,n,output,sizeof(output)).error==EINVAL);
+}
+
+int main(){normalization();converterContract();invalidArguments();guardPages();olderProducerHeaders();
  sonoma14OpenAndWpa2();sonoma14RejectsUnsupportedInputs();sonoma14GuardPages();}
 '''
 

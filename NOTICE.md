@@ -6,6 +6,11 @@ AirportBrcmCompat 自研核心、构建工具及回归测试以根目录 [BSD-3-
 
 Apple 无线组件版权归 Apple。OCLP 的 BSD-4-Clause 许可不替代 Apple 组件自身的适用条款。第三方版权与许可文本保留在 `LICENSES`。
 
+旧卡依赖生成器另使用 [OCLP 固定提交的无线资源](https://github.com/dortania/OpenCore-Legacy-Patcher/tree/e2107e05d9ce574e9ac3fd8b223e20a2edb7ba53/payloads/Kexts/Wifi)
+中的 `IO80211ElCap-v2.0.1.zip` 和 `corecaptureElCap-v1.0.2.zip`，保留博通子驱动，
+对冲突的 corecapture 运行时类名作等长调整。这些二进制及其来源版权仍归相应权利人；
+自研请求和事件桥的许可证不改变它们的许可。
+
 额外现代网卡匹配工具使用 [AirportBrcmFixup 2.2.1](https://github.com/acidanthera/AirportBrcmFixup/releases/tag/2.2.1)
 的官方二进制和 NIC injector，版权归 lvs1974 及上游贡献者，适用
 [上游 BSD-3-Clause 许可证](LICENSES/AirportBrcmFixup-LICENSE.txt)。这部分是可选依赖，不属于自研驱动代码。

@@ -20,7 +20,7 @@
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 				<key>MinKernel</key>
-				<string>23.0.0</string>
+				<string>21.0.0</string>
 				<key>MaxKernel</key>
 				<string></string>
 			</dict>

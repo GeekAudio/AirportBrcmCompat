@@ -1,0 +1,64 @@
+{
+  "scope": "Read-only static audit of pinned El Cap provider and 4331/43224 children; no runtime or RF claims.",
+  "samples": {
+    "IO80211ElCap.bin": "8ecd8f8a027d93205a493518c50a772f520ee774d2fa4d24b564dc67722c54b0",
+    "AirPortBrcm4331.bin": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e",
+    "AppleAirPortBrcm43224.bin": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165"
+  },
+  "get_state": {
+    "4331": {
+      "address": "0x98c4",
+      "behavior": "version=1; state=4 only when IO80211Interface::linkState()==2; otherwise successful return with state left zero",
+      "implication": "state zero does not prove no association attempt"
+    },
+    "43224": {
+      "address": "0x6938",
+      "behavior": "version=1; state=4 only when IO80211Interface::linkState()==2; otherwise successful return with state left zero",
+      "implication": "state zero does not prove no association attempt"
+    }
+  },
+  "get_bssid": {
+    "4331": {
+      "address": "0x9478",
+      "gates": ["bsscfg+0x0b & 1", "ordinary interface linkState()==2"],
+      "query": "WLC command 0x17, six bytes",
+      "implication": "when gates fail, no BSSID bytes are written by the WLC query"
+    },
+    "43224": {
+      "address": "0x66a2",
+      "gates": ["wlc+0x3b != 0", "ordinary user path linkState()==2"],
+      "query": "WLC command 0x17, six bytes",
+      "implication": "when gates fail, no BSSID bytes are written by the WLC query"
+    }
+  },
+  "set_disassociate": {
+    "4331": {
+      "address": "0xda90",
+      "execute_command_0x34_if": "bsscfg+0x0b != 0 && bsscfg+0x0a == 0",
+      "field_identity": {
+        "bsscfg+0x0b": "cfg->associated, corroborated by assertions at 0x25bc8 and 0x26db6",
+        "bsscfg+0x0a": "AP/BSS configuration branch byte; set path follows AP-specific cleanup when nonzero"
+      },
+      "does_not_check": ["current record BSSID at bsscfg+0x318", "association context at bsscfg+0x320"],
+      "result": "skipped or issued command result is ignored; local auth/interface fields are cleared; returns zero"
+    },
+    "43224": {
+      "address": "0x98bc",
+      "driver_wlc_identity": "wlcStart stores _wlc_attach return in both this+0x418 and this+0x420 at 0x2f95..0x2fad",
+      "execute_command_0x34_if": "wlc+0x3b != 0 && wlc+0x2f == 0",
+      "field_identity": {
+        "wlc+0x3b": "lifecycle byte; set at assoc_scan_complete and join_adopt_bss; recomputed from wlc+0x10ec != 0 in disassociate_client/bsscfg_disable",
+        "wlc+0x2f": "AP-lifecycle guard; written on AP doiovar paths at 0xa78a8 and 0xa7cfd"
+      },
+      "does_not_check": ["current record BSSID at wlc+0x2f8", "an explicit association-in-flight state"],
+      "result": "skipped or issued command result is ignored; local IBSS/interface fields are cleared; returns zero"
+    }
+  },
+  "counterevidence_to_zero_bssid_equivalence": [
+    "GET_BSSID may skip its query and leave bytes untouched when the driver's gates fail.",
+    "4331 has a separate association context at bsscfg+0x320; bsscfg_down checks its +0x0c state and can call _wlc_assoc_abort, while setDISASSOCIATE does not inspect it.",
+    "43224 SET_DISASSOCIATE reads WLC lifecycle/AP bytes and does not inspect the current record's BSSID.",
+    "Both setters return zero on skipped and ignored-command paths while still performing local cleanup."
+  ],
+  "conclusion": "Both children have zero-return command-skip paths. Static evidence does not establish that an all-zero or unavailable BSSID is sufficient to select a safe already-unassociated/no-join-in-flight no-op across both children."
+}

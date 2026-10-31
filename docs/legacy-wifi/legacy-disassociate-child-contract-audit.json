@@ -1,0 +1,3162 @@
+{
+  "scope": "fixed El Cap 4331/43224 current-BSS allocation/copy, SET22-to-worker route, bounded idle-timeout event branches, cfg-free, and WLC-stop publication static guards",
+  "accepted": true,
+  "raw_binaries": [
+    {
+      "label": "AirPortBrcm4331",
+      "source_path": "build/research/oclp-legacy/elcap-analysis-inputs/AirPortBrcm4331.bin",
+      "source_sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e",
+      "uuid": "59C1F2A3-D3B8-3C3E-8D7D-3E58CBD54500",
+      "text_vmaddr": "0x0",
+      "text_fileoff": "0x0",
+      "selected_functions": [
+        {
+          "symbol": "__ZN16AirPort_Brcm43319getVirtIfEP8OSObject",
+          "range": [
+            "0xc2e0",
+            "0xc332"
+          ],
+          "size": 82,
+          "raw_sha256": "b1401a2a1d8c29b4ae9b57e0d38bdaf59a7da248720f8a6adcfd1ce38ad43a0d",
+          "normalized_sha256": "b1401a2a1d8c29b4ae9b57e0d38bdaf59a7da248720f8a6adcfd1ce38ad43a0d",
+          "next_symbol": "__ZN16AirPort_Brcm433125getLINK_QUAL_EVENT_PARAMSEP8OSObjectP31apple80211_link_qual_event_data",
+          "next_offset": "0xc332"
+        },
+        {
+          "symbol": "_wlc_get_current_bss",
+          "range": [
+            "0x248fd",
+            "0x24931"
+          ],
+          "size": 52,
+          "raw_sha256": "2415a98f227376535928294a59a6d4e8a3b03242908bec4c937141e5bfd27d82",
+          "normalized_sha256": "2415a98f227376535928294a59a6d4e8a3b03242908bec4c937141e5bfd27d82",
+          "next_symbol": "_wlc_full_phy_cal",
+          "next_offset": "0x24931"
+        },
+        {
+          "symbol": "__ZN16AirPort_Brcm433115setDISASSOCIATEEP8OSObject",
+          "range": [
+            "0xda90",
+            "0xdb4a"
+          ],
+          "size": 186,
+          "raw_sha256": "58b841a0bfd67ef771110dcf6b4c7b78b910b9a89904b66927324a5e174b6347",
+          "normalized_sha256": "58b841a0bfd67ef771110dcf6b4c7b78b910b9a89904b66927324a5e174b6347",
+          "next_symbol": "__ZN16AirPort_Brcm433112setAUTH_TYPEEP8OSObjectP24apple80211_authtype_data",
+          "next_offset": "0xdb4a"
+        },
+        {
+          "symbol": "_wlc_disassociate_client",
+          "range": [
+            "0xb0b53",
+            "0xb10d0"
+          ],
+          "size": 1405,
+          "raw_sha256": "7e72faf5bce4787251a26cf60ded58a0e2ddcd4073f982adec11fc19e0853d6d",
+          "normalized_sha256": "7e72faf5bce4787251a26cf60ded58a0e2ddcd4073f982adec11fc19e0853d6d",
+          "next_symbol": "_wlc_disassoc_complete",
+          "next_offset": "0xb10d0"
+        },
+        {
+          "symbol": "_wlc_senddisassoc",
+          "range": [
+            "0x4d728",
+            "0x4d7ce"
+          ],
+          "size": 166,
+          "raw_sha256": "c3713efd4426c548a98effb807a9cf02db19af863f6e310418f96e01735501dd",
+          "normalized_sha256": "c3713efd4426c548a98effb807a9cf02db19af863f6e310418f96e01735501dd",
+          "next_symbol": "_wlc_rateprobe",
+          "next_offset": "0x4d7ce"
+        },
+        {
+          "symbol": "_wlc_frame_get_mgmt_int",
+          "range": [
+            "0x4a5f3",
+            "0x4a70d"
+          ],
+          "size": 282,
+          "raw_sha256": "c21fd2b83f6d70365c9778dbe24a950b4906f695a6efbeb3a881400c1e749d4b",
+          "normalized_sha256": "c21fd2b83f6d70365c9778dbe24a950b4906f695a6efbeb3a881400c1e749d4b",
+          "next_symbol": "_wlc_pdu_push_txparams",
+          "next_offset": "0x4a70d"
+        },
+        {
+          "symbol": "_wlc_bsscfg_find_by_wlcif",
+          "range": [
+            "0x5f3b8",
+            "0x5f3ea"
+          ],
+          "size": 50,
+          "raw_sha256": "100d50bf18cf00f4615a393523d7b30b447f7049fb6f832d886a16bf0f958739",
+          "normalized_sha256": "100d50bf18cf00f4615a393523d7b30b447f7049fb6f832d886a16bf0f958739",
+          "next_symbol": "_wlc_bsscfg_find_by_hwaddr",
+          "next_offset": "0x5f3ea"
+        },
+        {
+          "symbol": "_wlc_bsscfg_malloc",
+          "range": [
+            "0xb47e9",
+            "0xb49a9"
+          ],
+          "size": 448,
+          "raw_sha256": "c0f2c835d4a85c2ffbd6f2f53a6ebd914a59cd5c14b65d69f989f6b14788ef91",
+          "normalized_sha256": "c0f2c835d4a85c2ffbd6f2f53a6ebd914a59cd5c14b65d69f989f6b14788ef91",
+          "next_symbol": "_wlc_bsscfg_mfree",
+          "next_offset": "0xb49a9"
+        },
+        {
+          "symbol": "_wlc_BSSinit",
+          "range": [
+            "0x26be8",
+            "0x27680"
+          ],
+          "size": 2712,
+          "raw_sha256": "c5f5dd8690beb349f556bfef91dfe71cbabd7c549a4d43b0ceafd0874f9f8be8",
+          "normalized_sha256": "c5f5dd8690beb349f556bfef91dfe71cbabd7c549a4d43b0ceafd0874f9f8be8",
+          "next_symbol": "_wlc_freqtrack_reset",
+          "next_offset": "0x27680"
+        },
+        {
+          "symbol": "_wlc_bsscfg_disable",
+          "range": [
+            "0x5e0aa",
+            "0x5e28d"
+          ],
+          "size": 483,
+          "raw_sha256": "bb41fbe66e31bb616dad2ce3aeff3d21f30ea719022a0f7c2111f7e2f5eb908a",
+          "normalized_sha256": "bb41fbe66e31bb616dad2ce3aeff3d21f30ea719022a0f7c2111f7e2f5eb908a",
+          "next_symbol": "_wlc_bsscfg_disablemulti",
+          "next_offset": "0x5e28d"
+        },
+        {
+          "symbol": "_wlc_ioctl",
+          "range": [
+            "0x323cc",
+            "0x323d6"
+          ],
+          "size": 10,
+          "raw_sha256": "d002a506fc2c55b510bd8e34554ff5200043e663185183ce2006daf923c7451c",
+          "normalized_sha256": "d002a506fc2c55b510bd8e34554ff5200043e663185183ce2006daf923c7451c",
+          "next_symbol": "_wlc_get",
+          "next_offset": "0x323d6"
+        },
+        {
+          "symbol": "_wlc_bss_clear_bssid",
+          "range": [
+            "0x25d2f",
+            "0x25da2"
+          ],
+          "size": 115,
+          "raw_sha256": "308a728489d2e1954df280bcf2a2979cc2ac728ede8b152e8917bcb2e548865e",
+          "normalized_sha256": "308a728489d2e1954df280bcf2a2979cc2ac728ede8b152e8917bcb2e548865e",
+          "next_symbol": "_wlc_stas_connected",
+          "next_offset": "0x25da2",
+          "entry_abi": "RDI=cfg",
+          "return_abi": "opaque RAX forwarded from tail-called _wlc_bsscfg_tx_start"
+        },
+        {
+          "symbol": "_wlc_bsscfg_mfree",
+          "range": [
+            "0xb49a9",
+            "0xb4c43"
+          ],
+          "size": 666,
+          "raw_sha256": "b04e01a18c4abb8204250d2feef2e43e8f06478f8d8daa159a2ee12c4170fc62",
+          "normalized_sha256": "b04e01a18c4abb8204250d2feef2e43e8f06478f8d8daa159a2ee12c4170fc62",
+          "next_symbol": "_wlc_attach_malloc",
+          "next_offset": "0xb4c43",
+          "entry_abi": "RDI=osh, RSI=cfg",
+          "return_abi": "void-style; native callsites ignore RAX"
+        },
+        {
+          "symbol": "_wlc_detach",
+          "range": [
+            "0x2f9cb",
+            "0x2fe3f"
+          ],
+          "size": 1140,
+          "raw_sha256": "3f04ea11d70dc821615ee221587ced3af604766f878f452594cae354c42f3041",
+          "normalized_sha256": "3f04ea11d70dc821615ee221587ced3af604766f878f452594cae354c42f3041",
+          "next_symbol": "_wlc_radio_monitor_stop",
+          "next_offset": "0x2fe3f",
+          "entry_abi": "RDI=wlc",
+          "return_abi": "int32 status in EAX; wrapper must forward"
+        },
+        {
+          "symbol": "_wlc_bsscfg_free",
+          "range": [
+            "0x5e6be",
+            "0x5e92d"
+          ],
+          "size": 623,
+          "raw_sha256": "9f7ec17e6acf72479dff6632134e2f319c6838f8ea5444e9becfa5b6da48e221",
+          "normalized_sha256": "9f7ec17e6acf72479dff6632134e2f319c6838f8ea5444e9becfa5b6da48e221",
+          "next_symbol": "_wlc_bsscfg_reset",
+          "next_offset": "0x5e92d",
+          "entry_abi": "RDI=wlc, RSI=cfg",
+          "return_abi": "void-style; frees cfg before clearing wlc+0x2e0+index*8"
+        },
+        {
+          "symbol": "__ZN16AirPort_Brcm43317wlcStopEv",
+          "range": [
+            "0x49e8",
+            "0x4a9a"
+          ],
+          "size": 178,
+          "raw_sha256": "ff3a127fdb58db07a177cbc464384db29762b5d9bb9645f24f36aac352e60649",
+          "normalized_sha256": "ff3a127fdb58db07a177cbc464384db29762b5d9bb9645f24f36aac352e60649",
+          "next_symbol": "__ZN16AirPort_Brcm43314stopEP9IOService",
+          "next_offset": "0x4a9a",
+          "entry_abi": "RDI=controller this",
+          "return_abi": "void; clears controller+0x468 after _wlc_detach returns"
+        },
+        {
+          "symbol": "_osl_pktfree",
+          "range": [
+            "0x1680",
+            "0x17ad"
+          ],
+          "size": 301,
+          "raw_sha256": "5a57c1c211d92c5bbeb578eb46727c613ba308db86ef12dad422b48b135d45a4",
+          "normalized_sha256": "5a57c1c211d92c5bbeb578eb46727c613ba308db86ef12dad422b48b135d45a4",
+          "next_symbol": "__Z19osl_is_private_mbufP6__mbuf",
+          "next_offset": "0x17ad",
+          "entry_abi": "RDI=osh, RSI=mbuf, EDX=freeFlag",
+          "return_abi": "void; exact adapter ABI is (osh, unqueued packet, 1)"
+        },
+        {
+          "symbol": "_wlc_recv_parse_bcn_prb",
+          "range": [
+            "0x473c9",
+            "0x47c46"
+          ],
+          "size": 2173,
+          "raw_sha256": "f3fae6687148cfd1d76cde14e6b58d3eb16bb0172a28acb0f66ddd7c35502a15",
+          "normalized_sha256": "f3fae6687148cfd1d76cde14e6b58d3eb16bb0172a28acb0f66ddd7c35502a15",
+          "next_symbol": "_wlc_parse_rates",
+          "next_offset": "0x47c46",
+          "entry_abi": "RDI=wlc, RSI=rx metadata, RDX=BSSID source, ECX=beacon flag, R8=raw body, R9D=body length, stack arg 7=output record",
+          "return_abi": "int32 status in EAX; zero means parsed record was written"
+        },
+        {
+          "symbol": "_wlc_recvctl",
+          "range": [
+            "0x434e1",
+            "0x47389"
+          ],
+          "size": 16040,
+          "raw_sha256": "2674752aa8d694cd7ac10fe3d6230a8dccfa9a496c89a879b04d33dc1833bc82",
+          "normalized_sha256": "2674752aa8d694cd7ac10fe3d6230a8dccfa9a496c89a879b04d33dc1833bc82",
+          "next_symbol": "_wlc_compute_bcn_payloadtsfoff",
+          "next_offset": "0x4738e",
+          "entry_abi": "RDI=wlc, RSI=cfg, RDX=mbuf, RCX=rx metadata",
+          "return_abi": "native receive-control result; retq at 0x47388"
+        },
+        {
+          "symbol": "_wlc_join_complete",
+          "range": [
+            "0xaf453",
+            "0xafad7"
+          ],
+          "size": 1668,
+          "raw_sha256": "dd58903500bb521f52871aaf7faa41e97745494cad0983effc231e50a627c052",
+          "normalized_sha256": "dd58903500bb521f52871aaf7faa41e97745494cad0983effc231e50a627c052",
+          "next_symbol": "_wlc_join_adopt_bss",
+          "next_offset": "0xafad7",
+          "entry_abi": "RDI=wlc, RSI=join context, RDX=receive context, RCX=full body, R8D=body length; R9 unused",
+          "return_abi": "void-style retq at 0xafad1; both guarded callers ignore RAX"
+        },
+        {
+          "symbol": "_wlc_assoc_change_state",
+          "range": [
+            "0xad25f",
+            "0xad420"
+          ],
+          "size": 449,
+          "raw_sha256": "844b6f8769f7bc76e1dbfffd2cee998ce9a92a6d3130277da6fefd3b2ae26fc0",
+          "normalized_sha256": "844b6f8769f7bc76e1dbfffd2cee998ce9a92a6d3130277da6fefd3b2ae26fc0",
+          "next_symbol": "_wlc_join_bss_start",
+          "next_offset": "0xad420",
+          "entry_abi": "RDI=cfg, ESI=new state; state dword read/written via cfg+0x320+0x0c",
+          "return_abi": "field/layout guard only; this audit does not infer a general return contract"
+        },
+        {
+          "symbol": "_wlc_bsscfg_down",
+          "range": [
+            "0x5de67",
+            "0x5e0aa"
+          ],
+          "size": 579,
+          "raw_sha256": "85399723ce40f5fb67f937f9affd645434da68d8f35999486a475f1bd2b37886",
+          "normalized_sha256": "85399723ce40f5fb67f937f9affd645434da68d8f35999486a475f1bd2b37886",
+          "next_symbol": "_wlc_bsscfg_disable",
+          "next_offset": "0x5e0aa",
+          "entry_abi": "RDI=wlc, RSI=cfg; reads type cfg+0x08 and assoc state cfg+0x320+0x0c",
+          "return_abi": "field/layout guard only; no return claim used"
+        },
+        {
+          "symbol": "_wlc_assoc_timeout",
+          "range": [
+            "0xade7e",
+            "0xae0a8"
+          ],
+          "size": 554,
+          "raw_sha256": "6a61ed3aed1e805f0cc6a788c58f1eb7e1908598d2c4206ea6abbf7136a13a7f",
+          "normalized_sha256": "6a61ed3aed1e805f0cc6a788c58f1eb7e1908598d2c4206ea6abbf7136a13a7f",
+          "next_symbol": "_wlc_auth_complete",
+          "next_offset": "0xae0a8",
+          "entry_abi": "RDI=cfg; timeout dispatch reads cfg+0x320+0x0c",
+          "return_abi": "state-zero handoff is guarded; no general callback completion claim"
+        },
+        {
+          "symbol": "_wlc_auth_complete",
+          "range": [
+            "0xae0a8",
+            "0xae54c"
+          ],
+          "size": 1188,
+          "raw_sha256": "2713a960fdf39752b97ddfa3f129c042f37ee02a8b946f5239c4e782cbfbc704",
+          "normalized_sha256": "2713a960fdf39752b97ddfa3f129c042f37ee02a8b946f5239c4e782cbfbc704",
+          "next_symbol": "_wlc_assoc_complete",
+          "next_offset": "0xae54c",
+          "entry_abi": "RDI=cfg; RSI=status; RDX=address; state at cfg+0x320+0x0c",
+          "return_abi": "static branch guard only; no external event-consumer guarantee"
+        },
+        {
+          "symbol": "_wlc_bss_mac_event",
+          "range": [
+            "0x259e9",
+            "0x25a1d"
+          ],
+          "size": 52,
+          "raw_sha256": "63272f65ee56dd705c62a99ff1ef598e5acd397d5c70f373e179e3699fcbf8e8",
+          "normalized_sha256": "63272f65ee56dd705c62a99ff1ef598e5acd397d5c70f373e179e3699fcbf8e8",
+          "next_symbol": "_wlc_bss_list_free",
+          "next_offset": "0x25a1d",
+          "entry_abi": "wrapper forwards the native event arguments to _wlc_bss_mac_rxframe_event",
+          "return_abi": "wrapper-only; native event helper return is forwarded"
+        },
+        {
+          "symbol": "_wlc_bss_mac_rxframe_event",
+          "range": [
+            "0x4eebb",
+            "0x4eff6"
+          ],
+          "size": 315,
+          "raw_sha256": "3bdd8d8cae743cec9c0cc87b624eb13b17ac52a12d0d9ef5f7fb151887dc208e",
+          "normalized_sha256": "3bdd8d8cae743cec9c0cc87b624eb13b17ac52a12d0d9ef5f7fb151887dc208e",
+          "next_symbol": "_wlc_pmkid_event",
+          "next_offset": "0x4eff6",
+          "entry_abi": "RDI=wlc; event code from stack arg; event payload is passed to _wl_event_sync before queue insertion",
+          "return_abi": "event path is void-style; no association-state effect is inferred from this alone"
+        },
+        {
+          "symbol": "_wlc_eventq_enq",
+          "range": [
+            "0x811d3",
+            "0x81247"
+          ],
+          "size": 116,
+          "raw_sha256": "8b133276ce2dcd9af808af82213d4936f1f96578f5e74cc816198f97f6f6ec85",
+          "normalized_sha256": "8b133276ce2dcd9af808af82213d4936f1f96578f5e74cc816198f97f6f6ec85",
+          "next_symbol": "_wlc_eventq_deq",
+          "next_offset": "0x81247",
+          "entry_abi": "RDI=event queue, RSI=event; links event and schedules timer when queue idle",
+          "return_abi": "queue handoff only; does not guard higher-level event consumers"
+        }
+      ],
+      "route_symbols": [
+        {
+          "symbol": "__wlc_ioctl",
+          "address": "0x32625",
+          "external": false
+        },
+        {
+          "symbol": "_wl_event_sync",
+          "address": "0x16c10",
+          "external": true
+        }
+      ],
+      "selected_code_ranges": [
+        {
+          "range": [
+            "0x32625",
+            "0x32848"
+          ],
+          "size": 547,
+          "normalized_sha256": "5432bb5d75bdc9cae3402823ebdcc820075587f4112bb49695b24a2ebdf13802"
+        },
+        {
+          "range": [
+            "0x332b9",
+            "0x332ec"
+          ],
+          "size": 51,
+          "normalized_sha256": "852223a0f2d4df60e54b32cbe06d7e9a546a39e8b1087ffbe23f27748664163d"
+        },
+        {
+          "range": [
+            "0x16c10",
+            "0x16c1c"
+          ],
+          "size": 12,
+          "normalized_sha256": "2aca105f542c69b3d6c61bb97b990e560cc370916973950b744632dbc2842b4e",
+          "purpose": "_wl_event_sync entry compare and short mismatch branch for event code 3"
+        },
+        {
+          "range": [
+            "0x16c3c",
+            "0x16c43"
+          ],
+          "size": 7,
+          "normalized_sha256": "2f9d25a4f4bcc4e7df719764b589d57e53a780ca7d5d5980f311bd7b5d887694",
+          "purpose": "_wl_event_sync mismatch epilogue; the 0x20 willRoam path is excluded"
+        }
+      ],
+      "relative_table_entries": [
+        {
+          "table_base": "0x354a8",
+          "entry": "0x35578",
+          "target": "0x332b9",
+          "displacement": "-0x21ef"
+        }
+      ],
+      "relative_jumps": [
+        {
+          "instruction": "0x323d1",
+          "target": "0x32625"
+        }
+      ],
+      "relative_conditional_branches": [
+        {
+          "instruction": "0x16c1a",
+          "opcode": "0x75",
+          "target": "0x16c3c"
+        }
+      ],
+      "imports": [
+        "_IOLog",
+        "__ZN15OSMetaClassBase12safeMetaCastEPKS_PK11OSMetaClass",
+        "___stack_chk_fail",
+        "_bcmp",
+        "_bcopy",
+        "_bzero",
+        "_mbuf_data",
+        "_mbuf_free",
+        "_mbuf_freem",
+        "_mbuf_len",
+        "_mbuf_next",
+        "_mbuf_setlen",
+        "_mbuf_setnext",
+        "_mbuf_type",
+        "_strncpy"
+      ],
+      "external_calls": [
+        {
+          "instruction": "0xc2fa",
+          "target_symbol": "__ZN15OSMetaClassBase12safeMetaCastEPKS_PK11OSMetaClass",
+          "relocation_address": "0xc2fb",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xdafd",
+          "target_symbol": "__ZN15OSMetaClassBase12safeMetaCastEPKS_PK11OSMetaClass",
+          "relocation_address": "0xdafe",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xdb37",
+          "target_symbol": "_bzero",
+          "relocation_address": "0xdb38",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xb0bdb",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xb0bdc",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xb1093",
+          "target_symbol": "_bzero",
+          "relocation_address": "0xb1094",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xb10a0",
+          "target_symbol": "_bzero",
+          "relocation_address": "0xb10a1",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a6a2",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4a6a3",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a6b4",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4a6b5",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a6c5",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4a6c6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a642",
+          "target_symbol": "_mbuf_data",
+          "relocation_address": "0x4a643",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a681",
+          "target_symbol": "_mbuf_data",
+          "relocation_address": "0x4a682",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a679",
+          "target_symbol": "_mbuf_setlen",
+          "relocation_address": "0x4a67a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x26ca3",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x26ca4",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x26cb0",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x26cb1",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x26d59",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x26d5a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x26d8c",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x26d8d",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x26f0c",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x26f0d",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x27211",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x27212",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x32789",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x3278a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x25d48",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x25d49",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x25d59",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x25d5a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4a4e",
+          "target_symbol": "_IOLog",
+          "relocation_address": "0x4a4f",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x16d9",
+          "target_symbol": "_mbuf_type",
+          "relocation_address": "0x16da",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x1722",
+          "target_symbol": "_mbuf_next",
+          "relocation_address": "0x1723",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x172f",
+          "target_symbol": "_mbuf_setnext",
+          "relocation_address": "0x1730",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x1749",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x174a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x1761",
+          "target_symbol": "_mbuf_free",
+          "relocation_address": "0x1762",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x1796",
+          "target_symbol": "_IOLog",
+          "relocation_address": "0x1797",
+          "opcode": "0xe9",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x17a8",
+          "target_symbol": "_mbuf_freem",
+          "relocation_address": "0x17a9",
+          "opcode": "0xe9",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x46299",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0x4629a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43b6b",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x43b6c",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4416f",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x44170",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x44aa3",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x44aa4",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4540e",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x4540f",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x45927",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x45928",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43bb1",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x43bb2",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x44a26",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x44a27",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x44a39",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x44a3a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x46630",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x46631",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x47073",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x47074",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x449c8",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x449c9",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x449f5",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x449f6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43516",
+          "target_symbol": "_mbuf_data",
+          "relocation_address": "0x43517",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x435db",
+          "target_symbol": "_mbuf_len",
+          "relocation_address": "0x435dc",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43927",
+          "target_symbol": "_mbuf_len",
+          "relocation_address": "0x43928",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x439bc",
+          "target_symbol": "_mbuf_len",
+          "relocation_address": "0x439bd",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43cb3",
+          "target_symbol": "_mbuf_len",
+          "relocation_address": "0x43cb4",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x43908",
+          "target_symbol": "_mbuf_setlen",
+          "relocation_address": "0x43909",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x476e5",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x476e6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4775f",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x47760",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4783e",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x4783f",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4791a",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x4791b",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x47986",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x47987",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x479f3",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x479f4",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x47aa2",
+          "target_symbol": "_bcmp",
+          "relocation_address": "0x47aa3",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x474a1",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x474a2",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4755d",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4755e",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x47bf4",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x47bf5",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x47490",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x47491",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xaf73b",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xaf73c",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xaf766",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xaf767",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xaf81b",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xaf81c",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xaf889",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xaf88a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xaf8da",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xaf8db",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xafad2",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0xafad3",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xadfec",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0xadfed",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xae071",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0xae072",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xae112",
+          "target_symbol": "_strncpy",
+          "relocation_address": "0xae113",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0xae547",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0xae548",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4ef60",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4ef61",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x4efae",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x4efaf",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        }
+      ],
+      "internal_calls": [
+        {
+          "instruction": "0xdaa7",
+          "target": "0xc2e0",
+          "symbol": "__ZN16AirPort_Brcm43319getVirtIfEP8OSObject",
+          "return_pc": "0xdaac"
+        },
+        {
+          "instruction": "0xdac5",
+          "target": "0x5f3b8",
+          "symbol": "_wlc_bsscfg_find_by_wlcif",
+          "return_pc": "0xdaca"
+        },
+        {
+          "instruction": "0xdaee",
+          "target": "0x323cc",
+          "symbol": "_wlc_ioctl",
+          "return_pc": "0xdaf3"
+        },
+        {
+          "instruction": "0xb0dc0",
+          "target": "0x4d728",
+          "symbol": "_wlc_senddisassoc",
+          "return_pc": "0xb0dc5"
+        },
+        {
+          "instruction": "0xb0e3b",
+          "target": "0x4d728",
+          "symbol": "_wlc_senddisassoc",
+          "return_pc": "0xb0e40"
+        },
+        {
+          "instruction": "0x4d777",
+          "target": "0x4a5f3",
+          "symbol": "_wlc_frame_get_mgmt_int",
+          "return_pc": "0x4d77c"
+        },
+        {
+          "instruction": "0x3265d",
+          "target": "0x5f3b8",
+          "symbol": "_wlc_bsscfg_find_by_wlcif",
+          "return_pc": "0x32662"
+        },
+        {
+          "instruction": "0x332e7",
+          "target": "0x5e0aa",
+          "symbol": "_wlc_bsscfg_disable",
+          "return_pc": "0x332ec"
+        },
+        {
+          "instruction": "0x5e19f",
+          "target": "0x5de67",
+          "symbol": "_wlc_bsscfg_down",
+          "return_pc": "0x5e1a4"
+        },
+        {
+          "instruction": "0x5e1e9",
+          "target": "0xb0b53",
+          "symbol": "_wlc_disassociate_client",
+          "return_pc": "0x5e1ee"
+        },
+        {
+          "instruction": "0xb499a",
+          "target": "0xb49a9",
+          "symbol": "_wlc_bsscfg_mfree",
+          "return_pc": "0xb499f"
+        },
+        {
+          "instruction": "0x49fe",
+          "target": "0x6590",
+          "symbol": "_wl_down",
+          "return_pc": "0x4a03"
+        },
+        {
+          "instruction": "0x4a14",
+          "target": "0x2febc",
+          "symbol": "_wlc_module_unregister",
+          "return_pc": "0x4a19"
+        },
+        {
+          "instruction": "0x4a20",
+          "target": "0x2f9cb",
+          "symbol": "_wlc_detach",
+          "return_pc": "0x4a25"
+        },
+        {
+          "instruction": "0x4a2c",
+          "target": "0xf98",
+          "symbol": "_osl_malloced",
+          "return_pc": "0x4a31"
+        },
+        {
+          "instruction": "0x4a3c",
+          "target": "0xf98",
+          "symbol": "_osl_malloced",
+          "return_pc": "0x4a41"
+        },
+        {
+          "instruction": "0x4a66",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x4a6b"
+        },
+        {
+          "instruction": "0x5e6ce",
+          "target": "0x5ee1d",
+          "symbol": "_wlc_bsscfg_deinit",
+          "return_pc": "0x5e6d3"
+        },
+        {
+          "instruction": "0x5e6f3",
+          "target": "0xa5ac0",
+          "symbol": "_wlc_p2p_info_free",
+          "return_pc": "0x5e6f8"
+        },
+        {
+          "instruction": "0x5e716",
+          "target": "0xa5d79",
+          "symbol": "_wlc_p2p_d11cb_free",
+          "return_pc": "0x5e71b"
+        },
+        {
+          "instruction": "0x5e73a",
+          "target": "0x2455b",
+          "symbol": "_wlc_set_rcmta",
+          "return_pc": "0x5e73f"
+        },
+        {
+          "instruction": "0x5e751",
+          "target": "0xa5e4b",
+          "symbol": "_wlc_p2p_d11ra_free",
+          "return_pc": "0x5e756"
+        },
+        {
+          "instruction": "0x5e789",
+          "target": "0x2455b",
+          "symbol": "_wlc_set_rcmta",
+          "return_pc": "0x5e78e"
+        },
+        {
+          "instruction": "0x5e7a0",
+          "target": "0xa5e4b",
+          "symbol": "_wlc_p2p_d11ra_free",
+          "return_pc": "0x5e7a5"
+        },
+        {
+          "instruction": "0x5e7d1",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x5e7d6"
+        },
+        {
+          "instruction": "0x5e7f5",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x5e7fa"
+        },
+        {
+          "instruction": "0x5e813",
+          "target": "0x11d362",
+          "symbol": "_wlc_mchan_delete_bss_chan_context",
+          "return_pc": "0x5e818"
+        },
+        {
+          "instruction": "0x5e823",
+          "target": "0x5ed76",
+          "symbol": "_wlc_bsscfg_scbclear",
+          "return_pc": "0x5e828"
+        },
+        {
+          "instruction": "0x5e842",
+          "target": "0x323e8",
+          "symbol": "_wlc_if_event",
+          "return_pc": "0x5e847"
+        },
+        {
+          "instruction": "0x5e84e",
+          "target": "0x814f9",
+          "symbol": "_wlc_eventq_flush",
+          "return_pc": "0x5e853"
+        },
+        {
+          "instruction": "0x5e86e",
+          "target": "0x16c8e",
+          "symbol": "_wl_del_if",
+          "return_pc": "0x5e873"
+        },
+        {
+          "instruction": "0x5e886",
+          "target": "0x502a1",
+          "symbol": "_wlc_wlcif_free",
+          "return_pc": "0x5e88b"
+        },
+        {
+          "instruction": "0x5e8a8",
+          "target": "0xf47",
+          "symbol": "_osl_mfree",
+          "return_pc": "0x5e8ad"
+        },
+        {
+          "instruction": "0x5e8e5",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x5e8ea"
+        },
+        {
+          "instruction": "0x5e8fe",
+          "target": "0x56f5",
+          "symbol": "_wl_free_timer",
+          "return_pc": "0x5e903"
+        },
+        {
+          "instruction": "0x5e90a",
+          "target": "0xb49a9",
+          "symbol": "_wlc_bsscfg_mfree",
+          "return_pc": "0x5e90f"
+        },
+        {
+          "instruction": "0x16b4",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x16b9"
+        },
+        {
+          "instruction": "0x16d1",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x16d6"
+        },
+        {
+          "instruction": "0x1716",
+          "target": "0x17ad",
+          "symbol": "__Z19osl_is_private_mbufP6__mbuf",
+          "return_pc": "0x171b"
+        },
+        {
+          "instruction": "0x1737",
+          "target": "0x1809",
+          "symbol": "_osl_pkt_gettag",
+          "return_pc": "0x173c"
+        },
+        {
+          "instruction": "0x1754",
+          "target": "0x15b4",
+          "symbol": "__Z16osl_mbuf_enqueuePP6__mbufS0_",
+          "return_pc": "0x1759"
+        },
+        {
+          "instruction": "0x46c7b",
+          "target": "0x473c9",
+          "symbol": "_wlc_recv_parse_bcn_prb",
+          "return_pc": "0x46c80"
+        },
+        {
+          "instruction": "0x46cdb",
+          "target": "0x26be8",
+          "symbol": "_wlc_BSSinit",
+          "return_pc": "0x46ce0"
+        },
+        {
+          "instruction": "0x45bbe",
+          "target": "0xaf453",
+          "symbol": "_wlc_join_complete",
+          "return_pc": "0x45bc3"
+        },
+        {
+          "instruction": "0x46e3f",
+          "target": "0xaf453",
+          "symbol": "_wlc_join_complete",
+          "return_pc": "0x46e44"
+        },
+        {
+          "instruction": "0xaf4bb",
+          "target": "0x75c57",
+          "symbol": "_wlc_scbfind",
+          "return_pc": "0xaf4c0"
+        },
+        {
+          "instruction": "0xaf4f0",
+          "target": "0x27dc4",
+          "symbol": "_wlc_tsf_adopt_bcn",
+          "return_pc": "0xaf4f5"
+        },
+        {
+          "instruction": "0xaf527",
+          "target": "0x19efc",
+          "symbol": "_bcm_parse_tlvs",
+          "return_pc": "0xaf52c"
+        },
+        {
+          "instruction": "0xaf56a",
+          "target": "0x23ecf",
+          "symbol": "_wlc_write_shm",
+          "return_pc": "0xaf56f"
+        },
+        {
+          "instruction": "0xaf57b",
+          "target": "0x417e6",
+          "symbol": "_wlc_set_dtim_programmed",
+          "return_pc": "0xaf580"
+        },
+        {
+          "instruction": "0xaf598",
+          "target": "0xaa623",
+          "symbol": "_wlc_p2p_dtim_upd",
+          "return_pc": "0xaf59d"
+        },
+        {
+          "instruction": "0xaf5a4",
+          "target": "0xaf22e",
+          "symbol": "_wlc_roam_thresh_upd",
+          "return_pc": "0xaf5a9"
+        },
+        {
+          "instruction": "0xaf5c4",
+          "target": "0x417bf",
+          "symbol": "_wlc_set_pmoverride",
+          "return_pc": "0xaf5c9"
+        },
+        {
+          "instruction": "0xaf5d8",
+          "target": "0xe68",
+          "symbol": "_osl_malloc",
+          "return_pc": "0xaf5dd"
+        },
+        {
+          "instruction": "0xaf602",
+          "target": "0xafad7",
+          "symbol": "_wlc_join_adopt_bss",
+          "return_pc": "0xaf607"
+        },
+        {
+          "instruction": "0xaf613",
+          "target": "0xf47",
+          "symbol": "_osl_mfree",
+          "return_pc": "0xaf618"
+        },
+        {
+          "instruction": "0xaf65d",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0xaf662"
+        },
+        {
+          "instruction": "0xaf697",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0xaf69c"
+        },
+        {
+          "instruction": "0xaf725",
+          "target": "0xe68",
+          "symbol": "_osl_malloc",
+          "return_pc": "0xaf72a"
+        },
+        {
+          "instruction": "0xaf750",
+          "target": "0xe68",
+          "symbol": "_osl_malloc",
+          "return_pc": "0xaf755"
+        },
+        {
+          "instruction": "0xaf797",
+          "target": "0x19ec2",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0xaf79c"
+        },
+        {
+          "instruction": "0xaf7c4",
+          "target": "0xb35d4",
+          "symbol": "_wlc_find_ie_match",
+          "return_pc": "0xaf7c9"
+        },
+        {
+          "instruction": "0xaf7dc",
+          "target": "0x19ec2",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0xaf7e1"
+        },
+        {
+          "instruction": "0xaf7f8",
+          "target": "0xe68",
+          "symbol": "_osl_malloc",
+          "return_pc": "0xaf7fd"
+        },
+        {
+          "instruction": "0xaf89e",
+          "target": "0x19ec2",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0xaf8a3"
+        },
+        {
+          "instruction": "0xaf8c2",
+          "target": "0xb35d4",
+          "symbol": "_wlc_find_ie_match",
+          "return_pc": "0xaf8c7"
+        },
+        {
+          "instruction": "0xaf8f0",
+          "target": "0x19ec2",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0xaf8f5"
+        },
+        {
+          "instruction": "0xaf927",
+          "target": "0xf47",
+          "symbol": "_osl_mfree",
+          "return_pc": "0xaf92c"
+        },
+        {
+          "instruction": "0xaf97c",
+          "target": "0x19efc",
+          "symbol": "_bcm_parse_tlvs",
+          "return_pc": "0xaf981"
+        },
+        {
+          "instruction": "0xaf98a",
+          "target": "0x57f6c",
+          "symbol": "_bcm_find_p2pie",
+          "return_pc": "0xaf98f"
+        },
+        {
+          "instruction": "0xaf9b9",
+          "target": "0x2545e",
+          "symbol": "_wlc_adopt_country_ie",
+          "return_pc": "0xaf9be"
+        },
+        {
+          "instruction": "0xaf9d3",
+          "target": "0x2276f",
+          "symbol": "_wlc_ps_allowed",
+          "return_pc": "0xaf9d8"
+        },
+        {
+          "instruction": "0xaf9ee",
+          "target": "0x228be",
+          "symbol": "_wlc_set_pmstate",
+          "return_pc": "0xaf9f3"
+        },
+        {
+          "instruction": "0xafa15",
+          "target": "0x41c2c",
+          "symbol": "_wlc_pm2_sleep_ret_timer_start",
+          "return_pc": "0xafa1a"
+        },
+        {
+          "instruction": "0xafa1d",
+          "target": "0x23dde",
+          "symbol": "_wlc_set_ps_ctrl",
+          "return_pc": "0xafa22"
+        },
+        {
+          "instruction": "0xafa6e",
+          "target": "0x259e9",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0xafa73"
+        },
+        {
+          "instruction": "0xafa85",
+          "target": "0xaec30",
+          "symbol": "_wlc_assoc_done",
+          "return_pc": "0xafa8a"
+        },
+        {
+          "instruction": "0xafa94",
+          "target": "0x1974f",
+          "symbol": "_bcm_ether_ntoa",
+          "return_pc": "0xafa99"
+        },
+        {
+          "instruction": "0xafab5",
+          "target": "0xa144d",
+          "symbol": "_wlc_extlog_msg",
+          "return_pc": "0xafaba"
+        },
+        {
+          "instruction": "0xad29b",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0xad2a0"
+        },
+        {
+          "instruction": "0xad323",
+          "target": "0xd54b3",
+          "symbol": "_wlc_phy_hold_upd",
+          "return_pc": "0xad328"
+        },
+        {
+          "instruction": "0xad36e",
+          "target": "0xaedca",
+          "symbol": "_wlc_assoc_req_remove_entry",
+          "return_pc": "0xad373"
+        },
+        {
+          "instruction": "0xad390",
+          "target": "0x25a1d",
+          "symbol": "_wlc_bss_list_free",
+          "return_pc": "0xad395"
+        },
+        {
+          "instruction": "0xad3a4",
+          "target": "0xd54b3",
+          "symbol": "_wlc_phy_hold_upd",
+          "return_pc": "0xad3a9"
+        },
+        {
+          "instruction": "0xad3cb",
+          "target": "0xaeaea",
+          "symbol": "_wlc_assoc_abort",
+          "return_pc": "0xad3d0"
+        },
+        {
+          "instruction": "0xad3eb",
+          "target": "0x24521",
+          "symbol": "_wlc_set_wake_ctrl",
+          "return_pc": "0xad3f0"
+        },
+        {
+          "instruction": "0xad405",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0xad40a"
+        },
+        {
+          "instruction": "0x5de93",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x5de98"
+        },
+        {
+          "instruction": "0x5debc",
+          "target": "0xaeaea",
+          "symbol": "_wlc_assoc_abort",
+          "return_pc": "0x5dec1"
+        },
+        {
+          "instruction": "0x5dee8",
+          "target": "0x16b3f",
+          "symbol": "_wl_del_timer",
+          "return_pc": "0x5deed"
+        },
+        {
+          "instruction": "0x5df0d",
+          "target": "0x84d77",
+          "symbol": "_wlc_ap_down",
+          "return_pc": "0x5df12"
+        },
+        {
+          "instruction": "0x5df33",
+          "target": "0x27f91",
+          "symbol": "_wlc_suspend_mac_and_wait",
+          "return_pc": "0x5df38"
+        },
+        {
+          "instruction": "0x5df42",
+          "target": "0x242fe",
+          "symbol": "_wlc_mctrl",
+          "return_pc": "0x5df47"
+        },
+        {
+          "instruction": "0x5df4a",
+          "target": "0x2415a",
+          "symbol": "_wlc_enable_mac",
+          "return_pc": "0x5df4f"
+        },
+        {
+          "instruction": "0x5dfab",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x5dfb0"
+        },
+        {
+          "instruction": "0x5dfb8",
+          "target": "0xad25f",
+          "symbol": "_wlc_assoc_change_state",
+          "return_pc": "0x5dfbd"
+        },
+        {
+          "instruction": "0x5dfce",
+          "target": "0x2578d",
+          "symbol": "_wlc_radio_mpc_upd",
+          "return_pc": "0x5dfd3"
+        },
+        {
+          "instruction": "0x5dfd6",
+          "target": "0x24521",
+          "symbol": "_wlc_set_wake_ctrl",
+          "return_pc": "0x5dfdb"
+        },
+        {
+          "instruction": "0x5dff1",
+          "target": "0x16b3f",
+          "symbol": "_wl_del_timer",
+          "return_pc": "0x5dff6"
+        },
+        {
+          "instruction": "0x5e010",
+          "target": "0x16b3f",
+          "symbol": "_wl_del_timer",
+          "return_pc": "0x5e015"
+        },
+        {
+          "instruction": "0x5e022",
+          "target": "0x11b5d5",
+          "symbol": "_wlc_sup_down",
+          "return_pc": "0x5e027"
+        },
+        {
+          "instruction": "0x5e042",
+          "target": "0x3f651",
+          "symbol": "_wlc_hwtimer_del_timeout",
+          "return_pc": "0x5e047"
+        },
+        {
+          "instruction": "0x5e04a",
+          "target": "0xaeaea",
+          "symbol": "_wlc_assoc_abort",
+          "return_pc": "0x5e04f"
+        },
+        {
+          "instruction": "0x5e06b",
+          "target": "0x1916a",
+          "symbol": "_pktq_flush",
+          "return_pc": "0x5e070"
+        },
+        {
+          "instruction": "0x5e07c",
+          "target": "0x6fda4",
+          "symbol": "_wlc_key_defkeyflag",
+          "return_pc": "0x5e081"
+        },
+        {
+          "instruction": "0x5e094",
+          "target": "0x31212",
+          "symbol": "_wlc_mhf",
+          "return_pc": "0x5e099"
+        },
+        {
+          "instruction": "0xadeef",
+          "target": "0x2174c",
+          "symbol": "_si_deviceremoved",
+          "return_pc": "0xadef4"
+        },
+        {
+          "instruction": "0xae00a",
+          "target": "0xac7b1",
+          "symbol": "_wlc_join",
+          "return_pc": "0xae00f"
+        },
+        {
+          "instruction": "0xae019",
+          "target": "0xad25f",
+          "symbol": "_wlc_assoc_change_state",
+          "return_pc": "0xae01e"
+        },
+        {
+          "instruction": "0xae0fb",
+          "target": "0x1974f",
+          "symbol": "_bcm_ether_ntoa",
+          "return_pc": "0xae100"
+        },
+        {
+          "instruction": "0xae16b",
+          "target": "0x75c57",
+          "symbol": "_wlc_scbfind",
+          "return_pc": "0xae170"
+        },
+        {
+          "instruction": "0xae180",
+          "target": "0x7573f",
+          "symbol": "_wlc_scb_clearstatebit",
+          "return_pc": "0xae185"
+        },
+        {
+          "instruction": "0xae1a4",
+          "target": "0x16b3f",
+          "symbol": "_wl_del_timer",
+          "return_pc": "0xae1a9"
+        },
+        {
+          "instruction": "0xae1e2",
+          "target": "0x7573f",
+          "symbol": "_wlc_scb_clearstatebit",
+          "return_pc": "0xae1e7"
+        },
+        {
+          "instruction": "0xae288",
+          "target": "0xad25f",
+          "symbol": "_wlc_assoc_change_state",
+          "return_pc": "0xae28d"
+        },
+        {
+          "instruction": "0xae2d2",
+          "target": "0x4d3cb",
+          "symbol": "_wlc_sendauth",
+          "return_pc": "0xae2d7"
+        },
+        {
+          "instruction": "0xae2f6",
+          "target": "0x428fb",
+          "symbol": "_wlc_pkt_callback_register",
+          "return_pc": "0xae2fb"
+        },
+        {
+          "instruction": "0xae330",
+          "target": "0x259e9",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0xae335"
+        },
+        {
+          "instruction": "0xae376",
+          "target": "0x756cd",
+          "symbol": "_wlc_scb_setstatebit",
+          "return_pc": "0xae37b"
+        },
+        {
+          "instruction": "0xae3ab",
+          "target": "0xad25f",
+          "symbol": "_wlc_assoc_change_state",
+          "return_pc": "0xae3b0"
+        },
+        {
+          "instruction": "0xae3c3",
+          "target": "0x4da58",
+          "symbol": "_wlc_sendassocreq",
+          "return_pc": "0xae3c8"
+        },
+        {
+          "instruction": "0xae3d6",
+          "target": "0x16b3f",
+          "symbol": "_wl_del_timer",
+          "return_pc": "0xae3db"
+        },
+        {
+          "instruction": "0xae403",
+          "target": "0x428fb",
+          "symbol": "_wlc_pkt_callback_register",
+          "return_pc": "0xae408"
+        },
+        {
+          "instruction": "0xae43a",
+          "target": "0x259e9",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0xae43f"
+        },
+        {
+          "instruction": "0xae477",
+          "target": "0x259e9",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0xae47c"
+        },
+        {
+          "instruction": "0xae49c",
+          "target": "0xa144d",
+          "symbol": "_wlc_extlog_msg",
+          "return_pc": "0xae4a1"
+        },
+        {
+          "instruction": "0xae4d3",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0xae4d8"
+        },
+        {
+          "instruction": "0xae505",
+          "target": "0x5687",
+          "symbol": "_wl_add_timer",
+          "return_pc": "0xae50a"
+        },
+        {
+          "instruction": "0xae540",
+          "target": "0x5687",
+          "symbol": "_wl_add_timer",
+          "return_pc": "0xae545"
+        },
+        {
+          "instruction": "0x25a12",
+          "target": "0x4eebb",
+          "symbol": "_wlc_bss_mac_rxframe_event",
+          "return_pc": "0x25a17"
+        },
+        {
+          "instruction": "0x4eefa",
+          "target": "0x81136",
+          "symbol": "_wlc_event_alloc",
+          "return_pc": "0x4eeff"
+        },
+        {
+          "instruction": "0x4ef42",
+          "target": "0xe68",
+          "symbol": "_osl_malloc",
+          "return_pc": "0x4ef47"
+        },
+        {
+          "instruction": "0x4efc1",
+          "target": "0x4ee0b",
+          "symbol": "_wlc_event_if",
+          "return_pc": "0x4efc6"
+        },
+        {
+          "instruction": "0x4efd4",
+          "target": "0x16c10",
+          "symbol": "_wl_event_sync",
+          "return_pc": "0x4efd9"
+        },
+        {
+          "instruction": "0x811fa",
+          "target": "0xebf",
+          "symbol": "_osl_assert",
+          "return_pc": "0x811ff"
+        }
+      ],
+      "selected_local_relocations": 0,
+      "selected_section_relocations": 0
+    },
+    {
+      "label": "AppleAirPortBrcm43224",
+      "source_path": "build/research/oclp-legacy/elcap-analysis-inputs/AppleAirPortBrcm43224.bin",
+      "source_sha256": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165",
+      "uuid": "6F074D2E-E7E8-327B-AC63-F504B7367BA4",
+      "text_vmaddr": "0x0",
+      "text_fileoff": "0x0",
+      "selected_functions": [
+        {
+          "symbol": "__ZN17AirPort_Brcm4322415setDISASSOCIATEEP16IO80211Interface",
+          "range": [
+            "0x98bc",
+            "0x992a"
+          ],
+          "size": 110,
+          "raw_sha256": "6602f59a340f261f196df78d7f42b91e2a47111e9038f98644ce48fe31a96feb",
+          "normalized_sha256": "6602f59a340f261f196df78d7f42b91e2a47111e9038f98644ce48fe31a96feb",
+          "next_symbol": "__ZN17AirPort_Brcm4322412setAUTH_TYPEEP16IO80211InterfaceP24apple80211_authtype_data",
+          "next_offset": "0x992a"
+        },
+        {
+          "symbol": "_wlc_disassociate_client",
+          "range": [
+            "0x67583",
+            "0x67ab4"
+          ],
+          "size": 1329,
+          "raw_sha256": "4f759652c696415158fd20fc4e7cc43ef57f3964fa98981cf796e717b563cb27",
+          "normalized_sha256": "4f759652c696415158fd20fc4e7cc43ef57f3964fa98981cf796e717b563cb27",
+          "next_symbol": "_wlc_set",
+          "next_offset": "0x67ab4"
+        },
+        {
+          "symbol": "_wlc_senddisassoc",
+          "range": [
+            "0x7e44e",
+            "0x7e4ec"
+          ],
+          "size": 158,
+          "raw_sha256": "f03de3661a3c33397f4d3891f746cfe54942fa8e113328067a439c25e6ffce40",
+          "normalized_sha256": "f03de3661a3c33397f4d3891f746cfe54942fa8e113328067a439c25e6ffce40",
+          "next_symbol": "_wlc_rateprobe",
+          "next_offset": "0x7e4ec"
+        },
+        {
+          "symbol": "_wlc_frame_get_mgmt",
+          "range": [
+            "0x75582",
+            "0x75696"
+          ],
+          "size": 276,
+          "raw_sha256": "a07eb19ea65c284e4ee8dd7fab00c1880fa90fa05e37a3e1567288a146afd390",
+          "normalized_sha256": "a07eb19ea65c284e4ee8dd7fab00c1880fa90fa05e37a3e1567288a146afd390",
+          "next_symbol": "_wlc_sendmgmt",
+          "next_offset": "0x75696"
+        },
+        {
+          "symbol": "_wlc_BSSinit",
+          "range": [
+            "0x5be74",
+            "0x5ca04"
+          ],
+          "size": 2960,
+          "raw_sha256": "7e33e691e3902e48e01bc663a0369fabd4cc8a58af392a54f381ad3baa2206f1",
+          "normalized_sha256": "7e33e691e3902e48e01bc663a0369fabd4cc8a58af392a54f381ad3baa2206f1",
+          "next_symbol": "_wlc_assoc_abort",
+          "next_offset": "0x5ca04"
+        },
+        {
+          "symbol": "_wlc_bsscfg_disable",
+          "range": [
+            "0x900d5",
+            "0x9025b"
+          ],
+          "size": 390,
+          "raw_sha256": "f23d275559c772b8eb625597252ed978353a30a634e0a7020dcacf7edf8dc4ba",
+          "normalized_sha256": "f23d275559c772b8eb625597252ed978353a30a634e0a7020dcacf7edf8dc4ba",
+          "next_symbol": "_wlc_bsscfg_disablemulti",
+          "next_offset": "0x9025b"
+        },
+        {
+          "symbol": "_wlc_attach",
+          "range": [
+            "0x5f0e1",
+            "0x5fd76"
+          ],
+          "size": 3221,
+          "raw_sha256": "5ea82de475b30debacec171fc4d601a3273c9f64389bba5a59785d823cf3a60f",
+          "normalized_sha256": "5ea82de475b30debacec171fc4d601a3273c9f64389bba5a59785d823cf3a60f",
+          "next_symbol": "_wlc_ap_upd",
+          "next_offset": "0x5fd76"
+        },
+        {
+          "symbol": "_wlc_set",
+          "range": [
+            "0x67ab4",
+            "0x67ad6"
+          ],
+          "size": 34,
+          "raw_sha256": "2b96336a5233acfc5c62be16f7f4c8aa04bfc33738d69d01d2a97de0b1c17f3e",
+          "normalized_sha256": "2b96336a5233acfc5c62be16f7f4c8aa04bfc33738d69d01d2a97de0b1c17f3e",
+          "next_symbol": "_wlc_ioctl",
+          "next_offset": "0x67ad6"
+        },
+        {
+          "symbol": "_wlc_down",
+          "range": [
+            "0x66a26",
+            "0x66dee"
+          ],
+          "size": 968,
+          "raw_sha256": "b5824ef2c9d325fa962c027125551f9ee3d6898848b0ece119148563745551da",
+          "normalized_sha256": "b5824ef2c9d325fa962c027125551f9ee3d6898848b0ece119148563745551da",
+          "next_symbol": "_wlc_set_gmode",
+          "next_offset": "0x66dee",
+          "entry_abi": "RDI=wlc",
+          "return_abi": "int32 accumulated teardown status in EAX; wrapper must forward"
+        },
+        {
+          "symbol": "_wlc_detach",
+          "range": [
+            "0x65718",
+            "0x65bfc"
+          ],
+          "size": 1252,
+          "raw_sha256": "e94708d36f14eae8f3ce67e02af86d6efcdbee3ca26e71c6bbf4fdc6b9f7f42b",
+          "normalized_sha256": "e94708d36f14eae8f3ce67e02af86d6efcdbee3ca26e71c6bbf4fdc6b9f7f42b",
+          "next_symbol": "_wlc_radio_monitor_stop",
+          "next_offset": "0x65bfc",
+          "entry_abi": "RDI=wlc",
+          "return_abi": "int32 detach status in EAX; wrapper must forward"
+        },
+        {
+          "symbol": "__ZN17AirPort_Brcm432247wlcStopEv",
+          "range": [
+            "0x38aa",
+            "0x395b"
+          ],
+          "size": 177,
+          "raw_sha256": "f38a4dc5f3e2d3730c5ee0c542001db5e9eefb358f05c28d9e491a6de26fb588",
+          "normalized_sha256": "f38a4dc5f3e2d3730c5ee0c542001db5e9eefb358f05c28d9e491a6de26fb588",
+          "next_symbol": "__ZN17AirPort_Brcm432244stopEP9IOService",
+          "next_offset": "0x395c",
+          "entry_abi": "RDI=controller this",
+          "return_abi": "void; clears controller+0x418 after _wlc_detach returns"
+        },
+        {
+          "symbol": "_osl_pktfree",
+          "range": [
+            "0x1504",
+            "0x1631"
+          ],
+          "size": 301,
+          "raw_sha256": "73b7d183579ea6051345b4299370380026b9e89c1446ddd10a601955b1832830",
+          "normalized_sha256": "73b7d183579ea6051345b4299370380026b9e89c1446ddd10a601955b1832830",
+          "next_symbol": "__Z19osl_is_private_mbufP6__mbuf",
+          "next_offset": "0x1631",
+          "entry_abi": "RDI=osh, RSI=mbuf, EDX=freeFlag",
+          "return_abi": "void; exact adapter ABI is (osh, unqueued packet, 1)"
+        },
+        {
+          "symbol": "_wlc_join_complete",
+          "range": [
+            "0x81fe3",
+            "0x8269e"
+          ],
+          "size": 1723,
+          "raw_sha256": "95423d7bd299fc5f86c033b8a0b5ff0faa24a45485e71a209f20a11924886e28",
+          "normalized_sha256": "95423d7bd299fc5f86c033b8a0b5ff0faa24a45485e71a209f20a11924886e28",
+          "next_symbol": "_wlc_assocreq_complete",
+          "next_offset": "0x8269e",
+          "entry_abi": "RDI=wlc, RSI=full body, EDX=body length",
+          "return_abi": "void-style retq at 0x8266e; both guarded callers ignore RAX"
+        },
+        {
+          "symbol": "_wlc_assoc_change_state",
+          "range": [
+            "0x57347",
+            "0x573bb"
+          ],
+          "size": 116,
+          "raw_sha256": "be64d250ee723217f8800d83e4ec7e69d02a4ffc6ce1ef2ef1d953b81d353e5d",
+          "normalized_sha256": "be64d250ee723217f8800d83e4ec7e69d02a4ffc6ce1ef2ef1d953b81d353e5d",
+          "next_symbol": "_wlc_assoc_scan_complete",
+          "next_offset": "0x573bb",
+          "entry_abi": "RDI=wlc, ESI=new state; state dword at wlc+0x379c",
+          "return_abi": "not relied upon by the state-zero timeout predicate"
+        },
+        {
+          "symbol": "_wlc_bsscfg_down",
+          "range": [
+            "0x8ffa6",
+            "0x900d5"
+          ],
+          "size": 303,
+          "raw_sha256": "26cd8fe3dbece5ba28e4d8a2185b6cd8dcfd3b4bf8ee3aadddf8687078a08d2b",
+          "normalized_sha256": "26cd8fe3dbece5ba28e4d8a2185b6cd8dcfd3b4bf8ee3aadddf8687078a08d2b",
+          "next_symbol": "_wlc_bsscfg_disable",
+          "next_offset": "0x900d5",
+          "entry_abi": "RDI=wlc, RSI=cfg; state wlc+0x379c and type wlc+0x3798",
+          "return_abi": "not relied upon by the state-zero timeout predicate"
+        },
+        {
+          "symbol": "_wlc_assoc_timeout",
+          "range": [
+            "0x5eb02",
+            "0x5ec84"
+          ],
+          "size": 386,
+          "raw_sha256": "b7db4df0fb36def632a78e4c551abd8c6a27227b5b248bece862a1ab4b3d5672",
+          "normalized_sha256": "b7db4df0fb36def632a78e4c551abd8c6a27227b5b248bece862a1ab4b3d5672",
+          "next_symbol": "_wlc_apsd_trigger_timeout",
+          "next_offset": "0x5ec84",
+          "entry_abi": "RDI=wlc; state-zero route emits event code 3/detail 2",
+          "return_abi": "timeout branch evidence only; not a callback-quiescence claim"
+        },
+        {
+          "symbol": "_wlc_bss_mac_event",
+          "range": [
+            "0x7f4ca",
+            "0x7f5ec"
+          ],
+          "size": 290,
+          "raw_sha256": "2bc797a3727278c51c9a9663c33bbe3d82f100973e573b5c2eed096d2cec0ee9",
+          "normalized_sha256": "2bc797a3727278c51c9a9663c33bbe3d82f100973e573b5c2eed096d2cec0ee9",
+          "next_symbol": "_wlc_noise_cb",
+          "next_offset": "0x7f5ec",
+          "entry_abi": "RDI=wlc; constructs event object and passes it to _wlc_eventq_enq",
+          "return_abi": "event queue handoff only; no higher-level consumer claim"
+        },
+        {
+          "symbol": "_wlc_eventq_enq",
+          "range": [
+            "0xa558e",
+            "0xa5602"
+          ],
+          "size": 116,
+          "raw_sha256": "b918d27bec59e7305df9cf2971fa1dbcd36b69188746fd53212d10e1a8b503db",
+          "normalized_sha256": "b918d27bec59e7305df9cf2971fa1dbcd36b69188746fd53212d10e1a8b503db",
+          "next_symbol": "_wlc_eventq_deq",
+          "next_offset": "0xa5602",
+          "entry_abi": "RDI=event queue, RSI=event; links event and schedules timer when queue idle",
+          "return_abi": "queue handoff only; does not guard higher-level event consumers"
+        },
+        {
+          "symbol": "__ZN17AirPort_Brcm432247setIBSSEb",
+          "range": [
+            "0x4d3a",
+            "0x4e42"
+          ],
+          "size": 264,
+          "raw_sha256": "f2dcc22c06603d337d68408c04291f87bb4feb1a7135f3c3a8296957655bb481",
+          "normalized_sha256": "f2dcc22c06603d337d68408c04291f87bb4feb1a7135f3c3a8296957655bb481",
+          "next_symbol": "__ZN17AirPort_Brcm4322411powerChangeEj",
+          "next_offset": "0x4e42",
+          "entry_abi": "RDI=controller this, SIL=IBSS boolean",
+          "return_abi": "int32 status in EAX; early false/idle skip returns 0; other paths propagate _wlc_set status"
+        }
+      ],
+      "route_symbols": [
+        {
+          "symbol": "__ZN17AirPort_Brcm432248wlcStartEv",
+          "address": "0x2ecc",
+          "external": true
+        }
+      ],
+      "selected_code_ranges": [
+        {
+          "range": [
+            "0x2f64",
+            "0x2fb4"
+          ],
+          "size": 80,
+          "normalized_sha256": "9c6f970d8bf4597d96f810a94bd3f821004787a425d69f8162cc5ae92f643c2f"
+        },
+        {
+          "range": [
+            "0x67ad6",
+            "0x67cdc"
+          ],
+          "size": 518,
+          "normalized_sha256": "c4c7ab926bb03a878eca6c0e6e328f2e8905d64f8dcb2737fcee799dde82a2b1"
+        },
+        {
+          "range": [
+            "0x6883e",
+            "0x68875"
+          ],
+          "size": 55,
+          "normalized_sha256": "8d89d6f8b5cb4fa3ce887ab9e458c04e7d33a85426386de670f2ea7526501ae3"
+        }
+      ],
+      "relative_table_entries": [
+        {
+          "table_base": "0x6ac28",
+          "entry": "0x6acf8",
+          "target": "0x6883e",
+          "displacement": "-0x23ea"
+        }
+      ],
+      "relative_jumps": [],
+      "relative_conditional_branches": [],
+      "imports": [
+        "_IODelay",
+        "_IOLog",
+        "___stack_chk_fail",
+        "_bcopy",
+        "_bzero",
+        "_mbuf_data",
+        "_mbuf_free",
+        "_mbuf_freem",
+        "_mbuf_next",
+        "_mbuf_setlen",
+        "_mbuf_setnext",
+        "_mbuf_type",
+        "_memset",
+        "_strncpy"
+      ],
+      "external_calls": [
+        {
+          "instruction": "0x991c",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x991d",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x675dc",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x675dd",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x679a8",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x679a9",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x75631",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x75632",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x75643",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x75644",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x75654",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x75655",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x755d1",
+          "target_symbol": "_mbuf_data",
+          "relocation_address": "0x755d2",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x75610",
+          "target_symbol": "_mbuf_data",
+          "relocation_address": "0x75611",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x75608",
+          "target_symbol": "_mbuf_setlen",
+          "relocation_address": "0x75609",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5c092",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5c093",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5c0c8",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5c0c9",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5c3ca",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x5c3cb",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5c6e9",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5c6ea",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5c9eb",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0x5c9ec",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5f12f",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x5f130",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5f456",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5f457",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5f467",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5f468",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5f8e4",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x5f8e5",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5f9f5",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5f9f6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5fa09",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5fa0a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x5fce7",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x5fce8",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x67c06",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x67c07",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x66af5",
+          "target_symbol": "_IODelay",
+          "relocation_address": "0x66af6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x390f",
+          "target_symbol": "_IOLog",
+          "relocation_address": "0x3910",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x155d",
+          "target_symbol": "_mbuf_type",
+          "relocation_address": "0x155e",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x15a6",
+          "target_symbol": "_mbuf_next",
+          "relocation_address": "0x15a7",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x15b3",
+          "target_symbol": "_mbuf_setnext",
+          "relocation_address": "0x15b4",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x15cd",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x15ce",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x15e5",
+          "target_symbol": "_mbuf_free",
+          "relocation_address": "0x15e6",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x161a",
+          "target_symbol": "_IOLog",
+          "relocation_address": "0x161b",
+          "opcode": "0xe9",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x162c",
+          "target_symbol": "_mbuf_freem",
+          "relocation_address": "0x162d",
+          "opcode": "0xe9",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x821fa",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x821fb",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x82232",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x82233",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x822eb",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x822ec",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x82357",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x82358",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x823b4",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x823b5",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x8247f",
+          "target_symbol": "_memset",
+          "relocation_address": "0x82480",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x82493",
+          "target_symbol": "_bzero",
+          "relocation_address": "0x82494",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x824d8",
+          "target_symbol": "_strncpy",
+          "relocation_address": "0x824d9",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x82699",
+          "target_symbol": "___stack_chk_fail",
+          "relocation_address": "0x8269a",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x7f547",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x7f548",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        },
+        {
+          "instruction": "0x7f590",
+          "target_symbol": "_bcopy",
+          "relocation_address": "0x7f591",
+          "opcode": "0xe8",
+          "type": "x86_64 BRANCH rel32"
+        }
+      ],
+      "internal_calls": [
+        {
+          "instruction": "0x98e6",
+          "target": "0x67ab4",
+          "symbol": "_wlc_set",
+          "return_pc": "0x98eb"
+        },
+        {
+          "instruction": "0x98f0",
+          "target": "0x4d3a",
+          "symbol": "__ZN17AirPort_Brcm432247setIBSSEb",
+          "return_pc": "0x98f5"
+        },
+        {
+          "instruction": "0x6778b",
+          "target": "0x7e44e",
+          "symbol": "_wlc_senddisassoc",
+          "return_pc": "0x67790"
+        },
+        {
+          "instruction": "0x7e49f",
+          "target": "0x75582",
+          "symbol": "_wlc_frame_get_mgmt",
+          "return_pc": "0x7e4a4"
+        },
+        {
+          "instruction": "0x67acb",
+          "target": "0x67ad6",
+          "symbol": "_wlc_ioctl",
+          "return_pc": "0x67ad0"
+        },
+        {
+          "instruction": "0x68870",
+          "target": "0x900d5",
+          "symbol": "_wlc_bsscfg_disable",
+          "return_pc": "0x68875"
+        },
+        {
+          "instruction": "0x9019c",
+          "target": "0x8ffa6",
+          "symbol": "_wlc_bsscfg_down",
+          "return_pc": "0x901a1"
+        },
+        {
+          "instruction": "0x901e2",
+          "target": "0x67583",
+          "symbol": "_wlc_disassociate_client",
+          "return_pc": "0x901e7"
+        },
+        {
+          "instruction": "0x2f98",
+          "target": "0x5f0e1",
+          "symbol": "_wlc_attach",
+          "return_pc": "0x2f9d"
+        },
+        {
+          "instruction": "0x66ae1",
+          "target": "0x8ffa6",
+          "symbol": "_wlc_bsscfg_down",
+          "return_pc": "0x66ae6"
+        },
+        {
+          "instruction": "0x66aeb",
+          "target": "0x900d5",
+          "symbol": "_wlc_bsscfg_disable",
+          "return_pc": "0x66af0"
+        },
+        {
+          "instruction": "0x66d71",
+          "target": "0x8ffa6",
+          "symbol": "_wlc_bsscfg_down",
+          "return_pc": "0x66d76"
+        },
+        {
+          "instruction": "0x38bf",
+          "target": "0x66a26",
+          "symbol": "_wlc_down",
+          "return_pc": "0x38c4"
+        },
+        {
+          "instruction": "0x38d5",
+          "target": "0x65c65",
+          "symbol": "_wlc_module_unregister",
+          "return_pc": "0x38da"
+        },
+        {
+          "instruction": "0x38e1",
+          "target": "0x65718",
+          "symbol": "_wlc_detach",
+          "return_pc": "0x38e6"
+        },
+        {
+          "instruction": "0x38ed",
+          "target": "0xe2c",
+          "symbol": "_osl_malloced",
+          "return_pc": "0x38f2"
+        },
+        {
+          "instruction": "0x38fd",
+          "target": "0xe2c",
+          "symbol": "_osl_malloced",
+          "return_pc": "0x3902"
+        },
+        {
+          "instruction": "0x3927",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x392c"
+        },
+        {
+          "instruction": "0x1538",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x153d"
+        },
+        {
+          "instruction": "0x1555",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x155a"
+        },
+        {
+          "instruction": "0x159a",
+          "target": "0x1631",
+          "symbol": "__Z19osl_is_private_mbufP6__mbuf",
+          "return_pc": "0x159f"
+        },
+        {
+          "instruction": "0x15bb",
+          "target": "0x168d",
+          "symbol": "_osl_pkt_gettag",
+          "return_pc": "0x15c0"
+        },
+        {
+          "instruction": "0x15d8",
+          "target": "0x1438",
+          "symbol": "__Z16osl_mbuf_enqueuePP6__mbufS0_",
+          "return_pc": "0x15dd"
+        },
+        {
+          "instruction": "0x776a1",
+          "target": "0x81fe3",
+          "symbol": "_wlc_join_complete",
+          "return_pc": "0x776a6"
+        },
+        {
+          "instruction": "0x78658",
+          "target": "0x81fe3",
+          "symbol": "_wlc_join_complete",
+          "return_pc": "0x7865d"
+        },
+        {
+          "instruction": "0x8201c",
+          "target": "0x9b3cd",
+          "symbol": "_wlc_scbfind",
+          "return_pc": "0x82021"
+        },
+        {
+          "instruction": "0x8202e",
+          "target": "0x5d5cc",
+          "symbol": "_wlc_tsf_adopt_bcn",
+          "return_pc": "0x82033"
+        },
+        {
+          "instruction": "0x8206a",
+          "target": "0x10c88",
+          "symbol": "_bcm_parse_tlvs",
+          "return_pc": "0x8206f"
+        },
+        {
+          "instruction": "0x82091",
+          "target": "0xb9116",
+          "symbol": "_wlc_bmac_write_shm",
+          "return_pc": "0x82096"
+        },
+        {
+          "instruction": "0x820a3",
+          "target": "0x6bae0",
+          "symbol": "_wlc_roam_thresh_upd",
+          "return_pc": "0x820a8"
+        },
+        {
+          "instruction": "0x820c5",
+          "target": "0x827cd",
+          "symbol": "_wlc_join_adopt_bss",
+          "return_pc": "0x820ca"
+        },
+        {
+          "instruction": "0x82110",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x82115"
+        },
+        {
+          "instruction": "0x82147",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x8214c"
+        },
+        {
+          "instruction": "0x821e0",
+          "target": "0xcfc",
+          "symbol": "_osl_malloc",
+          "return_pc": "0x821e5"
+        },
+        {
+          "instruction": "0x82218",
+          "target": "0xcfc",
+          "symbol": "_osl_malloc",
+          "return_pc": "0x8221d"
+        },
+        {
+          "instruction": "0x8225f",
+          "target": "0x10c4e",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0x82264"
+        },
+        {
+          "instruction": "0x8228c",
+          "target": "0x10c4e",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0x82291"
+        },
+        {
+          "instruction": "0x822a2",
+          "target": "0x829b0",
+          "symbol": "_wlc_find_ie_match",
+          "return_pc": "0x822a7"
+        },
+        {
+          "instruction": "0x822c8",
+          "target": "0xcfc",
+          "symbol": "_osl_malloc",
+          "return_pc": "0x822cd"
+        },
+        {
+          "instruction": "0x8236f",
+          "target": "0x10c4e",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0x82374"
+        },
+        {
+          "instruction": "0x8239c",
+          "target": "0x829b0",
+          "symbol": "_wlc_find_ie_match",
+          "return_pc": "0x823a1"
+        },
+        {
+          "instruction": "0x823cd",
+          "target": "0x10c4e",
+          "symbol": "_bcm_next_tlv",
+          "return_pc": "0x823d2"
+        },
+        {
+          "instruction": "0x82407",
+          "target": "0xddb",
+          "symbol": "_osl_free",
+          "return_pc": "0x8240c"
+        },
+        {
+          "instruction": "0x8245a",
+          "target": "0x10c88",
+          "symbol": "_bcm_parse_tlvs",
+          "return_pc": "0x8245f"
+        },
+        {
+          "instruction": "0x824ab",
+          "target": "0x58859",
+          "symbol": "_wlc_parse_country_ie",
+          "return_pc": "0x824b0"
+        },
+        {
+          "instruction": "0x824ea",
+          "target": "0x92164",
+          "symbol": "_wlc_country_lookup_ext",
+          "return_pc": "0x824ef"
+        },
+        {
+          "instruction": "0x824fe",
+          "target": "0x58977",
+          "symbol": "_wlc_compatible_country",
+          "return_pc": "0x82503"
+        },
+        {
+          "instruction": "0x82515",
+          "target": "0x912c6",
+          "symbol": "_wlc_set_countrycode",
+          "return_pc": "0x8251a"
+        },
+        {
+          "instruction": "0x8253b",
+          "target": "0xb226e",
+          "symbol": "_wf_chspec_ctlchan",
+          "return_pc": "0x82540"
+        },
+        {
+          "instruction": "0x825d9",
+          "target": "0x6fc3d",
+          "symbol": "_wlc_pm2_sleep_ret_timer_start",
+          "return_pc": "0x825de"
+        },
+        {
+          "instruction": "0x8261f",
+          "target": "0x7f4ca",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0x82624"
+        },
+        {
+          "instruction": "0x82631",
+          "target": "0x1053d",
+          "symbol": "_bcm_ether_ntoa",
+          "return_pc": "0x82636"
+        },
+        {
+          "instruction": "0x82652",
+          "target": "0xbf90e",
+          "symbol": "_wlc_extlog_msg",
+          "return_pc": "0x82657"
+        },
+        {
+          "instruction": "0x82677",
+          "target": "0x6b1d8",
+          "symbol": "_wlc_set_pmstate",
+          "return_pc": "0x8267c"
+        },
+        {
+          "instruction": "0x5736b",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x57370"
+        },
+        {
+          "instruction": "0x573aa",
+          "target": "0x2a0d0",
+          "symbol": "_wlc_phy_hold_upd",
+          "return_pc": "0x573af"
+        },
+        {
+          "instruction": "0x8ffce",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x8ffd3"
+        },
+        {
+          "instruction": "0x8fff9",
+          "target": "0xa8bb9",
+          "symbol": "_wlc_ap_down",
+          "return_pc": "0x8fffe"
+        },
+        {
+          "instruction": "0x90015",
+          "target": "0xb843e",
+          "symbol": "_wlc_suspend_mac_and_wait",
+          "return_pc": "0x9001a"
+        },
+        {
+          "instruction": "0x90024",
+          "target": "0xbcd59",
+          "symbol": "_wlc_mctrl",
+          "return_pc": "0x90029"
+        },
+        {
+          "instruction": "0x9002c",
+          "target": "0xb86cf",
+          "symbol": "_wlc_enable_mac",
+          "return_pc": "0x90031"
+        },
+        {
+          "instruction": "0x90069",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0x9006e"
+        },
+        {
+          "instruction": "0x90076",
+          "target": "0x57347",
+          "symbol": "_wlc_assoc_change_state",
+          "return_pc": "0x9007b"
+        },
+        {
+          "instruction": "0x90084",
+          "target": "0x5ca04",
+          "symbol": "_wlc_assoc_abort",
+          "return_pc": "0x90089"
+        },
+        {
+          "instruction": "0x9009f",
+          "target": "0xddb",
+          "symbol": "_osl_free",
+          "return_pc": "0x900a4"
+        },
+        {
+          "instruction": "0x900c2",
+          "target": "0x5ca04",
+          "symbol": "_wlc_assoc_abort",
+          "return_pc": "0x900c7"
+        },
+        {
+          "instruction": "0x5eb44",
+          "target": "0x175a8",
+          "symbol": "_si_deviceremoved",
+          "return_pc": "0x5eb49"
+        },
+        {
+          "instruction": "0x5ebf3",
+          "target": "0x7f4ca",
+          "symbol": "_wlc_bss_mac_event",
+          "return_pc": "0x5ebf8"
+        },
+        {
+          "instruction": "0x7f50a",
+          "target": "0xa54f4",
+          "symbol": "_wlc_event_alloc",
+          "return_pc": "0x7f50f"
+        },
+        {
+          "instruction": "0x7f579",
+          "target": "0xcfc",
+          "symbol": "_osl_malloc",
+          "return_pc": "0x7f57e"
+        },
+        {
+          "instruction": "0x7f59e",
+          "target": "0x7f44c",
+          "symbol": "_wlc_event_if",
+          "return_pc": "0x7f5a3"
+        },
+        {
+          "instruction": "0xa55b5",
+          "target": "0xd53",
+          "symbol": "_osl_assert",
+          "return_pc": "0xa55ba"
+        },
+        {
+          "instruction": "0x4d90",
+          "target": "0x66a26",
+          "symbol": "_wlc_down",
+          "return_pc": "0x4d95"
+        },
+        {
+          "instruction": "0x4d9a",
+          "target": "0x4b9c",
+          "symbol": "__ZN17AirPort_Brcm432245setAPEb",
+          "return_pc": "0x4d9f"
+        },
+        {
+          "instruction": "0x4db6",
+          "target": "0x67ab4",
+          "symbol": "_wlc_set",
+          "return_pc": "0x4dbb"
+        },
+        {
+          "instruction": "0x4de3",
+          "target": "0x67ab4",
+          "symbol": "_wlc_set",
+          "return_pc": "0x4de8"
+        },
+        {
+          "instruction": "0x4dfb",
+          "target": "0x6b11c",
+          "symbol": "_wlc_get",
+          "return_pc": "0x4e00"
+        },
+        {
+          "instruction": "0x4e1d",
+          "target": "0x67ab4",
+          "symbol": "_wlc_set",
+          "return_pc": "0x4e22"
+        },
+        {
+          "instruction": "0x4e2c",
+          "target": "0x3fe2",
+          "symbol": "_wl_up",
+          "return_pc": "0x4e31"
+        }
+      ],
+      "selected_local_relocations": 0,
+      "selected_section_relocations": 0
+    }
+  ],
+  "production_header": "src/legacy_wifi_compat/disassociate_child_contracts.hpp",
+  "production_header_sha256": "115d04e1a98422e4114614097912621f40ce0afb83b661ac413ba651512eccce",
+  "runtime_contract": "selected full-body SHA-256 with external rel32 operands normalized, route-window hashes, relative table entry/thunk/conditional-branch target checks, exact import targets and internal call targets",
+  "sanitizers": [
+    "address",
+    "undefined"
+  ],
+  "runtime_harness": [
+    {
+      "child": "4331",
+      "accepted": true,
+      "rejected_body_bytes": 32033,
+      "rejected_code_range_bytes": 617,
+      "rejected_table_entry_bytes": 4,
+      "rejected_relative_jumps": 1,
+      "rejected_conditional_branches": 1,
+      "rejected_internal_branches": 135,
+      "rejected_tail_jump_opcodes": 2,
+      "rejected_tail_jump_targets": 2,
+      "rejected_import_targets": 15,
+      "rejected_symbol_addresses": 27,
+      "rejected_route_symbols": 2,
+      "rejected_uuid_mutation": true,
+      "rejected_unresolved_import": true,
+      "rejected_short_image": true,
+      "rejected_base_overflow": true,
+      "rejected_bad_return_pc_contexts": 4
+    },
+    {
+      "child": "43224",
+      "accepted": true,
+      "rejected_body_bytes": 14374,
+      "rejected_code_range_bytes": 653,
+      "rejected_table_entry_bytes": 4,
+      "rejected_relative_jumps": 0,
+      "rejected_conditional_branches": 0,
+      "rejected_internal_branches": 79,
+      "rejected_tail_jump_opcodes": 2,
+      "rejected_tail_jump_targets": 2,
+      "rejected_import_targets": 14,
+      "rejected_symbol_addresses": 19,
+      "rejected_route_symbols": 1,
+      "rejected_uuid_mutation": true,
+      "rejected_unresolved_import": true,
+      "rejected_short_image": true,
+      "rejected_base_overflow": true,
+      "rejected_bad_return_pc_contexts": 4
+    }
+  ],
+  "capture_preconditions": "Capture must occur before original SET22 while the native controller gate is held. A runtime adapter must prove the live controller/interface/WLC/cfg identity and bounds, reject invalid field and IE extents, copy IE bytes into owned storage, and retain no child-owned pointer past the synchronous call. These static guards do not authorize raw memory reads.",
+  "current_bss_layout": {
+    "4331": {
+      "controller_wlc": "0x468",
+      "virtual_interface_list": "0x500",
+      "interface_wlcif": "0x188",
+      "cfg_current_bss_pointer": "0x318",
+      "cfg_allocation_size": "0x600",
+      "current_bss_allocation_size": "0xa0",
+      "record_size": "0xa0",
+      "bssid": "0x00+6",
+      "ssid_length": "0x08",
+      "ssid_bytes": "0x09",
+      "chanspec": "0x32",
+      "capability": "0x62",
+      "ie_pointer": "0x68",
+      "ie_length_u16": "0x70"
+    },
+    "43224": {
+      "controller_wlc": "0x418",
+      "inline_current_bss": "0x2f8",
+      "wlc_allocation_size": "0x3b98",
+      "record_size": "0x98",
+      "bssid": "0x00+6",
+      "ssid_length": "0x08",
+      "ssid_bytes": "0x09",
+      "chanspec": "0x30",
+      "capability": "0x5e",
+      "ie_pointer": "0x68",
+      "ie_length_u16": "0x70"
+    },
+    "scope_note": "Pinned allocator and copy code establishes the sampled layout and backing sizes; static guards do not authorize dereference, prove live pointer validity/lifetime, or establish IE allocation readability. Runtime must perform bounded reads and an owned IE copy before original SET22."
+  },
+  "capture_provenance": {
+    "4331": {
+      "controller_to_wlc": "controller+0x468",
+      "interface_resolution": "AirPort_Brcm4331::getVirtIf at 0xc2e0 validates the supplied OSObject against list head controller+0x500; accepted object has wlcif at +0x188",
+      "cfg_resolution": "_wlc_bsscfg_find_by_wlcif at 0x5f3b8; _wlc_get_current_bss at 0x248fd returns *(cfg+0x318)",
+      "cfg_allocator": {
+        "symbol": "_wlc_bsscfg_malloc",
+        "range": [
+          "0xb47e9",
+          "0xb49a9"
+        ],
+        "cfg_size": "0x600",
+        "current_record": "cfg+0x318, zero-allocated 0xa0 bytes",
+        "secondary_record": "cfg+0x310, zero-allocated 0xa0 bytes"
+      },
+      "copy_producer": {
+        "symbol": "_wlc_BSSinit",
+        "range": [
+          "0x26be8",
+          "0x27680"
+        ],
+        "record_copy": "0xa0 bytes",
+        "ie_copy": "old IE allocation freed, fields cleared, exact source IE length allocated and copied"
+      }
+    },
+    "43224": {
+      "controller_to_wlc": "controller+0x418",
+      "wlc_start": {
+        "symbol": "AirPort_Brcm43224::wlcStart",
+        "symbol_address": "0x2ecc",
+        "guarded_store_window": [
+          "0x2f64",
+          "0x2fb4"
+        ],
+        "attach_call": "0x2f98 -> _wlc_attach at 0x5f0e1",
+        "stored_result": "same successful attach result stored in controller+0x418 (WLC base) and controller+0x420 (the WLC pointer used by child state gates)",
+        "attach_allocation": "_wlc_attach allocates and zeroes 0x3b98 bytes"
+      },
+      "inline_record": "wlc+0x2f8, 0x98 bytes; extent fits the pinned 0x3b98 allocation",
+      "copy_producer": {
+        "symbol": "_wlc_BSSinit",
+        "range": [
+          "0x5be74",
+          "0x5ca04"
+        ],
+        "record_copy": "0x98 bytes",
+        "ie_copy": "frees old wlc+0x360 IE, clears pointer/length, copies record then allocates/copies source IE bytes"
+      }
+    },
+    "note": "Offsets and allocator/copy behavior are fixed-sample static evidence. They do not prove a future adapter's pointer came from this allocation or remains valid while read."
+  },
+  "set22_to_worker_closure": {
+    "4331": {
+      "setter": "AirPort_Brcm4331::setDISASSOCIATE [0xda90,0xdb4a): getVirtIf -> wlcif -> cfg -> _wlc_ioctl(wlc,0x34,&zero,4,wlcif)",
+      "entry_thunk": "_wlc_ioctl [0x323cc,0x323d6); E9 at 0x323d1 targets local __wlc_ioctl 0x32625",
+      "dispatcher_prefix": [
+        "0x32625",
+        "0x32848"
+      ],
+      "command_0x34_table": {
+        "base": "0x354a8",
+        "entry": "0x35578",
+        "target": "0x332b9"
+      },
+      "command_case": [
+        "0x332b9",
+        "0x332ec"
+      ],
+      "disable": {
+        "symbol": "_wlc_bsscfg_disable",
+        "range": [
+          "0x5e0aa",
+          "0x5e28d"
+        ],
+        "down_call": "0x5e19f -> _wlc_bsscfg_down at 0x5de67",
+        "worker_call": "0x5e1e9 -> _wlc_disassociate_client at 0xb0b53; return PC 0x5e1ee"
+      }
+    },
+    "43224": {
+      "setter": "AirPort_Brcm43224::setDISASSOCIATE [0x98bc,0x992a) -> _wlc_set(wlc,0x34,0)",
+      "wlc_set": "_wlc_set [0x67ab4,0x67ad6) -> local _wlc_ioctl at 0x67ad6",
+      "dispatcher_prefix": [
+        "0x67ad6",
+        "0x67cdc"
+      ],
+      "command_0x34_table": {
+        "base": "0x6ac28",
+        "entry": "0x6acf8",
+        "target": "0x6883e"
+      },
+      "command_case": [
+        "0x6883e",
+        "0x68875"
+      ],
+      "disable": {
+        "symbol": "_wlc_bsscfg_disable",
+        "range": [
+          "0x900d5",
+          "0x9025b"
+        ],
+        "down_call": "0x9019c -> _wlc_bsscfg_down at 0x8ffa6",
+        "worker_call": "0x901e2 -> _wlc_disassociate_client at 0x67583; return PC 0x901e7"
+      }
+    },
+    "scope_note": "Dispatcher prefixes, selected command table entries/cases, setter-to-dispatch calls, complete disable functions, the 43224 _wlc_down body/calls, and direct worker callsites are pinned. The whole dispatcher body, _wlc_bsscfg_down bodies, upstream BSD request gate and live instance ownership are outside this child-only guard."
+  },
+  "teardown_publication_guards": {
+    "4331": {
+      "cfg_free": {
+        "symbol": "_wlc_bsscfg_free",
+        "range": [
+          "0x5e6be",
+          "0x5e92d"
+        ],
+        "abi": "(wlc, cfg), void-style",
+        "ordered_calls": [
+          "0x5e90a -> _wlc_bsscfg_mfree at 0xb49a9",
+          "0x5e90f clears wlc+0x2e0+cfg.index*8 after free"
+        ]
+      },
+      "wlc_stop": {
+        "symbol": "AirPort_Brcm4331::wlcStop",
+        "range": [
+          "0x49e8",
+          "0x4a9a"
+        ],
+        "detach_call": "0x4a20 -> _wlc_detach at 0x2f9cb",
+        "publish_clear": "0x4a6b clears controller+0x468 after _wlc_detach returns",
+        "abi": "(controller this), void"
+      }
+    },
+    "43224": {
+      "cfg_free": null,
+      "wlc_stop": {
+        "symbol": "AirPort_Brcm43224::wlcStop",
+        "range": [
+          "0x38aa",
+          "0x395b"
+        ],
+        "detach_call": "0x38e1 -> _wlc_detach at 0x65718",
+        "publish_clear": "0x392c clears controller+0x418 after _wlc_detach returns",
+        "symbol_after_padding": "__ZN17AirPort_Brcm432244stopEP9IOService at 0x395c; byte 0x395b is padding",
+        "abi": "(controller this), void"
+      }
+    },
+    "boundary": "The selected function bodies, raw source UUID/SHA, exact imports, and all direct internal call targets are guarded. This proves sampled ordering only; runtime serialization still depends on the separately established outer mutation scope."
+  },
+  "caller_return_pcs": {
+    "worker": {
+      "4331": [
+        "0x5e1ee"
+      ],
+      "43224": [
+        "0x901e7"
+      ]
+    },
+    "sender": {
+      "4331": [
+        "0xb0dc5",
+        "0xb0e40"
+      ],
+      "43224": [
+        "0x67790"
+      ]
+    },
+    "builder": {
+      "4331": [
+        "0x4d77c"
+      ],
+      "43224": [
+        "0x7e4a4"
+      ]
+    }
+  },
+  "idle_timeout_event_scope": {
+    "4331": {
+      "state_zero_route": "_wlc_assoc_timeout state 0 -> _wlc_auth_complete status 2 -> _wlc_bss_mac_event(event code 3, detail 2) -> _wlc_bss_mac_rxframe_event",
+      "sync_handoff": "Runtime RouteSymbol admission resolves _wl_event_sync as a named child-image symbol at 0x16c10; the _wlc_bss_mac_rxframe_event call at 0x4efd4 is pinned to that target. For this event-code-3 input, the checked compare/conditional branch reaches the mismatch return epilogue at 0x16c3c, then the caller continues to event queue insertion",
+      "guarded_ranges": [
+        [
+          "0x16c10",
+          "0x16c1c"
+        ],
+        [
+          "0x16c3c",
+          "0x16c43"
+        ]
+      ],
+      "conditional_branch": {
+        "instruction": "0x16c1a",
+        "opcode": "0x75",
+        "target": "0x16c3c"
+      },
+      "boundary": "Only the event-code-3 mismatch/return path is guarded. The 0x20 willRoam branch and any higher-level event consumer are outside this check."
+    },
+    "43224": {
+      "state_zero_route": "_wlc_assoc_timeout state 0 emits _wlc_bss_mac_event(event code 3, detail 2), which constructs and enqueues an event",
+      "boundary": "Selected child functions pin event construction and queue handoff only; no higher-level event consumer or reconnect behavior is checked."
+    },
+    "claim_boundary": "These static guard prerequisites do not independently validate the runtime idle no-op implementation or establish that no event is queued, no callback is pending, or no later consumer can reconnect."
+  },
+  "not_guarded": [
+    "Static guards do not authorize reads of current-BSS pointers, records, or IE memory and do not prove a live instance's object lifetime.",
+    "The full _wlc_ioctl dispatcher is not pinned; selected dispatcher prefixes/table entries/cases, both _wlc_bsscfg_down bodies, the selected 43224 _wlc_down body, cfg-free path on 4331, WLC-stop publication paths, and relevant callsites are guarded.",
+    "The 4331 _wl_event_sync 0x20 willRoam branch is not guarded; only the event-code-3 mismatch branch and its return epilogue are checked. No higher-level event consumer or global no-retry property is established.",
+    "The child contract does not establish the provider's request gate, runtime adapter ownership, serialized read window, or safe bounded-copy callback.",
+    "Runtime lookup and provenance of import target addresses must be supplied by a separately guarded installer path.",
+    "No legacy_install integration, kext detour, EFI deployment, boot, or hardware test is included."
+  ],
+  "required_future_installer_guards": [
+    "Before original SET22, prove the native controller gate and exact live controller/interface/WLC/cfg chain; validate field and IE bounds and copy IE bytes to owned memory without retaining raw child pointers.",
+    "Guard provider SET22 entry and same-stack dispatch so capture and original request share the exact gated lifetime; the child static route guards alone do not authorize the capture read or worker detour.",
+    "Resolve and validate the actual loaded import targets before passing them to this verifier."
+  ],
+  "runtime_support_claimed": false,
+  "nonzero_set22_runtime_support_proven": false
+}

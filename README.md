@@ -32,27 +32,36 @@
 
 蓝牙支持请参考 [Acidanthera 作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext)。
 
-## 支持范围
+## 兼容对应表
 
-当前实测网卡为 Intel x86_64 上的 BCM943602CDP / BCM43602。随包 AirPortBrcmNIC 的 PCI 匹配项还有：
+适用于 Intel x86_64。下表按 OCLP 的驱动家族划分；除单独标注的 Apple 别名外，PCI Vendor ID 为 `14e4`。
+**候选适配**表示当前源码中仍在开发的目标路径。
+已发布的 1.0.1-rc1 仍限定 25G241／25G332，已有功能基线的硬件是 BCM943602CDP / BCM43602。
 
-| PCI ID | 芯片 | 项目状态 |
-| --- | --- | --- |
-| `14e4:43ba` | BCM43602 | 已实测 |
-| `14e4:43a3` | BCM4350 | 随包驱动 plist 匹配，未实测 |
-| `14e4:43a0` | BCM4360 | 随包驱动 plist 匹配，未实测 |
+| 网卡 / 驱动家族 | PCI Device ID | Monterey 12 / Ventura 13 | Sonoma 14 / Sequoia 15 | Tahoe 26 | 依赖方案 |
+| --- | --- | --- | --- | --- | --- |
+| BCM43602、BCM4350、BCM4360 | `43ba`、`43a3`、`43a0` | 保留原生路径 | 候选适配 | 候选适配；BCM43602 有旧版本功能基线 | 现代 NIC |
+| BCM94331、BCM943224 | `4331`、`4353` | 保留原生路径 | 候选适配 | 候选适配 | 现代 NIC＋可选匹配组件 |
+| BCM43225、BCM4352 | `4357`、`43b1`、`43b2` | 不列入 OCLP 目标范围¹ | 候选适配 | 候选适配 | 现代 NIC＋可选匹配组件 |
+| OCLP AirPortBrcm4331 家族（BCM94322） | `432b` | 旧卡候选适配 | 旧卡候选适配 | 旧卡候选适配 | ElCap＋AirPortBrcm4331 |
+| OCLP AppleAirPortBrcm43224 家族 | `4311`、`4312`、`4313`、`4318`、`4319`、`431a`、`4320`、`4324`、`4325`、`4328`、`432c`、`432d`；Apple 别名 `106b:004e` | 旧卡候选适配 | 旧卡候选适配 | 旧卡候选适配 | ElCap＋AppleAirPortBrcm43224 |
 
-本项目不代表支持所有 Broadcom 网卡；BCM4352、BCM4331、其他 Broadcom Wi-Fi 家族和 USB Wi-Fi 不会自动获得支持。此驱动匹配 PCI 设备；[OCLP 的 Broadcom PCI ID 分类](https://github.com/dortania/OpenCore-Legacy-Patcher/blob/main/opencore_legacy_patcher/datasets/pci_data.py#L1162-L1194)列出其他驱动类别。
+现代 NIC 方案使用上文的三个无线依赖，Sonoma／Sequoia 与 Tahoe 分别选择对应 NIC 变体。
+旧卡方案使用独立的 `corecaptureElCap`、`IO80211ElCap` 和相应博通子驱动；其配置与现代 NIC 配置互斥。
+两条方案均通过 EFI/kext 加载，不替换系统无线框架或服务。
 
-扩展范围按「网卡＋系统是否需要恢复无线支持」划分，原生可用的组合保持原样。详见[兼容范围与上游依据](COMPATIBILITY.md)。
+`AirPortBrcm4331` 是旧驱动的名称，其对应 PCI ID `432b` 与表中现代路径的 `4331` 不是同一分类。
+¹ OCLP 的 Modern Wireless 补丁从 Sonoma 14 起；这些第三方 PCI ID 不作为本项目 Monterey／Ventura 的兼容承诺，较早系统的第三方卡修正需另行核对。
+原生可用的组合保持原样；较新的 AppleBCMWLAN 家族、没有对应 Apple 驱动的芯片及 USB Wi-Fi 不在此表范围内。
+PCI 匹配不等于硬件功能已验证。分类依据和各路径进展见[兼容范围与上游依据](COMPATIBILITY.md)。
 
-- 候选核心从 Darwin 23 开始检查实际接口；Sonoma／Sequoia 与 Tahoe 使用各自的 NIC 依赖变体。
+- 候选核心从 Darwin 21 开始检查实际接口。现代 NIC 路径仍从 Sonoma 开始，Sonoma／Sequoia 与 Tahoe 使用各自的 NIC 依赖变体；旧卡使用独立 ElCap 依赖配置。
 - 内核映像结构、关键函数实现、随包驱动及请求格式分别检查。检查失败时，不启用对应适配功能。
 - 当前源码按实际博通主接口身份匹配 `en0`、`en1` 等名称；已发布的旧下载版本仍使用其原有接口限制。
 - 接口没有改变的系统更新无需添加版本号和 UUID；新的内核实现或协议变化仍可能需要开发适配，不能保证所有未来系统自动可用。
 - 启动环境和底层依赖仍须支持目标系统。
 - 1.0.1-rc1 的 Test023r2 在 25G332 下完成双向 AirDrop 实际收件，32 KiB 回传文件 SHA-256 一致；这是该版本的功能基线。
-- SAE 接受已核对的密码载荷子集：selected auth=4096、cipher=10、密码 8–63 字节、PMK 长度 32，策略掩码保留原值。
+- 现代 NIC 路径的 SAE 接受已核对的密码载荷子集：selected auth=4096、cipher=10、密码 8–63 字节、PMK 长度 32，策略掩码保留原值。旧卡关联目前采用独立的 open／WPA2 子集。
 
 ## 源码与构建
 

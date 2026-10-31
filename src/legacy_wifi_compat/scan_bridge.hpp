@@ -18,9 +18,12 @@ namespace ScanBridge {
 constexpr size_t KernelHeaderSize = 0x98;
 constexpr size_t KernelIEPointerOffset = 0x90;
 constexpr size_t IELengthOffset = 0x8a;
-constexpr size_t NativeRequestSize = ScanCompat::NativeSize;
+constexpr size_t MaximumNativeRequestSize = ScanCompat::NativeSize;
 constexpr size_t FixedLegacyResultSize = ScanCompat::OldSize;
 constexpr size_t MaximumIEBytes = ScanCompat::OldIECapacity;
+inline size_t resultIECapacity(size_t size) {
+    return size==ScanCompat::OldSize?MaximumIEBytes:ScanCompat::resultIECapacity(size);
+}
 
 using ScanCompat::read16;
 using ScanCompat::read32;
@@ -39,7 +42,8 @@ inline uint64_t read64(const void *p) {
 inline int convertResult(uint8_t *native, size_t nativeSize,
                          const uint8_t *kernelHeader, size_t headerSize,
                          const uint8_t *ieSnapshot, size_t ieSnapshotSize) {
-    if (!native || !kernelHeader || nativeSize != NativeRequestSize ||
+    const size_t nativeIECapacity = resultIECapacity(nativeSize);
+    if (!native || !kernelHeader || !nativeIECapacity ||
         headerSize != KernelHeaderSize) return EINVAL;
     const size_t actual = read16(kernelHeader + IELengthOffset);
     if (actual > MaximumIEBytes) return EOVERFLOW;
@@ -49,9 +53,25 @@ inline int convertResult(uint8_t *native, size_t nativeSize,
     memcpy(fixed, kernelHeader, ScanCompat::IEOffset);
     write16(fixed + IELengthOffset, static_cast<uint16_t>(actual));
     if (actual) memcpy(fixed + ScanCompat::IEOffset, ieSnapshot, actual);
-    const int error = ScanCompat::convert(native, nativeSize, fixed, sizeof(fixed));
+    const int error = nativeSize==ScanCompat::OldSize?
+        ScanCompat::convertFixedResult(native,nativeSize,fixed,sizeof(fixed)):
+        ScanCompat::convert(native, nativeSize, fixed, sizeof(fixed));
     memset(fixed, 0, sizeof(fixed));
     return error;
+}
+
+// Convert an already-owned 0x48c inline legacy result. Runtime GET11
+// aggregation uses this path after peeking a bounded snapshot; cursor commit
+// remains the caller's responsibility and must follow successful copyOut.
+inline int convertFixedSnapshot(uint8_t *native, size_t nativeSize,
+                                const uint8_t *fixedLegacy,
+                                size_t legacySize) {
+    if (!native || !fixedLegacy || legacySize != FixedLegacyResultSize)
+        return EINVAL;
+    if (nativeSize == ScanCompat::OldSize)
+        return ScanCompat::convertFixedResult(native, nativeSize,
+                                              fixedLegacy, legacySize);
+    return ScanCompat::convert(native, nativeSize, fixedLegacy, legacySize);
 }
 
 // This signature matches the ElCap static getScanResult handler:
@@ -69,17 +89,20 @@ struct API {
     CopyOut copyOut = nullptr;
     void *(*scanManager)(void *interface) = nullptr;
     GetResult getResult = nullptr;
+    bool (*primaryInterface)(void *controller, void *interface,
+                             const char requestName[16]) = nullptr;
 };
 
 struct Buffer {
     API &api;
+    size_t size;
     uint8_t *bytes;
-    explicit Buffer(API &value)
-        : api(value), bytes(static_cast<uint8_t *>(value.allocate(NativeRequestSize))) {}
+    explicit Buffer(API &value, size_t length)
+        : api(value), size(length), bytes(static_cast<uint8_t *>(value.allocate(length))) {}
     ~Buffer() {
         if (bytes) {
-            memset(bytes, 0, NativeRequestSize);
-            api.deallocate(bytes, NativeRequestSize);
+            memset(bytes, 0, size);
+            api.deallocate(bytes, size);
         }
     }
     Buffer(const Buffer &) = delete;
@@ -99,12 +122,37 @@ struct KernelSnapshot {
 };
 
 inline bool targetsNativeGet11(const ScanCompat::Request *request) {
-    return request && request->type == 11 && request->length == NativeRequestSize;
+    return request && request->type == 11 &&
+        resultIECapacity(request->length) != 0;
+}
+
+// Copy one owned aggregate record without consuming the manager's cursor.
+// The caller commits its lease only after this complete operation succeeds.
+inline int copyFixedSnapshot(API &api,void *controller,void *interface,
+                             ScanCompat::Request *request,const uint8_t *fixed,
+                             size_t fixedSize) {
+    if (!targetsNativeGet11(request) || !controller || !interface || !fixed ||
+        fixedSize!=FixedLegacyResultSize || !request->userData ||
+        request->value || request->padding) return EINVAL;
+    const size_t nativeSize=request->length;
+    Buffer native(api,nativeSize);
+    if (!native.bytes) return ENOMEM;
+    int error=api.copyIn(controller,request->userData,native.bytes,nativeSize);
+    if (error) return error;
+    if (read32(native.bytes)!=1 ||
+        read16(native.bytes+IELengthOffset)>resultIECapacity(nativeSize)) return EINVAL;
+    error=nativeSize==ScanCompat::OldSize?
+        ScanCompat::convertFixedResult(native.bytes,nativeSize,fixed,fixedSize):
+        ScanCompat::convert(native.bytes,nativeSize,fixed,fixedSize);
+    if (error) return error;
+    if (!api.primaryInterface ||
+        !api.primaryInterface(controller,interface,request->interfaceName)) return ESTALE;
+    return api.copyOut(controller,native.bytes,request->userData,nativeSize);
 }
 
 inline int handle(API &api, void *controller, void *interface, void *virtualInterface,
                   ScanCompat::Request *request, bool user64) {
-    if (!targetsNativeGet11(request) || !interface)
+    if (!targetsNativeGet11(request) || !user64 || !interface)
         return api.original(controller, interface, virtualInterface, request, user64);
     if (!controller || !request->userData) return EINVAL;
 
@@ -130,16 +178,20 @@ inline int handle(API &api, void *controller, void *interface, void *virtualInte
     if (ieLength)
         memcpy(snapshot.ies, reinterpret_cast<const void *>(static_cast<uintptr_t>(ieAddress)), ieLength);
 
-    Buffer native(api);
+    const size_t nativeSize = request->length;
+    const size_t nativeIECapacity = resultIECapacity(nativeSize);
+    Buffer native(api, nativeSize);
     if (!native.bytes) return ENOMEM;
-    error = api.copyIn(controller, request->userData, native.bytes, NativeRequestSize);
+    error = api.copyIn(controller, request->userData, native.bytes, nativeSize);
     if (error) return error;
-    if (read32(native.bytes) != 1 || read16(native.bytes + IELengthOffset) > ScanCompat::NativeIECapacity)
+    if (read32(native.bytes) != 1 || read16(native.bytes + IELengthOffset) > nativeIECapacity)
         return EINVAL;
-    error = convertResult(native.bytes, NativeRequestSize, snapshot.header,
+    error = convertResult(native.bytes, nativeSize, snapshot.header,
                           sizeof(snapshot.header), snapshot.ies, ieLength);
     if (error) return error;
-    return api.copyOut(controller, native.bytes, request->userData, NativeRequestSize);
+    if (api.primaryInterface &&
+        !api.primaryInterface(controller, interface, request->interfaceName)) return ESTALE;
+    return api.copyOut(controller, native.bytes, request->userData, nativeSize);
 }
 
 } // namespace ScanBridge

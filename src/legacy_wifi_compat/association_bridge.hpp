@@ -22,11 +22,66 @@ inline bool overlap(const void *a, size_t an, const void *b, size_t bn) {
     return x <= y ? y - x < an : x - y < bn;
 }
 
-// Reuse this project's own native-to-Ventura codec, then accept only cases
-// whose projected bytes beyond ElCap's exact 464-byte copy limit are zero.
-// This avoids dropping flags, auth policy, PMK extensions, or unknown fields.
-// Current userland requests that need any such extension are rejected until a
-// separately proven legacy semantic mapping exists.
+// A single RSN IE selecting CCMP and PSK. No mixed AKM/cipher list, WPA vendor
+// IE, PMF requirement, or additional policy element is accepted. The IE is
+// preserved verbatim in the old request; this does not select a weaker mode.
+inline bool singleWPA2PSK(const uint8_t *ie, size_t length) {
+    if (!ie || (length!=20 && length!=22 && length!=24) ||
+        ie[0]!=0x30 || ie[1]!=length-2)
+        return false;
+    const uint8_t body[]={1,0, 0,0x0f,0xac,4, 1,0, 0,0x0f,0xac,4,
+                          1,0, 0,0x0f,0xac,2};
+    if (memcmp(ie+2,body,sizeof(body))) return false;
+    // Management Frame Protection Required cannot be delegated to this old
+    // firmware path. Other RSN capability bits remain in the original IE.
+    if (length>=22 && (ScanCompat::read16(ie+20)&0x40U)) return false;
+    // An explicitly empty PMKID list expresses the same association policy
+    // as an absent list. The pinned old parser accepts this tail, and the
+    // original IE is still forwarded intact. Nonempty lists need a separate
+    // PMKSA contract; neither they nor a group-management cipher are elided.
+    return length!=24 || ScanCompat::read16(ie+22)==0;
+}
+
+// Convert the already-validated 548-byte intermediate form to ElCap's actual
+// 464-byte consumer. The regular setAssociateRequest path (not just NetBoot)
+// uses cipher6/key[32] at +64/+72 for RSNSupplicant::setPMK. The independent
+// PMK extension can therefore be omitted only when it repeats those exact32
+// bytes. A zero-length extension must have no hidden data.
+//
+// AllowedAuth=4 is admitted only for selected WPA2-PSK plus an explicit,
+// single-suite RSN IE. Old setAUTH_TYPE receives the same selected upper8 and
+// old setASSOCIATE receives that IE unchanged. The private high policy bit
+// 0x40000000 has no proven equivalent and remains unsupported.
+inline Result narrowProjected(const uint8_t *projected,size_t projectedSize,
+                              uint8_t *legacy,size_t legacySize) {
+    if (!projected || !legacy || projectedSize!=ProjectedPayloadSize ||
+        legacySize!=MaximumPayloadSize ||
+        overlap(projected,projectedSize,legacy,legacySize)) return {EINVAL,0};
+    for (size_t j=464;j<468;j++) if (projected[j])
+        return {EOPNOTSUPP,static_cast<uint32_t>(j)};
+    const uint32_t pmk=ScanCompat::read32(projected+468);
+    const uint32_t allowed=ScanCompat::read32(projected+504);
+    const bool wpa2=ScanCompat::read16(projected+6)==1 &&
+                    ScanCompat::read16(projected+8)==8;
+    if (pmk) {
+        if (!wpa2 || pmk!=32 || ScanCompat::read32(projected+60)!=32 ||
+            ScanCompat::read32(projected+64)!=6 ||
+            memcmp(projected+72,projected+472,32)) return {EOPNOTSUPP,468};
+    } else {
+        for (size_t j=472;j<504;j++) if (projected[j])
+            return {EOPNOTSUPP,static_cast<uint32_t>(j)};
+    }
+    if (allowed && (allowed!=4 || !wpa2 ||
+        !singleWPA2PSK(projected+206,ScanCompat::read16(projected+204))))
+        return {EOPNOTSUPP,504};
+    for (size_t j=508;j<projectedSize;j++) if (projected[j])
+        return {EOPNOTSUPP,static_cast<uint32_t>(j)};
+    memcpy(legacy,projected,MaximumPayloadSize);
+    return {0,0};
+}
+
+// Reuse this project's native-to-Ventura codec, then enforce the independent
+// older-provider policy. A failed conversion never modifies the output.
 inline Result convert(const uint8_t *native, size_t nativeSize,
                       uint8_t *legacy, size_t legacySize) {
     if (!native || !legacy || nativeSize != NativePayloadSize ||
@@ -39,17 +94,10 @@ inline Result convert(const uint8_t *native, size_t nativeSize,
         memset(projected, 0, sizeof(projected));
         return result;
     }
-    for (size_t offset = MaximumPayloadSize; offset < sizeof(projected); ++offset) {
-        if (projected[offset]) {
-            memset(projected, 0, sizeof(projected));
-            // AssociationCompat maps the native buffer +4 bytes after its
-            // initial header fixups; report the matching native field offset.
-            return {EOPNOTSUPP, static_cast<uint32_t>(offset + 4)};
-        }
-    }
-    memcpy(legacy, projected, MaximumPayloadSize);
+    auto narrowed=narrowProjected(projected,sizeof(projected),legacy,legacySize);
     memset(projected, 0, sizeof(projected));
-    return {0, 0};
+    if (narrowed.error && narrowed.field>=12) narrowed.field+=4;
+    return narrowed;
 }
 
 struct Scope {

@@ -128,7 +128,7 @@ static int original(void *c, void *i, void *v, void *infra,
     memset(oldConsumed,0xa5,sizeof(oldConsumed));
     const int consumed=registry.consume(Owner,Caller,c,r->userData,oldConsumed,sizeof(oldConsumed));
     check(consumed==0 && scope->consumed);
-    if (requestLength==SonomaSize) {
+    if (AssociationProfiles::legacyHeaderSize(requestLength)) {
         check(get16(oldConsumed+6)==0); // Sonoma's native lower-auth value is retained exactly.
         check(!memcmp(oldConsumed,user,AssociationProfiles::LegacyPrefixSize));
         for (size_t j=AssociationProfiles::LegacyPrefixSize; j<OldSize; ++j) check(oldConsumed[j]==0);
@@ -143,7 +143,7 @@ static int original(void *c, void *i, void *v, void *infra,
 
 static void resetState(size_t length) {
     memset(user,0xc9,sizeof(user)); requestLength=length;
-    if (length==SonomaSize) fillSonoma();
+    if (AssociationProfiles::legacyHeaderSize(length)) fillSonoma();
     else if (length==SequoiaSize) fillSequoia();
     else fillTahoe();
     memcpy(userBefore,user,sizeof(user));
@@ -183,7 +183,7 @@ static int runSuccess(size_t length) {
     check(!memcmp(user,userBefore,sizeof(user)));
     check(!memcmp(&envelope.request,&request,sizeof(request)));
     for (uint8_t byte:envelope.trailer) check(byte==0x71);
-    if (length==SonomaSize) check(flagObservations==0 && surveyObservations==0);
+    if (AssociationProfiles::legacyHeaderSize(length)) check(flagObservations==0 && surveyObservations==0);
     else check(flagObservations==1 && surveyObservations==1);
     return 0;
 }
@@ -248,7 +248,7 @@ static int runIdentityInvalidated(size_t length) {
     check(!memcmp(user,userBefore,sizeof(user)));
     check(!memcmp(&envelope.request,&request,sizeof(request)));
     for (uint8_t byte:envelope.trailer) check(byte==0x71);
-    if (length==SonomaSize) check(flagObservations==0 && surveyObservations==0);
+    if (AssociationProfiles::legacyHeaderSize(length)) check(flagObservations==0 && surveyObservations==0);
     else check(flagObservations==1 && surveyObservations==1);
     return 0;
 }
@@ -265,6 +265,10 @@ int main(int argc,char **argv) {
         case 7: return runIdentityInvalidated(SonomaSize);
         case 8: return runIdentityInvalidated(SequoiaSize);
         case 9: return runIdentityInvalidated(TahoeSize);
+        case 10: return runSuccess(AssociationProfiles::Monterey12Size);
+        case 11: return runSuccess(AssociationProfiles::Ventura13Size);
+        case 12: return runIdentityInvalidated(AssociationProfiles::Monterey12Size);
+        case 13: return runIdentityInvalidated(AssociationProfiles::Ventura13Size);
         default: return 64;
     }
 }
@@ -295,8 +299,8 @@ class AssociationProfileDispatchTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_dispatches_all_supported_payload_sizes_without_mutation(self):
-        for case in (1, 2, 3):
-            with self.subTest(payload_size={1: 856, 2: 900, 3: 908}[case]):
+        for case in (1, 2, 3, 10, 11):
+            with self.subTest(payload_size={1: 856, 2: 900, 3: 908, 10: 580, 11: 592}[case]):
                 self.run_case(case)
 
     def test_sonoma_tail_and_scope_fail_closed_after_copy(self):
@@ -307,8 +311,8 @@ class AssociationProfileDispatchTests(unittest.TestCase):
         self.run_case(6)
 
     def test_primary_identity_lost_after_copy_fails_closed_for_all_profiles(self):
-        for case in (7, 8, 9):
-            with self.subTest(payload_size={7: 856, 8: 900, 9: 908}[case]):
+        for case in (7, 8, 9, 12, 13):
+            with self.subTest(payload_size={7: 856, 8: 900, 9: 908, 12: 580, 13: 592}[case]):
                 self.run_case(case)
 
 

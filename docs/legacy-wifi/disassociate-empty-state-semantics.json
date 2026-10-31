@@ -1,0 +1,201 @@
+{
+  "scope": "Read-only static audit of SET22 with no current network, compared across retained Tahoe host and pinned El Cap OCLP samples",
+  "runtime_executed": false,
+  "production_modified": false,
+  "inputs": {
+    "tahoe_bootkc": {
+      "path": "/System/Library/KernelCollections/BootKernelExtensions.kc",
+      "sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+      "members": [
+        "com.apple.iokit.IO80211Family",
+        "com.apple.driver.AppleBCMWLANCoreMac"
+      ]
+    },
+    "elcap_provider": {
+      "path": "build/research/oclp-legacy/elcap-analysis-inputs/IO80211ElCap.bin",
+      "sha256": "8ecd8f8a027d93205a493518c50a772f520ee774d2fa4d24b564dc67722c54b0"
+    },
+    "elcap_4331": {
+      "path": "build/research/oclp-legacy/elcap-analysis-inputs/AirPortBrcm4331.bin",
+      "sha256": "c5baef22eca03600ad255ac034d825d4a251b0538596a50ac92f845b2c86e62e"
+    },
+    "elcap_43224": {
+      "path": "build/research/oclp-legacy/elcap-analysis-inputs/AppleAirPortBrcm43224.bin",
+      "sha256": "fcbc111f3aa0d27bc61f17b558f5bcbaa6a8aa3d1d9370bed6eea9be4c9ce165"
+    }
+  },
+  "tahoe_wcl": {
+    "set_disassociate": {
+      "symbol": "WCLNetManager::setDISASSOCIATE",
+      "address": "0xffffff8002195aa6",
+      "reads_reason": "request+4",
+      "reads_flush": "request+8 != 0",
+      "call": "leaveNetworkCommand at 0xffffff8002192644"
+    },
+    "leave_network_command": {
+      "initial_reason": 0,
+      "current_bss_null": "skips current-BSS virtual gate; reason remains zero",
+      "flush_payload_offset": "event+0x1c",
+      "event": 4,
+      "address_evidence": [
+        "0x2192693",
+        "0x2192703",
+        "0x219270d",
+        "0x21926c1",
+        "0x2192730"
+      ]
+    },
+    "fsm_event4": {
+      "state0_LINK_DOWN": {
+        "action": "joinAbort",
+        "address": "0xffffff8002194828",
+        "return": 0,
+        "cache_purge": false
+      },
+      "state4_DEAUTH": {
+        "action": "ignore",
+        "address": "0xffffff8002190e92",
+        "return": 0
+      },
+      "state6_SLEEP_DEAUTH": {
+        "action": "ignore",
+        "address": "0xffffff8002190e92",
+        "return": 0
+      },
+      "states1_2_3_5": "leaveNetwork; active link-down path, not proven to be a no-op"
+    },
+    "cache": {
+      "flush_requires": "flag bit0 AND saved current BSS nonnull",
+      "operation": "removeBeaconsMatching(saved BSS)",
+      "call": "0xffffff8002192ff2 -> 0xffffff80022d478a",
+      "null_saved_bss": "no selective remove call",
+      "set22_full_purge": false,
+      "full_purge_separate_path": "SET90"
+    },
+    "family_entry": {
+      "checks_current_bssid": false,
+      "fallback": "apple80211setDISASSOCIATE only if WCL absent/unhandled or designated unsupported status",
+      "fallback_address": "0xffffff800226cf2d",
+      "fallback_empty_bssid_branch": false
+    },
+    "leave_network_sync": {
+      "address": "0xffffff80015c6bae",
+      "early_branch": "core+0x40 bit0 already set -> returns 0",
+      "interpretation": "busy/in-progress success path only; does not prove all-zero BSSID or missing current BSS acceptance"
+    }
+  },
+  "legacy_child": {
+    "4331": {
+      "set_disassociate": "0xda90..0xdb49",
+      "command34_condition": "cfg+0x0b != 0 && cfg+0x0a == 0",
+      "otherwise": "skips command34; clears local auth state; returns 0",
+      "command_result_propagated": false,
+      "reason_flush_payload_consumed": false
+    },
+    "43224": {
+      "set_disassociate": "0x98bc..0x992a",
+      "command34_condition": "cfg+0x3b != 0 && cfg+0x2f == 0",
+      "otherwise": "skips command34; clears local/interface state; returns 0",
+      "command_result_propagated": false,
+      "reason_flush_payload_consumed": false
+    },
+    "predicate_semantics": "private config bytes are not proven equivalent to null current BSS or all-zero BSSID",
+    "scan_cache_purge": false
+  },
+  "conclusion": {
+    "native_null_current_bss_reason": "requested nonzero reason is reduced to zero before WCL FSM dispatch",
+    "native_null_current_bss_flush": "flag remains independent but no saved BSS means no selective cache removal; no global purge evidenced",
+    "all_zero_bssid_equivalence": "not established",
+    "successful_empty_state_examples": [
+      "Tahoe FSM state0 event4 joinAbort returns0",
+      "Tahoe FSM state4/6 event4 ignore returns0",
+      "both pinned old child handlers can skip command34 and return0"
+    ],
+    "general_empty_state_idempotence": "not established for every state/handler path; Family fallback and active WCL states may perform more work",
+    "dk_policy_assessment": "rejecting when a safe current-network identity cannot be built is conservative; samples do not justify unconditional success for every zero BSSID",
+    "later_prune": "a distinct linkDownInd handler can prune under its own event condition; no evidence links that action to an ignored SET22 flush flag",
+    "verified_idle_success_condition": "only when WCL state is LINK_DOWN and no association/leave is in flight; not inferred from BSSID alone"
+  },
+  "limits": [
+    "Static disassembly only; no runtime execution.",
+    "A null WCL current-BSS slot is not proven equivalent to an all-zero BSSID or every disconnected FSM state.",
+    "Old child config-byte predicates are opaque for the question of association state.",
+    "No end-to-end statement is made about firmware/AP completion or the status of every downstream active-state IOUC."
+  ],
+  "report": "build/research/disassociate-empty-state-semantics.md",
+  "followup_completion": {
+    "joinAbort": {
+      "address": "0xffffff8002194828",
+      "sends": [
+        "0x90003 unconditional",
+        "0x60003 conditional",
+        "0xd0003 conditional"
+      ],
+      "writes": "manager-private byte +0x439 = 0",
+      "clears_current_bss_or_refs": false,
+      "internal_set_targets": {
+        "selector9_slot8": "null",
+        "selector6_slot5": "null",
+        "selector13_slot12": "null"
+      },
+      "null_handler_status": "0x66 unsupported",
+      "send_status_checked": false,
+      "action_return": 0,
+      "interpretation": "no proven in-flight association cancellation or BSS release in this body"
+    },
+    "ignore": {
+      "address": "0xffffff8002190e92",
+      "return": 0,
+      "reads_event_flush": false,
+      "clears_bss_or_prunes": false
+    },
+    "state4_bss_window": {
+      "state4_entered_before": "leaveNetwork action",
+      "normal_clear": "linkDownComplete calls setCurrentBSS(nullptr) after 0x1a9 command",
+      "event3_skip": "selector-0x1a9 status 0xe0821806 plus manager/controller predicates can skip processEvent(3)",
+      "consequence": "state4 can persist with current BSS not cleared; later event4 is ignored; ignored request flush is not saved"
+    },
+    "completion_timing": {
+      "normal_active_state": "leaveNetwork synchronously calls cmdIouc selector 0x1a9, then processEvent(3), whose linkDownComplete executes conditional cache removal before returning",
+      "separate_async_flush_callback": "none identified in this path",
+      "special_skip": "event3 and its flush prune may be skipped while the 0x1a9 status is returned",
+      "hardware_completion_ack": "not established",
+      "no_op_branch_deferred_flush": "joinAbort/ignore do not save the request flush bit; a separate linkDownInd may later prune by its own event-derived gate, not by this SET22 flag"
+    },
+    "metadata_split": {
+      "reason": "gated/zeroed before event4; handled in selector 0x1a9 native vendor-IE path when leaveNetwork runs",
+      "flush": "carried separately in event payload; acts only in event3 when flag is set and saved BSS is nonnull",
+      "reason_only_vs_flush_only": "not separately async-acknowledged; active path can execute 0x1a9 with reason zero and then prune; if event3 is skipped only the reason-side call may have run",
+      "normal_active_path": "direct synchronous selector 0x1a9 call then processEvent(3); selective removal runs inline before return unless the documented special skip branch applies",
+      "no_op_path": "state0 joinAbort and state4/6 ignore return zero without forwarding or storing this request reason/flush"
+    },
+    "identity_boundary": "all-zero BSSID or no child worker is not proven equivalent to WCL FSM state0 with no in-flight leave",
+    "independent_linkDownInd": {
+      "symbol": "WCLNetManager::linkDownInd",
+      "address": "0xffffff8002193120",
+      "current_bss": "retains the then-current BSS at entry when nonnull",
+      "cache_call": "removeBeaconsMatching(current BSS) at 0xffffff8002193884",
+      "gate": "event-derived r13b bit and current BSS nonnull",
+      "message_selector_read": "incoming message+8",
+      "reads_request_flush_plus_0x1c": false,
+      "request_correlation": "none established; later independent prune cannot be attributed to ignored SET22 flush"
+    },
+    "minimal_success_case": {
+      "required_state": "WCL FSM LINK_DOWN state0 receiving event4",
+      "additional_stipulated_conditions": [
+        "current BSS absent",
+        "no association or leave in flight",
+        "stationary STA"
+      ],
+      "request_return": 0,
+      "current_request_operations": [
+        "joinAbort WCL-private byte +0x439 cleared"
+      ],
+      "reason_action": "no selector 0x1a9 call",
+      "flush_or_cache_action": "none from this event4 action",
+      "equivalence": "a legacy request handler that completes its own local cleanup and returns0 is equivalent at request-result and network/cache-effect boundaries for this narrow case",
+      "not_reproduced": "private WCL manager byte +0x439",
+      "unsafe_inference": "all-zero BSSID alone does not prove LINK_DOWN state or no operation in flight"
+    }
+  }
+}

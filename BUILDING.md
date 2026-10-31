@@ -78,14 +78,20 @@ their release tag.
 
 ## Compatibility policy
 
-The minimum is Darwin 23; the plugin has no
-fixed maximum. The boot environment and underlying dependencies must themselves
-support the target system. An absent version ceiling is not proof of support.
+The compatibility core starts at Darwin 21 and has no fixed maximum. Modern
+NIC dependencies and the optional third-party NIC injector start at Darwin 23.
+The boot environment and underlying dependencies must themselves support the
+target system. An absent version ceiling is not proof of support.
 
 The running inner kernel must have a valid bounded x86_64 Mach-O header and a
 unique nonzero UUID. The UUID is remembered only to detect a contradictory image
 during the same run; new UUIDs do not require a source change. Structural image
 validation does not approve a private interface.
+
+The offline ifnet verifier accepts BootKC files with `--kernel-collection` and
+standalone KDK kernels with `--kernel-image`. The input kind is explicit and is
+recorded in the report. A standalone kernel can check an instruction contract;
+it does not establish that a retail system's BootKC contains that same image.
 
 Image validation owns its bounded header snapshot. It does not allocate or read
 framework-private Mach-O objects. Before calling the runtime-resolved XNU
@@ -117,17 +123,21 @@ branches, argument registers, stack slots, field offsets and reference-count
 instructions remain part of the fingerprint. Named helper targets are resolved
 separately. Two adjacent-data references also require their exact relationship
 to a resolved linker anchor; this is a layout check, not an interpretation of
-that symbol as a public data structure. Anonymous cold/post-release displacements remain in the fingerprint,
-and their targets are checked for the required mapping permissions. They are
-not tied to a nearby unrelated symbol. Changes to these anonymous layouts can
-disable the private-address adapter even when named interfaces still match.
+that symbol as a public data structure. Saved exact-layout fingerprints remain
+available without extra target excerpts. A second path permits five relocated
+panic-helper/string references only after bounded no-fault reads verify their
+complete checked instruction sequences, literals and independently resolved
+panic callee. The callback body is still hashed; the remaining anonymous
+post-release displacement stays in that fingerprint. It is not justified by a
+nearby unrelated symbol or a short code prefix. Missing auxiliary evidence,
+changed fields or unknown target content reject this second path.
 These checks recognize the implemented contracts; they cannot infer the meaning
 of a new private kernel ABI.
 
 The callback checker also recognizes two independently inspected implementations
 from Sonoma and Sequoia. Selection uses their full code contracts and resolved
 symbols, without checking an OS label or UUID. These additional contracts alone
-do not alone prove whole-system support. To check explicitly supplied Apple
+do not prove whole-system support. To check explicitly supplied Apple
 kernel collections against the production validators:
 
 ```sh
@@ -141,7 +151,15 @@ file-backed bytes, symbol targets, callback offsets and mapped ranges, then
 tests byte mutations, incorrect targets and address relocation. Apple samples
 are supplied locally and are not included in the source repository.
 
-The owned-client reset instead uses its retained synchronous work-loop/gate
+Add `--save-excerpts build/ifnet-excerpts` with a new output directory to retain
+the bounded function bytes and symbol/segment metadata after successful image
+verification. After removing the large input images, the production validators
+can be rerun with `--contract-excerpt build/ifnet-excerpts/BootKC1.json` (repeat
+for multiple excerpts). Replay reports explicitly mark the original image as
+not reverified: they check the retained bytes against the current contracts,
+without re-extracting symbols or authenticating the recorded source hash.
+
+The owned-client reset uses its retained synchronous work-loop/gate
 scope, checking thread, owner, provider, gate binding and one-shot consumption.
 It retains the supplied legacy driver's UUID and instruction guards without
 pinning the host command-gate function body or its internal return offset.
@@ -173,7 +191,7 @@ format. Their IORegistry key is `BroadcomAwdlBaseline`, without a build suffix.
 | `src/awdl_kernel` | Native control bridge, event ownership, routing and diagnostics |
 | `src/awdl_compat` | Message codecs and bounded event-ring logic |
 | `src/unified_kernel` | One-kext module identity and shared core |
-| `src/legacy_wifi_compat` | Separate legacy request/scan/association codecs; not connected to the core loader |
+| `src/legacy_wifi_compat` | Pinned ElCap loader, request and BSD event adapters, owned scan sequencing and result snapshots |
 | `tests` | Offline regression tests and synthetic fixtures |
 
 `tools/verify_legacy_wifi_imports.py` audits explicitly supplied ElCap driver
@@ -187,6 +205,32 @@ for the legacy dependencies. It requires exact original binary inputs; those
 Apple binaries are not source code and are not covered by this project's BSD
 license. Rebuilding the core does not regenerate or replace the dependency ZIP.
 The offline facade mock is never linked into the kext.
+
+To exercise the production request guards against the pinned ElCap executable:
+
+```sh
+python3 tools/verify_legacy_provider_contracts.py \
+  --provider /path/to/IO80211ElCap.kext/Contents/MacOS/IO80211ElCap \
+  --output build/legacy-provider-contracts.json
+```
+
+The verifier checks the input digest, runs the actual guards under ASan/UBSan,
+and rejects changed instructions, symbol addresses and invalid mapping bounds.
+The input binary is not included in this repository.
+
+To compare code-4 event projection with the original pure TLV parser:
+
+```sh
+python3 tools/verify_legacy_event_projection.py \
+  --provider /path/to/IO80211ElCap.kext/Contents/MacOS/IO80211ElCap \
+  --output build/legacy-event-projection.json
+```
+
+This x86_64 host check extracts only the hash-checked 85-byte parser and compares
+20,000 valid lists with the production projection. The compiled harness uses
+ASan/UBSan; the extracted machine code is not sanitizer-instrumented. Malformed
+inputs run only through the bounded production helper in the unit tests.
+No kext is loaded, and parser equivalence does not establish hardware behavior.
 
 ## Wi-Fi dependency profiles
 
@@ -242,3 +286,28 @@ hardware functionality; use the same profile as the main dependency package.
 For a combined cross-version dependency package, select `automatic`; its two
 optional entries start at Darwin 23. The upstream component's own runtime
 compatibility checks still apply.
+
+The older Broadcom families use a separate dependency package. Supply the
+pinned OCLP `IO80211ElCap-v2.0.1.zip` and `corecaptureElCap-v1.0.2.zip` inputs,
+plus one or more user-selected target BootKCs. Labels `Darwin21` through
+`Darwin25` are accepted; each label is supplied with its path, for example:
+
+```sh
+python3 tools/build_legacy_wifi_dependencies.py \
+  --io80211-archive /path/to/IO80211ElCap-v2.0.1.zip \
+  --corecapture-archive /path/to/corecaptureElCap-v1.0.2.zip \
+  --kernel-collection Darwin21=/path/to/Monterey/BootKernelExtensions.kc \
+  --output build/LegacyWiFiDependencies.zip
+```
+
+Repeat `--kernel-collection` for any additional samples to inspect. The manifest
+records only the supplied labels, paths and hashes. Those labels are supplied by
+the caller; the builder checks class collisions in each file but does not infer
+the OS version from its contents. A sample validates that file's offline class
+collision check only; omitted releases remain unverified. The generated fragment
+uses `MinKernel=21.0.0` with no maximum as a loading range, not a claim that every
+system in that range is compatible. The package includes the compatibility core,
+the old provider, corecapture dependency, and two Broadcom plugins; it excludes
+the unrelated Atheros plugin. The fixed source hashes, preserved C++ imports,
+renamed runtime classes, signatures and resulting configuration are checked
+together. This configuration is exclusive with the modern NIC configuration.
