@@ -126,6 +126,24 @@ changed fields or unknown target content reject this second path.
 These checks recognize the implemented contracts; they cannot infer the meaning
 of a new private kernel ABI.
 
+If these saved kernel implementations do not match, a second lifetime path can
+use the public `ifnet_ioctl` boundary. Its resolved address must match the
+loader import, and its copied trampoline prefix must contain only admitted
+position-independent instructions. The native `IONetworkInterface` registration
+and ioctl callback must satisfy complete instruction contracts, including
+independently resolved calls and the fixed wireless `performCommand` consumer.
+The callback contract has no host UUID or build-number condition.
+
+This path keeps opaque request identities in nested, synchronous scopes. Only
+the same thread, interface, command and data pointer can claim one callback and
+one perform operation. Reentry, mismatches, repeated claims and exhausted
+registries revoke admission. The original public KPI still owns the I/O
+reference; the scopes neither acquire an ordinary reference nor extend the
+callback lifetime. Existing credential, primary-interface, controller-gate and
+private-state checks remain required. This tolerates internal kernel layout
+changes while the public KPI and checked interface callback stay compatible;
+it does not infer an unknown callback or request schema.
+
 The callback checker recognizes independently inspected implementations
 from Sonoma, Sequoia and Tahoe. Selection uses their full code contracts and resolved
 symbols, without checking an OS label or UUID. These additional contracts alone
@@ -205,6 +223,17 @@ python3 src/build_namespace.py \
   --output build/WiFi-Dependencies-Sonoma-Sequoia.zip
 ```
 
+Build the independent Sequoia input with the same pinned dependency directory
+and profile, but use the Sequoia BootKC and a separate output path:
+
+```sh
+python3 src/build_namespace.py \
+  --legacy-dir /path/to/original-wireless-kexts \
+  --dependency-profile sonoma-sequoia \
+  --native-kernel-collection /path/to/Sequoia/BootKernelExtensions.kc \
+  --output build/WiFi-Dependencies-Sequoia.zip
+```
+
 `sonoma-sequoia` selects the original nested AirPortBrcmNIC for Darwin 23–24.
 `tahoe` selects the separate AirPortBrcmNIC-Tahoe input for Darwin 25 onward.
 Each output contains three Wi-Fi dependencies and a matching configuration
@@ -217,15 +246,39 @@ To prepare both NIC variants in one EFI dependency package:
 ```sh
 python3 tools/combine_wifi_dependency_profiles.py \
   --sonoma-sequoia build/WiFi-Dependencies-Sonoma-Sequoia.zip \
+  --sequoia build/WiFi-Dependencies-Sequoia.zip \
   --tahoe build/WiFi-Dependencies-Tahoe.zip \
   --output build/WiFi-Dependencies-Automatic.zip
 ```
 
-The combiner verifies the fixed driver contents, identical shared dependencies
-and strict signatures. Its fragment loads one NIC variant for Darwin 23–24
-and the other from Darwin 25. Both variants are stored in EFI; only one is
-loaded for a given system. The compatibility core is a separate download/build.
-This package contains no Bluetooth or system-volume patching components.
+All three inputs are required. The combiner verifies the pinned Sonoma,
+Sequoia and Tahoe sample hashes as offline provenance and collision-check
+evidence; these are not runtime OS-version or kernel-UUID admission rules. It
+then requires the Sonoma and Sequoia shared
+dependencies and NIC payload to match byte-for-byte. It records all three
+sample hashes in the output manifest, deriving the Sequoia version/build from
+its pinned sample hash rather than its input label. The fragment still loads
+one NIC variant for Darwin 23–24 and the other from Darwin 25 onward; both
+variants are stored in EFI, and only one is loaded for a given system. The
+compatibility core is a separate download/build. This package contains no
+Bluetooth or system-volume patching components.
+
+To recheck that the bundled Sonoma/Sequoia and Tahoe NIC binaries satisfy the
+current private-driver pin contract without loading a kext or calling a driver
+function:
+
+```sh
+python3 tools/verify_modern_driver_pins.py \
+  --dependencies build/WiFi-Dependencies-Sonoma-Sequoia.zip \
+  --dependencies build/WiFi-Dependencies-Sequoia.zip \
+  --dependencies build/WiFi-Dependencies-Tahoe.zip \
+  --output-json build/research/modern-driver-pins-verification.json
+```
+
+This is an offline host check of the actual `initializeDriverPins` code. The
+tool maps each Mach-O by its load-command segment addresses, reports the
+dependency and executable hashes, and rejects conflicting same-profile
+executables. It does not change runtime OS selection.
 
 For the additional modern PCI IDs `4331`, `4353`, `4357`, `43b1` and `43b2`,
 prepare the optional upstream core and NIC injector from the

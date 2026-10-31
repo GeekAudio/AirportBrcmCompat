@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Combine the pinned Sonoma/Sequoia and Tahoe Wi-Fi dependency profiles."""
+"""Combine pinned Sonoma, Sequoia, and Tahoe Wi-Fi dependency profiles."""
 
 from __future__ import annotations
 
@@ -60,6 +60,75 @@ PROFILES = {
         "source_sha256": "0b6cf936e594d1372960a60c8f17b6cbf68e3535a191574bd91498da49713775",
         "output_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
         "profile_name": "tahoe",
+    },
+}
+
+# These native sample identities are derived from the retained kernel-collection
+# files and validation/compatibility-contracts.json. The sample label inside an
+# input manifest is descriptive only; identify the sample by its pinned KC hash.
+NATIVE_SAMPLE_IDENTITIES = {
+    "sonoma": {
+        "system": "Sonoma",
+        "version": "14.8.9",
+        "build": "23J631",
+        "container_sha256": "3f5dcde57f2d0ce27b9c9abf3d1e3d2c36b33cea9ae0a7eb36bf9c4282ed8cd2",
+        "sample_fields": {
+            "bundle_id": "com.apple.iokit.IOSkywalkFamily",
+            "bundle_version": "1.0",
+            "container_filename": "sonoma14__AssetData__boot__System__Library__KernelCollections__BootKernelExtensions.kc",
+            "container_size_bytes": 62783488,
+            "defined_external_symbol_count": 1935,
+            "fileset_entry_file_offset": 41254912,
+            "fileset_entry_id": "com.apple.iokit.IOSkywalkFamily",
+            "info_sha256": "ece6b3b542111e41b2c2b9707b760e34b6c4306cec7e9b051dfebce3ac85ce25",
+            "macho_header_sha256": "ffe50914f8e77853685d56c3db7b80c3b4d214e06b7b97e4a8d709b02cfe03a3",
+            "macho_load_commands_sha256": "8b5769575cc91aefc06aaaec9f06680ea7082a1c2d419afa7fc919676a8a0cf6",
+            "macho_uuid": "9F5908B5-BA4B-37E3-AC31-62E1D45F1589",
+            "sample_kind": "kernel-collection-fileset-entry",
+            "sdk_name": "macosx14.8.internal",
+        },
+    },
+    "sequoia": {
+        "system": "Sequoia",
+        "version": "15.8.2",
+        "build": "24H232",
+        "container_sha256": "ddd9016e225a61ebfd4f04b02a00937262f26690c57a928613e08506978c81be",
+        "sample_fields": {
+            "bundle_id": "com.apple.iokit.IOSkywalkFamily",
+            "bundle_version": "1.0",
+            "container_filename": "sequoia15__AssetData__boot__System__Library__KernelCollections__BootKernelExtensions.kc",
+            "container_size_bytes": 66125824,
+            "defined_external_symbol_count": 2157,
+            "fileset_entry_file_offset": 42422272,
+            "fileset_entry_id": "com.apple.iokit.IOSkywalkFamily",
+            "info_sha256": "b5be21185a517cba29cf43c3628bd1ed390b10b16a52b45f5bd4e87fa08cb7f8",
+            "macho_header_sha256": "ffe50914f8e77853685d56c3db7b80c3b4d214e06b7b97e4a8d709b02cfe03a3",
+            "macho_load_commands_sha256": "17fabd51173ab3bfac9bc335a6f43670788a5cf81178fe9a854de1c481b830b6",
+            "macho_uuid": "70DFAA8E-E369-3417-B6FD-B19FB6D5D49B",
+            "sample_kind": "kernel-collection-fileset-entry",
+            "sdk_name": "macosx15.8.internal",
+        },
+    },
+    "tahoe": {
+        "system": "Tahoe",
+        "version": "26.7.2",
+        "build": "25G332",
+        "container_sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+        "sample_fields": {
+            "bundle_id": "com.apple.iokit.IOSkywalkFamily",
+            "bundle_version": "1.0",
+            "container_filename": "BootKernelExtensions.kc",
+            "container_size_bytes": 67600384,
+            "defined_external_symbol_count": 2195,
+            "fileset_entry_file_offset": 44040192,
+            "fileset_entry_id": "com.apple.iokit.IOSkywalkFamily",
+            "info_sha256": "c6f591e047ce09df4a9f59d2b15c3a0dd835ddb83023eb8d6fa35f8c58aa6ea0",
+            "macho_header_sha256": "ffe50914f8e77853685d56c3db7b80c3b4d214e06b7b97e4a8d709b02cfe03a3",
+            "macho_load_commands_sha256": "368199b38a78cd97c0760848c54b8bb17b6da8bbc9b207d7b75a509095a45d9d",
+            "macho_uuid": "A6EDB8DB-175B-3A49-8919-5769FCDB6BED",
+            "sample_kind": "kernel-collection-fileset-entry",
+            "sdk_name": "macosx26.7.internal",
+        },
     },
 }
 
@@ -249,7 +318,8 @@ def _validate_bundle(bundle: str, files: dict[str, bytes], expected: dict) -> di
         info = plistlib.loads(files[prefix + "Info.plist"])
     except Exception as exc:
         raise CombineError(f"Invalid Info.plist for {bundle}") from exc
-    if (info.get("CFBundleIdentifier") != expected["bundle_id"] or
+    if (not isinstance(info, dict) or
+            info.get("CFBundleIdentifier") != expected["bundle_id"] or
             info.get("CFBundleExecutable") != expected["executable"]):
         raise CombineError(f"Unexpected bundle identity or executable in {bundle}")
     executable_path = prefix + "MacOS/" + expected["executable"]
@@ -265,6 +335,15 @@ def _validate_native_sample(manifest: dict) -> dict:
     sample = manifest.get("native_skywalk_sample")
     if not isinstance(sample, dict):
         raise CombineError("Input manifest has no native Skywalk sample metadata")
+    expected_keys = {
+        "bundle_id", "bundle_version", "container_filename", "container_sha256",
+        "container_size_bytes", "defined_external_symbol_count",
+        "fileset_entry_file_offset", "fileset_entry_id", "info_sha256", "label",
+        "macho_header_sha256", "macho_load_commands_sha256", "macho_uuid",
+        "sample_kind", "sdk_name",
+    }
+    if set(sample) != expected_keys:
+        raise CombineError("Native Skywalk sample metadata fields differ from the pinned schema")
     if sample.get("sample_kind") != "kernel-collection-fileset-entry":
         raise CombineError("Native Skywalk sample is not a kernel collection fileset entry")
     if sample.get("fileset_entry_id") != "com.apple.iokit.IOSkywalkFamily":
@@ -283,22 +362,20 @@ def _validate_native_sample(manifest: dict) -> dict:
         raise CombineError("Native Skywalk sample has empty container or export metadata")
     if sample["fileset_entry_file_offset"] >= sample["container_size_bytes"]:
         raise CombineError("Native Skywalk fileset entry offset exceeds its container")
-    if "bundle_id" in sample and sample["bundle_id"] != "com.apple.iokit.IOSkywalkFamily":
+    if sample.get("bundle_id") != "com.apple.iokit.IOSkywalkFamily":
         raise CombineError("Native Skywalk sample Info.plist identity differs")
-    for optional_string in ("bundle_version", "sdk_name"):
-        if optional_string in sample and (
-                not isinstance(sample[optional_string], str) or not sample[optional_string]):
-            raise CombineError(f"Native Skywalk sample has invalid {optional_string}")
+    for required_string in ("bundle_version", "sdk_name"):
+        if not isinstance(sample.get(required_string), str) or not sample[required_string]:
+            raise CombineError(f"Native Skywalk sample has invalid {required_string}")
     for key in ("container_sha256", "macho_header_sha256", "macho_load_commands_sha256"):
         value = sample.get(key)
         if (not isinstance(value, str) or len(value) != 64 or
                 any(ch not in "0123456789abcdef" for ch in value.lower())):
             raise CombineError(f"Native Skywalk sample has invalid {key}")
-    if "info_sha256" in sample:
-        value = sample["info_sha256"]
-        if (not isinstance(value, str) or len(value) != 64 or
-                any(ch not in "0123456789abcdef" for ch in value.lower())):
-            raise CombineError("Native Skywalk sample has invalid info_sha256")
+    value = sample.get("info_sha256")
+    if (not isinstance(value, str) or len(value) != 64 or
+            any(ch not in "0123456789abcdef" for ch in value.lower())):
+        raise CombineError("Native Skywalk sample has invalid info_sha256")
     value = sample.get("macho_uuid")
     try:
         parsed_uuid = uuid.UUID(value)
@@ -309,7 +386,20 @@ def _validate_native_sample(manifest: dict) -> dict:
     return sample
 
 
-def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -> tuple[dict, dict[str, dict]]:
+def _verify_native_sample_identity(sample_key: str, sample: dict) -> dict:
+    expected = NATIVE_SAMPLE_IDENTITIES[sample_key]
+    if sample.get("container_sha256") != expected["container_sha256"]:
+        raise CombineError(
+            f"Native Skywalk sample hash does not match the pinned {expected['system']} sample")
+    for key, value in expected["sample_fields"].items():
+        if sample.get(key) != value:
+            raise CombineError(
+                f"Native Skywalk {expected['system']} sample metadata differs: {key}")
+    return {key: expected[key] for key in ("system", "version", "build", "container_sha256")}
+
+
+def _verify_manifest(profile_key: str, sample_key: str, profile: dict,
+                     files: dict[str, bytes]) -> tuple[dict, dict[str, dict], dict]:
     manifest_raw = files["manifest.json"]
     if sha256(files["TESTING.txt"]) != TESTING_SHA256:
         raise CombineError(f"{profile_key} TESTING.txt differs from the reviewed input")
@@ -317,6 +407,8 @@ def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -
         manifest = json.loads(manifest_raw)
     except Exception as exc:
         raise CombineError("Input manifest.json is invalid") from exc
+    if not isinstance(manifest, dict):
+        raise CombineError("Input manifest.json must contain an object")
     if (manifest.get("schema") != 1 or manifest.get("prototype") != "isolated-legacy-skywalk" or
             manifest.get("version") != "0.1.0" or
             manifest.get("status") != "STATIC_PROFILE_CANDIDATE" or
@@ -324,7 +416,8 @@ def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -
         raise CombineError("Input manifest schema/profile status differs from the reviewed source")
     if manifest.get("dependency_profile") != _expected_profile_manifest(profile_key, profile):
         raise CombineError(f"{profile_key} dependency profile is not the pinned original")
-    _validate_native_sample(manifest)
+    sample = _validate_native_sample(manifest)
+    sample_identity = _verify_native_sample_identity(sample_key, sample)
     if manifest.get("remaining_native_skywalk_export_collisions") != []:
         raise CombineError("Input profile reports native export collisions")
     checks = manifest.get("checks")
@@ -334,7 +427,10 @@ def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -
             any(value is not True for value in checks.values())):
         raise CombineError("Input profile checks are missing or false")
 
-    pins = manifest.get("private_import_resolution", {}).get("pinned_input_sha256")
+    resolution = manifest.get("private_import_resolution")
+    if not isinstance(resolution, dict):
+        raise CombineError("Input manifest private import resolution is invalid")
+    pins = resolution.get("pinned_input_sha256")
     expected_pins = {
         "provider": COMMON_INPUTS["provider"]["source_sha256"],
         "legacy_consumer": COMMON_INPUTS["legacy_consumer"]["source_sha256"],
@@ -342,7 +438,6 @@ def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -
     }
     if pins != expected_pins:
         raise CombineError("Input manifest pinned source hashes differ")
-    resolution = manifest["private_import_resolution"]
     if resolution.get("unresolved_after_inherited_slots") != []:
         raise CombineError("Input profile has unresolved private imports")
 
@@ -382,7 +477,7 @@ def _verify_manifest(profile_key: str, profile: dict, files: dict[str, bytes]) -
         if sha256(files[name]) != expected_hash:
             raise CombineError(f"Pinned kext member hash mismatch: {name}")
     _verify_source_config(files["config.fragment.plist"], profile)
-    return manifest, inventory
+    return manifest, inventory, sample_identity
 
 
 def _compare_common_payloads(sonoma_files: dict[str, bytes], tahoe_files: dict[str, bytes]) -> dict:
@@ -396,6 +491,33 @@ def _compare_common_payloads(sonoma_files: dict[str, bytes], tahoe_files: dict[s
                 raise CombineError(f"Common dependency differs byte-for-byte: {name}")
             compared[name] = sha256(left)
     return compared
+
+
+def _compare_sonoma_sequoia_payloads(sonoma_files: dict[str, bytes],
+                                      sequoia_files: dict[str, bytes]) -> dict:
+    compared = _compare_common_payloads(sonoma_files, sequoia_files)
+    nic_bundle = PROFILES["sonoma-sequoia"]["bundle"]
+    prefix = f"Kexts/{nic_bundle}/"
+    nic_members = sorted(name for name in sonoma_files if name.startswith(prefix))
+    if not nic_members or nic_members != sorted(
+            name for name in sequoia_files if name.startswith(prefix)):
+        raise CombineError("Sonoma and Sequoia NIC payload member sets differ")
+    for name in nic_members:
+        if sonoma_files[name] != sequoia_files[name]:
+            raise CombineError(f"Sonoma and Sequoia NIC payload differs byte-for-byte: {name}")
+        compared[name] = sha256(sonoma_files[name])
+    return compared
+
+
+def _sample_manifest_record(sample: dict, identity: dict) -> dict:
+    record = dict(sample)
+    record["input_manifest_label"] = sample["label"]
+    record["label"] = f"{identity['system']} {identity['version']} ({identity['build']})"
+    record["verified_system"] = identity["system"]
+    record["verified_version"] = identity["version"]
+    record["verified_build"] = identity["build"]
+    record["verified_by_container_sha256"] = identity["container_sha256"]
+    return record
 
 
 def _combined_config() -> dict:
@@ -460,7 +582,8 @@ def _verify_staged_signatures(root: Path, bundles: list[str]) -> None:
         _verify_codesign(root / "Kexts" / bundle)
 
 
-def _read_pinned_profile(path: Path, profile_key: str) -> tuple[dict[str, bytes], dict, dict]:
+def _read_pinned_profile(path: Path, profile_key: str,
+                         sample_key: str) -> tuple[dict[str, bytes], dict, dict, dict]:
     profile = PROFILES[profile_key]
     try:
         with zipfile.ZipFile(path) as archive:
@@ -468,28 +591,38 @@ def _read_pinned_profile(path: Path, profile_key: str) -> tuple[dict[str, bytes]
     except (zipfile.BadZipFile, OSError) as exc:
         raise CombineError(f"Cannot read {profile_key} profile ZIP: {path}") from exc
     _verify_source_config(files["config.fragment.plist"], profile)
-    manifest, inventory = _verify_manifest(profile_key, profile, files)
-    return files, manifest, inventory
+    manifest, inventory, sample_identity = _verify_manifest(
+        profile_key, sample_key, profile, files)
+    return files, manifest, inventory, sample_identity
 
 
-def combine(sonoma_path: Path, tahoe_path: Path, output_path: Path) -> dict:
-    if Path(sonoma_path).is_symlink() or Path(tahoe_path).is_symlink():
+def combine(sonoma_path: Path, sequoia_path: Path, tahoe_path: Path,
+            output_path: Path) -> dict:
+    input_paths = (Path(sonoma_path), Path(sequoia_path), Path(tahoe_path))
+    if any(path.is_symlink() for path in input_paths):
         raise CombineError("Input ZIP paths must not be symlinks")
     sonoma_path = Path(sonoma_path).resolve(strict=True)
+    sequoia_path = Path(sequoia_path).resolve(strict=True)
     tahoe_path = Path(tahoe_path).resolve(strict=True)
     output_path = Path(output_path).absolute()
-    if sonoma_path == tahoe_path:
-        raise CombineError("Sonoma/Sequoia and Tahoe inputs must be different ZIP files")
+    resolved_inputs = (sonoma_path, sequoia_path, tahoe_path)
+    if len(set(resolved_inputs)) != len(resolved_inputs):
+        raise CombineError("Sonoma, Sequoia, and Tahoe inputs must be different ZIP files")
     if output_path.exists() or output_path.is_symlink():
         raise CombineError("Output already exists")
-    if output_path.resolve() in (sonoma_path, tahoe_path):
+    if output_path.resolve() in resolved_inputs:
         raise CombineError("Output must not overwrite an input ZIP")
     if not shutil.which("/usr/bin/codesign"):
         raise CombineError("macOS /usr/bin/codesign is required")
 
-    sonoma_files, sonoma_manifest, sonoma_inventory = _read_pinned_profile(
-        sonoma_path, "sonoma-sequoia")
-    tahoe_files, tahoe_manifest, tahoe_inventory = _read_pinned_profile(tahoe_path, "tahoe")
+    sonoma_files, sonoma_manifest, sonoma_inventory, sonoma_identity = _read_pinned_profile(
+        sonoma_path, "sonoma-sequoia", "sonoma")
+    sequoia_files, sequoia_manifest, sequoia_inventory, sequoia_identity = _read_pinned_profile(
+        sequoia_path, "sonoma-sequoia", "sequoia")
+    tahoe_files, tahoe_manifest, tahoe_inventory, tahoe_identity = _read_pinned_profile(
+        tahoe_path, "tahoe", "tahoe")
+    sonoma_sequoia_hashes = _compare_sonoma_sequoia_payloads(
+        sonoma_files, sequoia_files)
     common_hashes = _compare_common_payloads(sonoma_files, tahoe_files)
 
     combined_kexts: dict[str, bytes] = {}
@@ -510,27 +643,36 @@ def combine(sonoma_path: Path, tahoe_path: Path, output_path: Path) -> dict:
                              PROFILES["sonoma-sequoia"]["bundle"],
                              PROFILES["tahoe"]["bundle"]]
     output_manifest = {
-        "schema": 1,
+        "schema": 2,
         "prototype": "combined-cross-version-wifi-dependencies",
         "version": "0.1.0",
         "status": "STATIC_PROFILE_CANDIDATE",
         "validation_scope": "offline",
         "profiles": [
-            {"name": key, "min_kernel": PROFILES[key]["min_kernel"],
+            {"name": role, "dependency_profile": key,
+             "min_kernel": PROFILES[key]["min_kernel"],
              "max_kernel": PROFILES[key]["max_kernel"],
              "nic_bundle": PROFILES[key]["bundle"],
              "source_zip_sha256": sha256(path.read_bytes()),
              "source_manifest_sha256": sha256(files["manifest.json"]),
-             "native_skywalk_sample": manifest["native_skywalk_sample"],
+             "native_skywalk_sample": _sample_manifest_record(
+                 manifest["native_skywalk_sample"], identity),
              "binary_inventory": inventory}
-            for key, path, files, manifest, inventory in (
-                ("sonoma-sequoia", sonoma_path, sonoma_files, sonoma_manifest, sonoma_inventory),
-                ("tahoe", tahoe_path, tahoe_files, tahoe_manifest, tahoe_inventory))
+            for role, key, path, files, manifest, inventory, identity in (
+                ("sonoma", "sonoma-sequoia", sonoma_path, sonoma_files,
+                 sonoma_manifest, sonoma_inventory, sonoma_identity),
+                ("sequoia", "sonoma-sequoia", sequoia_path, sequoia_files,
+                 sequoia_manifest, sequoia_inventory, sequoia_identity),
+                ("tahoe", "tahoe", tahoe_path, tahoe_files,
+                 tahoe_manifest, tahoe_inventory, tahoe_identity))
         ],
         "common_dependency_member_sha256": common_hashes,
+        "sonoma_sequoia_payload_member_sha256": sonoma_sequoia_hashes,
         "bundles": expected_bundle_names,
         "checks": {
             "input_manifests_pinned": True,
+            "native_sample_hashes_pinned": True,
+            "sonoma_sequoia_common_and_nic_payloads_byte_identical": True,
             "common_dependencies_byte_identical": True,
             "strict_codesign_verified": True,
             "wifi_only_kexts": True,
@@ -615,13 +757,15 @@ def main(argv=None) -> int:
     parser.add_argument("--sonoma-sequoia", type=Path,
                         default=PROJECT / "build/compatibility-profiles" /
                         PROFILES["sonoma-sequoia"]["archive_filename"])
+    parser.add_argument("--sequoia", type=Path, required=True,
+                        help="independent Sequoia input profile; must match Sonoma payloads")
     parser.add_argument("--tahoe", type=Path,
                         default=PROJECT / "build/compatibility-profiles" /
                         PROFILES["tahoe"]["archive_filename"])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        manifest = combine(args.sonoma_sequoia, args.tahoe, args.output)
+        manifest = combine(args.sonoma_sequoia, args.sequoia, args.tahoe, args.output)
     except (CombineError, OSError, subprocess.SubprocessError) as exc:
         parser.error(str(exc))
     print(f"Wrote {args.output}")

@@ -48,12 +48,14 @@ const char *brcmPaths[]={
     "/System/Library/Extensions/AirPortBrcmNIC-Sonoma-Sequoia.kext/Contents/MacOS/AirPortBrcmNIC",
     "/System/Library/Extensions/AirPortBrcmNIC-Tahoe.kext/Contents/MacOS/AirPortBrcmNIC"
 };
+const char *networkingPaths[]={"/System/Library/Extensions/IONetworkingFamily.kext/Contents/MacOS/IONetworkingFamily"};
 #endif
 KernelPatcher::KextInfo watched[] {
     {"org.geekaudio.IOLegacyWFamilyKC",providerPaths,arrsize(providerPaths),{true}},
     {"com.apple.iokit.IO80211FamilyLegacy",legacyPaths,arrsize(legacyPaths),{true}},
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
     {"com.apple.driver.AirPort.BrcmNIC",brcmPaths,arrsize(brcmPaths),{true}},
+    {"com.apple.iokit.IONetworkingFamily",networkingPaths,arrsize(networkingPaths),{true}},
 #endif
 };
 bool systemVerified=false,providerVerified=false,legacyVerified=false,routingAttempted=false;
@@ -86,6 +88,7 @@ void associationUnlock(void *lock) {
 }
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
 mach_vm_address_t brcmAddress=0;size_t brcmSize=0;
+mach_vm_address_t networkingAddress=0;size_t networkingSize=0;
 uintptr_t associationLockOwner() {return __atomic_load_n(&associationOwner,__ATOMIC_ACQUIRE);}
 int runtimeBuild() {
     return ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
@@ -116,9 +119,11 @@ void observeAssociationSurvey(const AssociationSurvey::Snapshot &s) {
     recordBatch(entries,sizeof(entries)/sizeof(entries[0]));
 }
 void tryInstallPrivate(KernelPatcher &patcher) {
-    if (!systemVerified || !providerVerified || !legacyVerified || !associationInstalled || !brcmAddress) return;
+    if (!systemVerified || !providerVerified || !legacyVerified || !associationInstalled ||
+        !brcmAddress || !networkingAddress) return;
     PrivateBridge::Install input {watched[1].loadIndex,watched[2].loadIndex,legacyAddress,brcmAddress,
-        legacySize,brcmSize,&associationRegistry,associationLockOwner,runtimeBuild};
+        legacySize,brcmSize,&associationRegistry,associationLockOwner,runtimeBuild,
+        watched[3].loadIndex,networkingAddress,networkingSize};
     PrivateBridge::install(patcher,input);
 }
 #if defined(AIRPORT_BRCM_NATIVE_CONTROL)
@@ -219,7 +224,7 @@ bool imageUUID(mach_vm_address_t address,size_t size,const uint8_t expected[16])
 void *allocate(size_t size) { return IOMallocZero(size); }
 void deallocate(void *data,size_t size) { IOFree(data,size); }
 int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::Request *req,bool user64) {
-    const bool native=req && req->type==11 && ScanCompat::resultIECapacity(req->length) &&
+    const bool native=ScanCompat::nativeGet11Envelope(req,user64) &&
         !vif && primaryInterfaceIdentity(controller,interface,req->interfaceName);
     if (native) {
         const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
@@ -433,6 +438,10 @@ void loaded(KernelPatcher &patcher,size_t index,mach_vm_address_t address,size_t
     } else if (index==watched[2].loadIndex) {
         // PrivateBridge validates exact UUID/ranges/bytes before any route.
         brcmAddress=address;brcmSize=size;
+    } else if (index==watched[3].loadIndex) {
+        // Host interface code is admitted by its callback contract, never by
+        // a saved host UUID. The image owner supplies the mapped bounds.
+        networkingAddress=address;networkingSize=size;
 #endif
     }
     // The already-loaded _kmod traversal need not follow dependency order.
@@ -461,7 +470,7 @@ void init() {
         if (identity || profile!=ScanKernelIdentity::Profile::Structural) {
             watched[0].switchOff();watched[1].switchOff();
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
-            watched[2].switchOff();
+            watched[2].switchOff();watched[3].switchOff();
 #endif
             SYSLOG("init","running kernel image structure rejected; no hooks installed");return;
         }

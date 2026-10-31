@@ -203,6 +203,7 @@ class BuildToolchainCLI(unittest.TestCase):
         self.assertEqual(manifest['compiled_features'], {
             'automatic_kernel_abi_probe_gate': True,
             'wifi_private_mac_bridge': True,
+            'ifnet_public_kpi_scoped_fallback': True,
             'native_control_endpoint': True,
             'scan_multiple_set86_adapter': True,
             'sae_password_carrier_subset': True,
@@ -212,6 +213,7 @@ class BuildToolchainCLI(unittest.TestCase):
         })
         self.assertNotIn('legacy_wifi_bridge', manifest)
         build_source = Path(builder.__file__).read_text()
+        self.assertNotIn('message55_recovery_codec.c', build_source)
         for stale in ('IO80211ElCap', 'legacy_wifi_compat', 'AirPort_Brcm4331',
                       'AirPort_Brcm43224', 'Installer7observe', 'Runtime15setDisassociate'):
             self.assertNotIn(stale, build_source)
@@ -231,8 +233,9 @@ class BuildToolchainCLI(unittest.TestCase):
         self.assertNotIn('dhcp_device_type_policy', manifest)
         self.assertNotIn('original_driver_dependencies', manifest)
         self.assertNotIn('No event capability advertised', manifest['native_empty_query_policy'])
-        self.assertEqual(manifest['linked_inactive_cores'],
-                         ['Strict message55 recovery codec: no proven observer source'])
+        self.assertEqual(manifest['linked_inactive_cores'], [])
+        test_runner = (Path(__file__).resolve().parents[1] / 'tools/run_tests.py').read_text()
+        self.assertNotIn('test_message55_recovery_codec', test_runner)
         self.assertFalse(manifest['release_ready'])
         self.assertFalse(manifest['runtime_validated'])
         self.assertNotIn('supported_build', manifest)

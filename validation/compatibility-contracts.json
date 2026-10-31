@@ -429,5 +429,14 @@
       "ifnet_profiles.hpp": "fd2cd7d1be5ede2bfa115799c1154b69239bef25208f5bdd5f4ee24d03b9ce99"
     },
     "runtime_observed": false
+  },
+  "public_kpi_scoped_fallback": {
+    "evidence": "validation/modern-ifnet-callback.json",
+    "known_kernel_contracts_remain_first_choice": true,
+    "public_kpi_loader_address_must_match": true,
+    "complete_native_interface_callback_contract": true,
+    "same_thread_exact_tuple_single_use_scopes": true,
+    "future_private_request_formats_are_not_inferred": true,
+    "runtime_observed": false
   }
 }

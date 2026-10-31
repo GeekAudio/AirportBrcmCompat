@@ -1,0 +1,170 @@
+{
+  "schema": "airportbrcm-public-modern-ifnet-callback-v1",
+  "status": "offline evidence only; no kernel callback was invoked",
+  "source": {
+    "system_product_version": "26.7.2",
+    "darwin_kernel": "25.6.0 (xnu-12377.161.15.701.48~2), x86_64",
+    "boot_kernel_collection_path": "/System/Library/KernelCollections/BootKernelExtensions.kc",
+    "boot_kernel_collection_sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+    "boot_kernel_collection_uuid": "4BF8CD70-1D60-637F-DD1A-CA7BE2D3D846",
+    "fileset_bundle": "com.apple.iokit.IONetworkingFamily",
+    "fileset_version": "3.4",
+    "fileset_uuid": "0E40B82F-4995-3F34-9955-EC28B68057A2",
+    "fileset_source_version": "190.0",
+    "extracted_macho_sha256": "4e07943399417a8bbdac39254eb608bf4811f7b4ed9b10f3f62a144e4f10a280",
+    "extracted_macho_path": "temporary local extraction /tmp/IONetworkingFamily-host.kc-image",
+    "extracted_macho_vm_text_base": "0xffffff80026f0000"
+  },
+  "initIfnetParams": {
+    "symbol": "__ZN18IONetworkInterface15initIfnetParamsEP17ifnet_init_params",
+    "vm_start": "0xffffff80026fb7c0",
+    "vm_end_exclusive": "0xffffff80026fb824",
+    "size_bytes": 100,
+    "sha256": "51aad06708455384950111fb38548b9f7444c63443e93a16e831eedeaaec4357",
+    "body_hex": "554889e54156534889f34989fe488b07ff90a008000048894310498b86080100008b4804894b208b00894318488d053100000048894328488d050401000048894360488d057b01000048894368488d0568020000488943704c897358b0015b415e5dc390",
+    "if_ioctl_callback_lea": {
+      "instruction_offset": "0x37",
+      "disp32_offset": "0x3a",
+      "instruction_hex": "488d0504010000",
+      "resolved_vm_target": "0xffffff80026fb902"
+    },
+    "registration_store": {
+      "callback_params_offset": "0x60",
+      "instruction_offset": "0x3e",
+      "instruction_hex": "48894360"
+    },
+    "softc_store": {
+      "params_offset": "0x58",
+      "instruction_offset": "0x58",
+      "instruction_hex": "4c897358",
+      "source_register_meaning": "R14 holds this from RDI at entry"
+    },
+    "independently_resolved_registration_targets": [
+      {
+        "instruction_offset": "0x2c",
+        "operand_offset": "0x2f",
+        "target_symbol": "__ZN18IONetworkInterface9if_outputEP7__ifnetP6__mbuf",
+        "resolved_vm_target": "0xffffff80026fb824"
+      },
+      {
+        "instruction_offset": "0x37",
+        "operand_offset": "0x3a",
+        "target_symbol": "__ZN18IONetworkInterface8if_ioctlEP7__ifnetmPv",
+        "resolved_vm_target": "0xffffff80026fb902"
+      },
+      {
+        "instruction_offset": "0x42",
+        "operand_offset": "0x45",
+        "target_symbol": "__ZN18IONetworkInterface14if_set_bpf_tapEP7__ifnetjPFiS1_P6__mbufE",
+        "resolved_vm_target": "0xffffff80026fb984"
+      },
+      {
+        "instruction_offset": "0x4d",
+        "operand_offset": "0x50",
+        "target_symbol": "__ZN18IONetworkInterface9if_detachEP7__ifnet",
+        "resolved_vm_target": "0xffffff80026fba7c"
+      }
+    ]
+  },
+  "if_ioctl": {
+    "symbol": "__ZN18IONetworkInterface8if_ioctlEP7__ifnetmPv",
+    "vm_start": "0xffffff80026fb902",
+    "vm_end_exclusive": "0xffffff80026fb984",
+    "size_bytes": 130,
+    "sha256": "1e9befc7e8d4b9cd026e422ad64f195c6cfcbaa8c8e5d743faf4f8157d2938c1",
+    "body_hex": "554889e5415741564155415453504889d34989f74989fee80253f4fd41bd660000004885c074494989c44889c7e86ca63afe84c0753a498bb424880000004885f67427498b0424488b80600900004c89e74c89fa4c89f14989d84883c4085b415c415d415e415f5dffe041bd160000004489e84883c4085b415c415d415e415f5dc3",
+    "normalized_sha256_zeroing_only_two_rel32_operands": "44ab358c60c21f4d3c8b5be5017e6d6d484842fd285f6305be2446840270474a",
+    "rel32_calls": [
+      {
+        "instruction_offset": "0x17",
+        "operand_offset": "0x18",
+        "instruction_hex": "e80253f4fd",
+        "target_symbol": "_ifnet_softc",
+        "resolved_target_vm": "0xffffff8000640c20"
+      },
+      {
+        "instruction_offset": "0x2d",
+        "operand_offset": "0x2e",
+        "instruction_hex": "e86ca63afe",
+        "target_symbol": "__ZNK9IOService10isInactiveEv",
+        "resolved_target_vm": "0xffffff8000aa5fa0"
+      }
+    ],
+    "tail_dispatch": {
+      "instruction_offset": "0x68",
+      "bytes": "ffe0",
+      "meaning": "indirect tail jump through IONetworkInterface virtual performCommand slot +0x960"
+    },
+    "argument_mapping_before_tail_dispatch": {
+      "rdi": "ifnet_softc(ifp)",
+      "rdx": "original command",
+      "rcx": "original ifp as arg0",
+      "r8": "original data as arg1"
+    }
+  },
+  "contract": {
+    "only_normalized_bytes": [
+      "if_ioctl[0x18..0x1c) rel32 to independently resolved _ifnet_softc",
+      "if_ioctl[0x2e..0x32) rel32 to independently resolved IOService::isInactive",
+      "initIfnetParams[0x2f..0x33) LEA rel32 to independently resolved __ZN18IONetworkInterface9if_outputEP7__ifnetP6__mbuf",
+      "initIfnetParams[0x3a..0x3e) LEA rel32 to independently resolved __ZN18IONetworkInterface8if_ioctlEP7__ifnetmPv",
+      "initIfnetParams[0x45..0x49) LEA rel32 to independently resolved __ZN18IONetworkInterface14if_set_bpf_tapEP7__ifnetjPFiS1_P6__mbufE",
+      "initIfnetParams[0x50..0x54) LEA rel32 to independently resolved __ZN18IONetworkInterface9if_detachEP7__ifnet"
+    ],
+    "initIfnetParams_is_exact_full_body": false,
+    "callback_registration_target_must_equal_if_ioctl_entry": true,
+    "ifnet_init_params_callback_field_offset": "0x60",
+    "ifnet_init_params_softc_field_offset": "0x58",
+    "macho_validation": "Bounded x86_64 MH_KEXT_BUNDLE header, aligned complete load commands, unique __TEXT VM anchor, executable segment and instruction section; fileoff is not a runtime address.",
+    "host_uuid_or_os_allowlist": false,
+    "initIfnetParams_complete_body_except_verified_LEA_operands": true,
+    "all_registration_targets_require_same_image_executable_range": true
+  },
+  "test": "python3 -m unittest tests.test_network_callback_contract (clang++ ASan/UBSan synthetic mapped-image and mutation cases)",
+  "public_kpi_lifetime_basis": {
+    "declaration": "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/net/kpi_interface.h",
+    "declaration_blob_sha": "6d528010c4e9f224620417927aa362ca2fdb2db8",
+    "implementation": "https://github.com/apple-oss-distributions/xnu/blob/main/bsd/net/dlil.c",
+    "implementation_blob_sha": "676122350a0a145d11440033da22c7425b2e2335",
+    "scope": "Public synchronous ifnet_ioctl holds its I/O reference through filters, protocol and driver callbacks; wrappers do not acquire or release that reference. Future admission assumes this public KPI lifetime remains compatible."
+  },
+  "actual_binary_replay": {
+    "native_callback_contract_passed": true,
+    "callback_safe_prefix_passed": true,
+    "kernel_prefix_samples_passed": [
+      "23A344",
+      "23J631",
+      "24B83",
+      "24H232",
+      "25A354",
+      "25A362",
+      "25B78",
+      "25C56",
+      "25D125",
+      "25D2128",
+      "25E246",
+      "25E253",
+      "25F71",
+      "25F80",
+      "25F84",
+      "25G229",
+      "25G241",
+      "25G332",
+      "25G72",
+      "25G76",
+      "25G83"
+    ],
+    "source_callback_evidence": "validation/modern-ifnet-callback.json",
+    "execution": "Host validators only; no kernel function invoked"
+  },
+  "production_sources": {
+    "src/private_mac_compat/network_callback_contract.hpp": "7c4bf7cfefb107b2184b0194ae01611fc36d15608d819027224e071e6ad460ae",
+    "src/private_mac_compat/ifnet_kpi_contract.hpp": "e9e59474d5d75c821fb0156fb54c51ed88d997b2f487860974de096596dbaebe",
+    "src/private_mac_compat/ifnet_scope_core.hpp": "e829a07cd646aae1357c54d3e53dc4973e0362b095c218493aedc4f44dbd12a7",
+    "src/private_mac_compat/bsd_lease.cpp": "01ab13a737b34de7a861ece324be5b0c54b1d66377ac5ac6e1920c3895fe2171",
+    "src/private_mac_compat/private_bridge.cpp": "c19730117754959d761fb09c7f2aad3128c5ba35e90d4e355ba0e5bdf91378a8",
+    "src/private_mac_compat/route_checked.hpp": "5bb2c2b60b5a719f0d4f61f133f1a5444d8d250ab414e029b1da006f6ad776ae",
+    "src/private_mac_compat/bsd_lease.hpp": "e41355c97d5c96fbab24a018257236315b92479257f468f73b62ecd2982f2604"
+  },
+  "partial_route_policy": "Every route requires success return, NoError backend status and an original trampoline; ready is published only after every route passes."
+}

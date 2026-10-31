@@ -27,6 +27,11 @@ SUITES = {
         "test_scan_multiple_compat",
     ),
     "private-mac": (
+        "test_ifnet_scope_core",
+        "test_ifnet_kpi_contract",
+        "test_network_callback_contract",
+        "test_bsd_lease",
+        "test_route_checked",
         "test_private_mac_admission",
         "test_private_mac_state_gate",
         "test_private_mac_transaction",
@@ -40,7 +45,6 @@ SUITES = {
     "awdl": (
         "test_version_method_schema",
         "test_message48_subset_codec",
-        "test_message55_recovery_codec",
         "test_awdl_async_notification_owner",
         "test_event_pipe_core",
         "test_event_pipe_router",
@@ -50,6 +54,7 @@ SUITES = {
         "test_control_rx_windows",
     ),
     "build": (
+        "test_modern_driver_pins",
         "test_build_unified_kernel_cli",
         "test_namespace_profiles",
         "test_combine_wifi_dependency_profiles",

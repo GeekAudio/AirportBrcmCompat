@@ -3,6 +3,9 @@
 #include "private_bridge.hpp"
 #include "pinned_driver.hpp"
 #include "bsd_lease.hpp"
+#include "ifnet_kpi_contract.hpp"
+#include "network_callback_contract.hpp"
+#include "route_checked.hpp"
 #include "station_backend.hpp"
 #include "state_gate.hpp"
 #include "admission.hpp"
@@ -20,7 +23,14 @@ constexpr const char *Perform="__ZN16IO80211Interface14performCommandEP19IONetwo
 constexpr const char *Associate="__ZN15AirPort_BrcmNIC12setASSOCIATEEP8OSObjectP21apple80211_assoc_data";
 constexpr const char *Auth="__ZN15AirPort_BrcmNIC12setAUTH_TYPEEP8OSObjectP24apple80211_authtype_data";
 using PerformCommand=int (*)(IOService *,IOService *,uint64_t,void *,void *);
+using PublicIoctl=int (*)(ifnet_t,protocol_family_t,unsigned long,void *);
+// IONetworkInterface::if_ioctl is static and implements this three-argument
+// KPI callback type. Its body obtains the C++ receiver through ifnet_softc.
+using InterfaceIoctl=ifnet_ioctl_func;
 PerformCommand originalPerform=nullptr;
+PublicIoctl originalPublicIoctl=nullptr;
+InterfaceIoctl originalInterfaceIoctl=nullptr;
+bool publicKPIMode=false;
 PrivateMAC::DriverPins pins {};
 PrivateMAC::DriverPins::SetAssociate originalAssociate=nullptr;
 PrivateMAC::DriverPins::SetAuthType originalAuth=nullptr;
@@ -34,6 +44,22 @@ uintptr_t thread() {return reinterpret_cast<uintptr_t>(current_thread());}
 void lock() {IOLockLock(bridgeLock);__atomic_store_n(&lockOwner,thread(),__ATOMIC_RELEASE);}
 void unlock() {__atomic_store_n(&lockOwner,uintptr_t(0),__ATOMIC_RELEASE);IOLockUnlock(bridgeLock);}
 bool enabled() {return __atomic_load_n(&ready,__ATOMIC_ACQUIRE);}
+int wrappedPublicIoctl(ifnet_t ifp,protocol_family_t protocol,unsigned long command,void *data) {
+    if (!enabled() || !publicKPIMode) return originalPublicIoctl(ifp,protocol,command,data);
+    PrivateMAC::BSDLease::RootScope scope;
+    // Entry carries opaque identities only. The original public KPI owns the
+    // I/O reference; do not read ifp/data here or replace it with an ordinary ref.
+    scope.enter(callbackPin,ifp,protocol,command,data);
+    return originalPublicIoctl(ifp,protocol,command,data);
+}
+int wrappedInterfaceIoctl(ifnet_t ifp,unsigned long command,void *data) {
+    if (!enabled() || !publicKPIMode) return originalInterfaceIoctl(ifp,command,data);
+    PrivateMAC::BSDLease::CallbackScope scope;
+    scope.enter(callbackPin,ifp,command,data);
+    // No scope failure changes the native callback's arguments or result. The
+    // private-address admission separately requires a live one-shot ticket.
+    return originalInterfaceIoctl(ifp,command,data);
+}
 bool exactClass(const IOService *object,const char *name) {
     return object && object->getMetaClass() && !strcmp(object->getMetaClass()->getClassName(),name);
 }
@@ -289,10 +315,19 @@ int wrappedPerform(IOService *i,IOService *c,uint64_t command,void *arg0,void *a
     // Both 32/64-bit main SET20 entries share admission. Do not read a 40-byte
     // Request from the 32-byte form; only the common type/length DWORDs here.
     const bool set=command==0x802869c8ULL || command==0x802069c8ULL;
-    if (!enabled() || !set || !arg1 || !primaryPair(c,i) ||
-        ScanCompat::read32(static_cast<const uint8_t *>(arg1)+16)!=20) return originalPerform(i,c,command,arg0,arg1);
+    if (!enabled() || !set || !arg1 || !primaryPair(c,i)) return originalPerform(i,c,command,arg0,arg1);
     PrivateMAC::BSDLease::Scope lease;
-    int error=lease.enter(callbackPin,caller,c,i,static_cast<ifnet_t>(arg0));
+    int error=0;
+    if (publicKPIMode) {
+        // Match the actual callback tuple before reading the request envelope.
+        // Non-SET20 commands and calls without authorization keep their native
+        // behavior; the SET20 adapter refuses absent private bridge context.
+        error=lease.enterScoped(callbackPin,c,i,static_cast<ifnet_t>(arg0),command,arg1);
+        if (error) return originalPerform(i,c,command,arg0,arg1);
+    }
+    if (ScanCompat::read32(static_cast<const uint8_t *>(arg1)+16)!=20)
+        return originalPerform(i,c,command,arg0,arg1);
+    if (!publicKPIMode) error=lease.enter(callbackPin,caller,c,i,static_cast<ifnet_t>(arg0));
     if (error) {ScanDiagnostics::record(ScanDiagnostics::PrivateEntry,error);return error;}
     ControllerRecord *r=getRecord(c,i,true);
     if (!r) return ENXIO;
@@ -426,6 +461,52 @@ int prepareIfnetContract(KernelPatcher &patcher,uintptr_t callback,
         readIfnetSemanticKernelEvidence,&evidenceBudget,contract);
     return dynamicStatus==Status::Passed?0:EOPNOTSUPP;
 }
+int preparePublicKPIScope(KernelPatcher &patcher,const Install &input,
+                          uintptr_t publicIoctl,uintptr_t perform) {
+    using namespace PrivateMAC;
+    // Confirm the resolved symbol is the actual public import in this boot.
+    // Entry shape proves only that routing can safely copy its prologue; the
+    // public KPI owns the synchronous I/O reference across native callbacks.
+    if (publicIoctl!=reinterpret_cast<uintptr_t>(&ifnet_ioctl) ||
+        ScanKernelIdentity::verifyRunningKernelCodeRange(publicIoctl,IfnetKPIContract::PrefixBudget) ||
+        !IfnetKPIContract::safeRoutePrefix(reinterpret_cast<const uint8_t *>(publicIoctl),
+                                          IfnetKPIContract::PrefixBudget)) return EOPNOTSUPP;
+    const uintptr_t softc=resolveKernelSymbol(patcher,"_ifnet_softc");
+    const uintptr_t inactive=resolveKernelSymbol(patcher,"__ZNK9IOService10isInactiveEv");
+    if (softc!=reinterpret_cast<uintptr_t>(&ifnet_softc) || !inactive ||
+        ScanKernelIdentity::verifyRunningKernelCodeRange(softc,1) ||
+        ScanKernelIdentity::verifyRunningKernelCodeRange(inactive,1)) return EOPNOTSUPP;
+    patcher.clearError();
+    const uintptr_t init=patcher.solveSymbol(input.networkingIndex,NetworkCallbackContract::InitIfnetParamsSymbol,
+        input.networkingAddress,input.networkingSize);
+    const uintptr_t callback=patcher.solveSymbol(input.networkingIndex,NetworkCallbackContract::IfIoctlSymbol,
+        input.networkingAddress,input.networkingSize);
+    const NetworkCallbackContract::Targets registration {
+        patcher.solveSymbol(input.networkingIndex,"__ZN18IONetworkInterface9if_outputEP7__ifnetP6__mbuf",
+            input.networkingAddress,input.networkingSize),
+        patcher.solveSymbol(input.networkingIndex,"__ZN18IONetworkInterface14if_set_bpf_tapEP7__ifnetjPFiS1_P6__mbufE",
+            input.networkingAddress,input.networkingSize),
+        patcher.solveSymbol(input.networkingIndex,"__ZN18IONetworkInterface9if_detachEP7__ifnet",
+            input.networkingAddress,input.networkingSize)};
+    const uintptr_t vtable=patcher.solveSymbol(input.legacyIndex,"__ZTV16IO80211Interface",
+        input.legacyAddress,input.legacySize);
+    if (patcher.getError()!=KernelPatcher::Error::NoError || !init || !callback || !vtable) {
+        patcher.clearError();return EOPNOTSUPP;
+    }
+    const NetworkCallbackContract::ImageView image {
+        reinterpret_cast<const uint8_t *>(input.networkingAddress),input.networkingSize,
+        static_cast<uintptr_t>(input.networkingAddress)};
+    if (!NetworkCallbackContract::verify(image,init,callback,softc,inactive,registration)) return EOPNOTSUPP;
+    if (!IfnetKPIContract::safeRoutePrefix(reinterpret_cast<const uint8_t *>(callback),
+                                          IfnetKPIContract::PrefixBudget)) return EOPNOTSUPP;
+    // The admitted native callback dispatches slot 0x960. Check its fixed
+    // wireless consumer resolves to the function whose replacement we own.
+    constexpr size_t PerformSlot=0x10+0x960;
+    if (!within(vtable,input.legacyAddress,input.legacySize,PerformSlot+sizeof(uintptr_t)))
+        return EOPNOTSUPP;
+    uintptr_t target=0;memcpy(&target,reinterpret_cast<const void *>(vtable+PerformSlot),sizeof(target));
+    return target==perform?0:EOPNOTSUPP;
+}
 }
 
 int entryAllowed(void *c,void *i) {
@@ -455,23 +536,46 @@ void install(KernelPatcher &patcher,const Install &input) {
     }
     KernelContracts::IfnetIoctlPlan contract;
     const int contractStatus=prepareIfnetContract(patcher,callback,contract);
-    if (contractStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,contractStatus);return;}
-    const int pin=callbackPin.prepare(contract,input.runtimeBuild);
+    if (contractStatus) {
+        const int scoped=preparePublicKPIScope(patcher,input,callback,perform);
+        if (scoped) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,scoped);return;}
+        publicKPIMode=true;
+    }
+    const int pin=publicKPIMode?callbackPin.preparePublicKPI(input.runtimeBuild):
+        callbackPin.prepare(contract,input.runtimeBuild);
     ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,pin);if (pin) return;
+    ScanDiagnostics::record(ScanDiagnostics::PrivateIfnetMode,publicKPIMode?1:0);
     bridgeLock=IOLockAlloc();if (!bridgeLock) return;
     config=input;
+    if (publicKPIMode) {
+        KernelPatcher::RouteRequest callbackRoute(PrivateMAC::NetworkCallbackContract::IfIoctlSymbol,
+            wrappedInterfaceIoctl,originalInterfaceIoctl);
+        if (!PrivateMAC::routeChecked(patcher,input.networkingIndex,callbackRoute,originalInterfaceIoctl,
+                                     input.networkingAddress,input.networkingSize)) {
+            patcher.clearError();ScanDiagnostics::record(ScanDiagnostics::PrivateInterfaceIoctlRoute,1);return;
+        }
+        ScanDiagnostics::record(ScanDiagnostics::PrivateInterfaceIoctlRoute,0);
+        KernelPatcher::RouteRequest publicRoute("_ifnet_ioctl",wrappedPublicIoctl,originalPublicIoctl);
+        if (!PrivateMAC::routeChecked(patcher,KernelPatcher::KernelID,publicRoute,originalPublicIoctl)) {
+            patcher.clearError();ScanDiagnostics::record(ScanDiagnostics::PrivatePublicIoctlRoute,1);return;
+        }
+        ScanDiagnostics::record(ScanDiagnostics::PrivatePublicIoctlRoute,0);
+    }
     KernelPatcher::RouteRequest driverRoute(Associate,wrappedDriverAssociate,originalAssociate);
-    if (!patcher.routeMultiple(input.brcmIndex,&driverRoute,1,input.brcmAddress,input.brcmSize)) {
+    if (!PrivateMAC::routeChecked(patcher,input.brcmIndex,driverRoute,originalAssociate,
+                                 input.brcmAddress,input.brcmSize)) {
         patcher.clearError();ScanDiagnostics::record(ScanDiagnostics::PrivateDriverRoute,1);return;
     }
     ScanDiagnostics::record(ScanDiagnostics::PrivateDriverRoute,0);
     KernelPatcher::RouteRequest authRoute(Auth,wrappedAuth,originalAuth);
-    if (!patcher.routeMultiple(input.brcmIndex,&authRoute,1,input.brcmAddress,input.brcmSize)) {
+    if (!PrivateMAC::routeChecked(patcher,input.brcmIndex,authRoute,originalAuth,
+                                 input.brcmAddress,input.brcmSize)) {
         patcher.clearError();ScanDiagnostics::record(ScanDiagnostics::PrivateAuthRoute,1);return;
     }
     ScanDiagnostics::record(ScanDiagnostics::PrivateAuthRoute,0);
     KernelPatcher::RouteRequest bsdRoute(Perform,wrappedPerform,originalPerform);
-    if (!patcher.routeMultiple(input.legacyIndex,&bsdRoute,1,input.legacyAddress,input.legacySize)) {
+    if (!PrivateMAC::routeChecked(patcher,input.legacyIndex,bsdRoute,originalPerform,
+                                 input.legacyAddress,input.legacySize)) {
         patcher.clearError();ScanDiagnostics::record(ScanDiagnostics::PrivateBSDRoute,1);return;
     }
     ScanDiagnostics::record(ScanDiagnostics::PrivateBSDRoute,0);

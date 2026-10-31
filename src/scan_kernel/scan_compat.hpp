@@ -35,6 +35,15 @@ inline uint16_t read16(const void *p) { uint16_t x; memcpy(&x,p,sizeof(x)); retu
 inline uint32_t read32(const void *p) { uint32_t x; memcpy(&x,p,sizeof(x)); return x; }
 inline void write16(void *p,uint16_t x) { memcpy(p,&x,sizeof(x)); }
 
+// The captured native GET11 producers zero-initialize the request prefix,
+// then set only type, length and data. Require the complete known envelope
+// before projecting its result; other values, padding, widths, or lengths
+// remain with the original handler.
+inline bool nativeGet11Envelope(const Request *request,bool user64) {
+    return request && user64 && request->type==11 && request->value==0 &&
+        request->padding==0 && resultIECapacity(request->length)!=0;
+}
+
 // On error the native buffer is unchanged. Native-only tail and input padding
 // are preserved. No uninitialized Legacy padding is copied to userspace.
 inline int convert(uint8_t *native, size_t nativeSize, const uint8_t *old, size_t oldSize) {
@@ -78,7 +87,7 @@ struct Buffer {
 inline int handle(API &api,void *controller,void *interface,void *virtualInterface,
                   void *infra,Request *request,bool user64) {
     PrimaryInterface::Name parsedName;
-    const bool nativeScan=request && request->type==11 && resultIECapacity(request->length);
+    const bool nativeScan=nativeGet11Envelope(request,user64);
     if (nativeScan && (virtualInterface || (!interface && infra)))
         return api.original(controller,interface,virtualInterface,infra,request,user64);
     if (nativeScan && controller && interface && (!api.primaryInterface ||

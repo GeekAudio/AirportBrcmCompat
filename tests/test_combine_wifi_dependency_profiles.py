@@ -1,3 +1,5 @@
+import contextlib
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -19,6 +21,7 @@ sys.modules[SPEC.name] = combine_tool
 SPEC.loader.exec_module(combine_tool)
 
 SONOMA = PROJECT / "build/compatibility-profiles/sonoma14-dependencies.zip"
+SEQUOIA = PROJECT / "build/compatibility-profiles/sequoia15-dependencies.zip"
 TAHOE = PROJECT / "build/compatibility-profiles/tahoe26-dependencies.zip"
 
 
@@ -69,6 +72,52 @@ class CombineWifiDependencyProfileTests(unittest.TestCase):
                                     "differs byte-for-byte"):
             combine_tool._compare_common_payloads(left, right)
 
+    def test_sonoma_sequoia_comparison_includes_every_nic_member(self):
+        left = {}
+        for bundle, paths in combine_tool.COMMON_RELATIVE_FILES.items():
+            for relative in paths:
+                left[f"Kexts/{bundle}/{relative}"] = b"shared"
+        nic = combine_tool.PROFILES["sonoma-sequoia"]["bundle"]
+        for relative in (
+                "Contents/Info.plist", "Contents/_CodeSignature/CodeResources",
+                "Contents/version.plist", "Contents/MacOS/AirPortBrcmNIC"):
+            left[f"Kexts/{nic}/{relative}"] = relative.encode()
+        right = dict(left)
+        compared = combine_tool._compare_sonoma_sequoia_payloads(left, right)
+        self.assertEqual(len(compared), 10)
+        executable = f"Kexts/{nic}/Contents/MacOS/AirPortBrcmNIC"
+        right[executable] = b"different executable"
+        with self.assertRaisesRegex(combine_tool.CombineError,
+                                    "NIC payload differs byte-for-byte"):
+            combine_tool._compare_sonoma_sequoia_payloads(left, right)
+
+    def test_sonoma_sequoia_comparison_rejects_missing_nic_member(self):
+        left = {}
+        for bundle, paths in combine_tool.COMMON_RELATIVE_FILES.items():
+            for relative in paths:
+                left[f"Kexts/{bundle}/{relative}"] = b"shared"
+        nic = combine_tool.PROFILES["sonoma-sequoia"]["bundle"]
+        for relative in (
+                "Contents/Info.plist", "Contents/_CodeSignature/CodeResources",
+                "Contents/version.plist", "Contents/MacOS/AirPortBrcmNIC"):
+            left[f"Kexts/{nic}/{relative}"] = relative.encode()
+        right = dict(left)
+        del right[f"Kexts/{nic}/Contents/version.plist"]
+        with self.assertRaisesRegex(combine_tool.CombineError,
+                                    "NIC payload member sets differ"):
+            combine_tool._compare_sonoma_sequoia_payloads(left, right)
+
+    def test_cli_requires_explicit_sequoia_input(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as raised:
+                combine_tool.main([
+                    "--sonoma-sequoia", str(SONOMA), "--tahoe", str(TAHOE),
+                    "--output", "/tmp/should-not-be-created.zip",
+                ])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("--sequoia", stderr.getvalue())
+
     def test_preflight_rejects_path_traversal(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "traversal.zip"
@@ -107,8 +156,9 @@ class CombineWifiDependencyProfileTests(unittest.TestCase):
                         archive, combine_tool.PROFILES["sonoma-sequoia"])
 
 
-@unittest.skipUnless(SONOMA.is_file() and TAHOE.is_file() and shutil.which("/usr/bin/codesign"),
-                     "requires the two pinned profile ZIPs and macOS codesign")
+@unittest.skipUnless(SONOMA.is_file() and SEQUOIA.is_file() and TAHOE.is_file() and
+                     shutil.which("/usr/bin/codesign"),
+                     "requires the three pinned profile ZIPs and macOS codesign")
 class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
     def _read_zip(self, path):
         with zipfile.ZipFile(path) as archive:
@@ -129,8 +179,9 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
     def test_pinned_profiles_combine_with_signatures_and_common_bytes_preserved(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "cross-version-wifi.zip"
-            manifest = combine_tool.combine(SONOMA, TAHOE, output)
+            manifest = combine_tool.combine(SONOMA, SEQUOIA, TAHOE, output)
             sonoma_files = self._read_zip(SONOMA)
+            sequoia_files = self._read_zip(SEQUOIA)
             tahoe_files = self._read_zip(TAHOE)
             output_files = self._read_zip(output)
 
@@ -147,7 +198,13 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
                 for relative in relative_paths:
                     name = f"Kexts/{bundle}/{relative}"
                     self.assertEqual(sonoma_files[name], tahoe_files[name])
+                    self.assertEqual(sonoma_files[name], sequoia_files[name])
                     self.assertEqual(output_files[name], sonoma_files[name])
+            nic_bundle = combine_tool.PROFILES["sonoma-sequoia"]["bundle"]
+            for name, data in sonoma_files.items():
+                if name.startswith(f"Kexts/{nic_bundle}/"):
+                    self.assertEqual(data, sequoia_files[name])
+                    self.assertEqual(output_files[name], data)
             for profile, source_files in (("sonoma-sequoia", sonoma_files), ("tahoe", tahoe_files)):
                 bundle = combine_tool.PROFILES[profile]["bundle"]
                 prefix = f"Kexts/{bundle}/"
@@ -166,8 +223,18 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
             self.assertEqual(config["Kernel"]["Quirks"],
                              {"DisableLinkeditJettison": True})
             self.assertTrue(manifest["checks"]["strict_codesign_verified"])
-            self.assertEqual(manifest["profiles"][0]["name"], "sonoma-sequoia")
-            self.assertEqual(manifest["profiles"][1]["name"], "tahoe")
+            self.assertTrue(manifest["checks"][
+                "sonoma_sequoia_common_and_nic_payloads_byte_identical"])
+            self.assertEqual([item["name"] for item in manifest["profiles"]],
+                             ["sonoma", "sequoia", "tahoe"])
+            self.assertEqual([item["native_skywalk_sample"]["verified_system"]
+                              for item in manifest["profiles"]],
+                             ["Sonoma", "Sequoia", "Tahoe"])
+            sequoia_sample = manifest["profiles"][1]["native_skywalk_sample"]
+            self.assertEqual(sequoia_sample["input_manifest_label"], "Sequoia15.0")
+            self.assertEqual(sequoia_sample["label"], "Sequoia 15.8.2 (24H232)")
+            self.assertEqual(sequoia_sample["verified_by_container_sha256"],
+                             "ddd9016e225a61ebfd4f04b02a00937262f26690c57a928613e08506978c81be")
 
             with tempfile.TemporaryDirectory() as extracted:
                 root = Path(extracted)
@@ -179,7 +246,7 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
                 for bundle in expected_bundles:
                     combine_tool._verify_codesign(root / "Kexts" / bundle)
 
-    def test_native_target_sample_metadata_may_change_with_same_kext_tree(self):
+    def test_sample_label_is_not_trusted_for_os_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             changed = root / "different-native-sample.zip"
@@ -187,15 +254,71 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
 
             def alter_native_sample(_files, manifest):
                 sample = manifest["native_skywalk_sample"]
-                sample["label"] = "Sonoma14.8.x alternate native KC"
-                sample["macho_uuid"] = "11223344-5566-7788-99AA-BBCCDDEEFF00"
-                sample["macho_load_commands_sha256"] = "a" * 64
+                sample["label"] = "Sequoia 15.0 arbitrary label"
 
-            changed_manifest = self._rewrite_profile(SONOMA, changed, alter_native_sample)
-            output_manifest = combine_tool.combine(changed, TAHOE, output)
-            output_sample = output_manifest["profiles"][0]["native_skywalk_sample"]
-            self.assertEqual(output_sample, changed_manifest["native_skywalk_sample"])
+            self._rewrite_profile(SEQUOIA, changed, alter_native_sample)
+            output_manifest = combine_tool.combine(SONOMA, changed, TAHOE, output)
+            output_sample = output_manifest["profiles"][1]["native_skywalk_sample"]
+            self.assertEqual(output_sample["input_manifest_label"],
+                             "Sequoia 15.0 arbitrary label")
+            self.assertEqual(output_sample["label"], "Sequoia 15.8.2 (24H232)")
+            self.assertEqual(output_sample["verified_build"], "24H232")
             self.assertTrue(output.is_file())
+
+    def test_sample_hash_or_identity_tampering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mutations = (
+                ("container_sha256", "a" * 64,
+                 "does not match the pinned Sequoia sample"),
+                ("macho_uuid", "11223344-5566-7788-99AA-BBCCDDEEFF00",
+                 "sample metadata differs: macho_uuid"),
+            )
+            for index, (field, value, error) in enumerate(mutations):
+                tampered = root / f"tampered-sequoia-{index}.zip"
+                output = root / f"must-not-exist-{index}.zip"
+
+                def alter_sample(_files, manifest, field=field, value=value):
+                    manifest["native_skywalk_sample"][field] = value
+
+                self._rewrite_profile(SEQUOIA, tampered, alter_sample)
+                with self.assertRaisesRegex(combine_tool.CombineError, error):
+                    combine_tool.combine(SONOMA, tampered, TAHOE, output)
+                self.assertFalse(output.exists())
+
+            tampered = root / "tampered-sequoia-extra-field.zip"
+            output = root / "must-not-exist-extra-field.zip"
+
+            def add_unexpected_sample_field(_files, manifest):
+                manifest["native_skywalk_sample"]["asserted_os_version"] = "15.0"
+
+            self._rewrite_profile(SEQUOIA, tampered, add_unexpected_sample_field)
+            with self.assertRaisesRegex(combine_tool.CombineError,
+                                        "metadata fields differ from the pinned schema"):
+                combine_tool.combine(SONOMA, tampered, TAHOE, output)
+            self.assertFalse(output.exists())
+
+    def test_malformed_manifest_resolution_is_rejected_cleanly(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tampered = root / "dirty-manifest.zip"
+            output = root / "must-not-exist.zip"
+
+            def alter_resolution(_files, manifest):
+                manifest["private_import_resolution"] = []
+
+            self._rewrite_profile(SEQUOIA, tampered, alter_resolution)
+            with self.assertRaisesRegex(combine_tool.CombineError,
+                                        "private import resolution is invalid"):
+                combine_tool.combine(SONOMA, tampered, TAHOE, output)
+            self.assertFalse(output.exists())
+
+    def test_duplicate_profile_inputs_are_rejected_before_reading(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "must-not-exist.zip"
+            with self.assertRaisesRegex(combine_tool.CombineError,
+                                        "inputs must be different ZIP files"):
+                combine_tool.combine(SONOMA, SONOMA, TAHOE, output)
 
     def test_changed_kext_and_forged_manifest_hash_are_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -216,7 +339,7 @@ class CombineWifiDependencyProfileReleaseTests(unittest.TestCase):
             self._rewrite_profile(SONOMA, tampered, alter_kext_and_forge_hash)
             with self.assertRaisesRegex(combine_tool.CombineError,
                                         "Pinned manifest binary record differs"):
-                combine_tool.combine(tampered, TAHOE, output)
+                combine_tool.combine(tampered, SEQUOIA, TAHOE, output)
             self.assertFalse(output.exists())
 
 

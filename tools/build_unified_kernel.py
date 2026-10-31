@@ -27,6 +27,7 @@ def automatic_compatibility_info_metadata(baseline_trace, control_windows):
         'AirportBrcmDevelopmentStatus':'AutomaticABICandidate-1.1.0',
         'AirportBrcmAutomaticCompatibility':1,
         'AirportBrcmKernelIdentityPolicy':'ABIContractProbesFailClosed',
+        'AirportBrcmIfnetLifetimePolicy':'KnownContractThenPublicKPICallbackScopes',
         'AirportBrcmMinimumDarwinKernelVersion':'23.0.0',
         'AirportBrcmRequestSchemaPolicy':'StrictFailClosed',
         'AirportBrcmStrictRequestSchemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
@@ -40,7 +41,7 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
         'purpose':'Automatic kernel ABI-probe compatibility candidate with strict request schemas',
         'compatibility_policy':{
             'kernel_admission':'All required ABI contract probes must pass; an unknown UUID alone never admits compatibility.',
-            'probe_policy':'Probe the active kernel contract, then retain independent exact checks for each wireless dependency image.',
+            'probe_policy':'Prefer saved ifnet implementation contracts; otherwise require the loader-bound public ioctl entry, a complete native interface callback contract, and nested one-shot request scopes. Retain independent exact checks for wireless dependency images.',
             'failure_behavior':'Kernel probe failures prevent compatibility admission; requests outside the strict schemas are not adapted.',
             'minimum_darwin_kernel_version':'23.0.0',
             'request_schema_policy':'strict-fail-closed',
@@ -64,6 +65,7 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
         'compiled_features':{
             'automatic_kernel_abi_probe_gate':True,
             'wifi_private_mac_bridge':True,
+            'ifnet_public_kpi_scoped_fallback':True,
             'native_control_endpoint':True,
             'scan_multiple_set86_adapter':True,
             'sae_password_carrier_subset':True,
@@ -74,7 +76,7 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
         'native_empty_query_policy':'Selectors1/5/7 accept a nonnull unused inline input pointer when length is exactly0; pointer is never read. All descriptor/scalar/async/output constraints remain.',
         'native_ool_input_policy':'Borrowed synchronous MIG input descriptor: balanced prepare/complete around one owned snapshot read, outside the old WorkLoop/gate; no descriptor release or retained mapping.',
         'bounded_closing_policy':'Retain at most8 authorized Closing records until reboot; no automatic record removal or late old-table dispatch; subsequent admission may be refused.',
-        'linked_inactive_cores':['Strict message55 recovery codec: no proven observer source'],
+        'linked_inactive_cores':[],
         'validation_scope':'offline'
     }
 
@@ -324,7 +326,7 @@ def main():
             'legacy_post_observer.cpp','event_pipe_session.cpp','event_pipe_worker.cpp']]
         if args.event_pipe_routes_review:
             cpp.append(source/'awdl_kernel'/'event_pipe_router.cpp')
-        c += [source/'awdl_compat'/p for p in ['message48_subset_codec.c','message55_recovery_codec.c']]
+        c += [source/'awdl_compat'/'message48_subset_codec.c']
     if args.baseline_trace:
         cpp.append(source/'awdl_kernel'/'baseline_trace.cpp')
     common=['-arch','x86_64','-mkernel','-fno-builtin','-fno-common','-fno-stack-protector',
@@ -368,10 +370,12 @@ def main():
         if len(kmod)!=1:raise ValueError('Unified executable must have exactly one kmod_info')
         required=['awcm_translate','awc_ring_publish','applyPrivateAddress','checkStationState',
                   'admitPrimaryAssociation','BSDLease5Scope5enter','StationSession4open',
-                  'wrappedPerform','wrappedDriverAssociate','wrappedAuth']
+                  'wrappedPerform','wrappedDriverAssociate','wrappedAuth',
+                  'wrappedPublicIoctl','wrappedInterfaceIoctl','enterScoped']
         if any(not any(needle in line for line in symbols) for needle in required):
             raise ValueError('A required compatibility core was not linked')
         if any('awcf_mock_' in line for line in symbols):raise ValueError('Offline facade mock must never be linked')
+        if any('m55r_' in line for line in symbols):raise ValueError('Removed inactive recovery code must not be linked')
         headers=[p for directory in ['scan_kernel','private_mac_compat','awdl_compat','awdl_kernel','unified_kernel']
                  for p in (source/directory).glob('*') if p.suffix in ('.h','.hpp') and p.name!='facade_mock.h']
         manifest={'schema':1,'identifier':IDENTIFIER,'version':VERSION,
@@ -394,8 +398,7 @@ def main():
                 'event_pipe_routes_compiled':args.event_pipe_routes_review,
                 'ready_for_install':False,
                 'linked_inactive_cores':['bounded native event ring, descriptor owner, async-right owner, '
-                    'real legacy post observer, resident event session/worker, strict46/47/48 codecs; '
-                    'strict message55 recovery codec has no proven observer source'],
+                    'real legacy post observer, resident event session/worker, strict46/47/48 codecs'],
                 'remaining':'Real IOUC selector/map/lifecycle routing and same-connection pipe reinitialization '
                     'are not installed. No event capability, AirDrop transfer or runtime safety claim.'})
         if args.automatic_compatibility:

@@ -97,6 +97,9 @@ enum Stage {
     PmkLengthLow16,
     PmkLengthHigh16,
     FirstIELength,
+    PrivateIfnetMode, // 0 saved kernel contract, 1 public KPI + interface scopes.
+    PrivatePublicIoctlRoute,
+    PrivateInterfaceIoctlRoute,
     StageCount
 };
 struct Entry { Stage stage; int32_t code; };

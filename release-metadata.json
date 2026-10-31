@@ -8,35 +8,35 @@
   "all_target_minor_versions_completed": false,
   "variants": {
     "RELEASE": {
-      "binary_sha256": "11e47b75001c64fe33e5082bfa66223dd35d6e2cb6510b4f21badbcc730aef2d",
-      "uuid": "1FC4A798-CB51-3550-84EF-27CB0A7F0F26",
+      "binary_sha256": "15c6e43df691f48915d292485681acc3411446b81cf338a83f4197a004b3d87e",
+      "uuid": "9BBAF49F-4DE0-3886-9186-73AF15BF41D2",
       "compiler_debug_macro": false,
       "baseline_trace": false,
       "control_rx_windows": false,
-      "zip_filename": "AirportBrcmCompat-1.1.0-modern-main-RELEASE.zip",
-      "zip_sha256": "5ab313a043111ec53a4b8c89e4656dccff7760122af7121e842c3f7cd452ebec",
-      "source_hashes_verified": 73,
+      "zip_filename": "AirportBrcmCompat-1.1.0-modern-kpi-r2-RELEASE.zip",
+      "zip_sha256": "c07291a73cdeff55427cf819dcf3eb02bf8e6b1f409bda6b0f47a151cd8a6f5f",
+      "source_hashes_verified": 75,
       "artifact_hashes_verified": 3
     },
     "DEBUG": {
-      "binary_sha256": "eea56e07662abb72c3976183080d2c08affb4ddc758448e1b0f558fd9c2942cd",
-      "uuid": "88AECD1A-BE72-3706-945E-D0D6832A0D44",
+      "binary_sha256": "017707714db6a9c056f8e776e41a495d61fce3623659cc65be294437ec3b035a",
+      "uuid": "1445067F-7351-3469-950B-14FC6E1FCD51",
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "AirportBrcmCompat-1.1.0-modern-main-DEBUG.zip",
-      "zip_sha256": "96156954cec83a5afe5a2b4172c286e1656824027257d7b1307ee825e3b55052",
-      "source_hashes_verified": 74,
+      "zip_filename": "AirportBrcmCompat-1.1.0-modern-kpi-r2-DEBUG.zip",
+      "zip_sha256": "5ebe2ebd73ad1c67830119dd548d4a96ccbe535c841fad3da1b5a5df9576ded2",
+      "source_hashes_verified": 76,
       "artifact_hashes_verified": 3
     }
   },
   "checks": {
-    "offline_tests_passed": 308,
-    "offline_test_seconds": 45.284,
+    "offline_tests_passed": 323,
+    "offline_test_seconds": 49.514,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "80c71643b0051486c195be78130383a95090c2601509ffca7a17cd0c3d18427f",
+    "offline_test_log_sha256": "e4e994857720cde3d33e48179847a2d903b34351fce533fd8bb9affa197a7a5e",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -51,13 +51,21 @@
       "DEBUG"
     ],
     "signature_verification_scope": "Clean ZIP extraction; repository file bytes matched to signed artifact manifests",
-    "compatibility_contract_evidence": "validation/compatibility-contracts.json"
+    "compatibility_contract_evidence": "validation/compatibility-contracts.json",
+    "public_kpi_callback_evidence": "validation/modern-ifnet-callback.json",
+    "public_kpi_prefix_sample_count": 21,
+    "removed_unconnected_recovery_symbols_verified": true,
+    "private_bridge_route_result_checks": true,
+    "removed_old_card_production_paths": true,
+    "ifnet_saved_contract_evidence_origin": "Retained validated excerpts from 6235fba; production saved-contract source hashes unchanged."
   },
   "development_dependency_packages": {
     "automatic": {
-      "zip_filename": "AirportBrcmCompat-1.1.0-cross-version-Dependencies.zip",
-      "zip_sha256": "8fe61aa15dd63680113026b0788c92bf34f435dde6993de529b48560ae3ff2d4",
-      "published_release": false
+      "zip_filename": "WiFi-Dependencies-Automatic-three-samples.zip",
+      "zip_sha256": "b93ae5ae7e92204db7b558d37aa55132023faf7e5f151836ee912a9d7c8aa5af",
+      "published_release": false,
+      "independent_native_samples": 3,
+      "nic_variants_pin_checked": 2
     },
     "additional_cards": {
       "zip_filename": "AirportBrcmCompat-1.1.0-additional-cards.zip",

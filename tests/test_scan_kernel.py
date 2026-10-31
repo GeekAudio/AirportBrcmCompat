@@ -50,7 +50,7 @@ int main(int argc,char **argv) {
     for(size_t i=0;i<NativeSize;i++)user[i]=(uint8_t)(i*7+3);
     memset(old,0x5a,OldSize);put32(user,1);put32(old,1);
     old[0x22]=15;old[0x60]=32;write16(user+0x8a,2048);write16(old+0x8a,1024);
-    Request request{};request.type=11;request.value=-3;request.padding=0x12345678;
+    Request request{};request.type=11;
     memcpy(request.interfaceName,"en1",4);
     request.length=NativeSize;request.userData=reinterpret_cast<uint64_t>(user);
     Request *argument=&request;
@@ -86,14 +86,18 @@ int main(int argc,char **argv) {
     case 26:interface=nullptr;infra=reinterpret_cast<void*>(4);expected=77;break;
     case 27:break;
     case 28:expected=EINVAL;break;
+    case 31:request.value=1;expected=77;break;
+    case 32:request.padding=1;expected=77;break;
+    case 33:expected=77;break; // Exact native envelope from a non-64-bit caller.
     default:return 64;
     }
     memcpy(before,user,NativeSize);memcpy(oldBefore,old,OldSize);Request requestBefore=request;
     API api{original,alloc,release,copyIn,copyOut,manager,get,primary};
-    CHECK(handle(api,controller,interface,nullptr,infra,argument,mode==23)==expected);
+    CHECK(handle(api,controller,interface,nullptr,infra,argument,mode!=23 && mode!=33)==expected);
     CHECK(!memcmp(&request,&requestBefore,sizeof(request)));
     CHECK(allocations==frees+(mode==6));
-    if(expected==77)CHECK(originalCalls==1 && allocations==0 && managerCalls==0);
+    if(expected==77)CHECK(originalCalls==1 && allocations==0 && managerCalls==0 &&
+                           inCalls==0 && outCalls==0 && resultCalls==0);
     else CHECK(originalCalls==0);
     if(mode==7 || mode==8 || mode==9)CHECK(managerCalls==0 && resultCalls==0);
     if(expected!=0)CHECK(!memcmp(user,before,NativeSize));
@@ -131,6 +135,7 @@ class KernelScanContractTests(unittest.TestCase):
                 self.assertEqual(r.returncode,0,r.stderr)
     def test_native_fields_bounds_tail_and_capacities(self):self.cases((1,19,20,21,26,27))
     def test_old_and_unrelated_contexts_pass_through(self):self.cases((2,3,4,5,23))
+    def test_unrecognized_envelopes_pass_through_without_consuming_results(self):self.cases((31,32,33))
     def test_allocation_copy_and_manager_errors_free_buffer(self):self.cases((6,7,10,18,24,25))
     def test_invalid_user_input_does_not_consume_scan_cursor(self):self.cases((8,9,22))
     def test_pending_eof_and_driver_errors_are_not_retried(self):self.cases((11,12,13,28))

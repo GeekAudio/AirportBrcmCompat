@@ -11,6 +11,9 @@ struct Install {
     AssociationCompat::Registry *associations;
     uintptr_t (*associationLockOwner)();
     int (*runtimeBuild)();
+    size_t networkingIndex;
+    mach_vm_address_t networkingAddress;
+    size_t networkingSize;
 };
 // Called only after pinned kernel/provider/legacy and scan/association routing.
 // Partial routes keep their original trampolines but never enable private plans.

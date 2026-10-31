@@ -56,7 +56,8 @@ int32_t stageCodes[] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1
+    -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1
 };
 const char *const stageNames[] = {
     "Bootstrap", "Access", "ShouldLoad", "PluginInit", "BuildGuard", "RuntimeBuild",
@@ -102,7 +103,8 @@ const char *const stageNames[] = {
     "MultipleSymbols", "MultipleGuards", "MultipleRoute", "MultipleValidation",
     "MultipleField", "MultipleCopy", "MultipleResult",
     "KeyLengthLow16", "KeyLengthHigh16", "CipherLow16", "CipherHigh16",
-    "PmkLengthLow16", "PmkLengthHigh16", "FirstIELength"
+    "PmkLengthLow16", "PmkLengthHigh16", "FirstIELength",
+    "PrivateIfnetMode", "PrivatePublicIoctlRoute", "PrivateInterfaceIoctlRoute"
 };
 static_assert(sizeof(stageCodes) / sizeof(stageCodes[0]) == ScanDiagnostics::StageCount,
               "Every diagnostic stage needs an initial sentinel");

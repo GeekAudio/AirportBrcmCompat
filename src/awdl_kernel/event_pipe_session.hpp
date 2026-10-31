@@ -41,7 +41,7 @@ public:
     // Sleepable kernel consumer, outside gate. Rechecks pinned role6/awdl0 and
     // builds the actual native calendar-seconds/microseconds + padded BSD-name
     // envelope. Copies proven46/47 bodies and validates the strictly bounded
-    // message48 receive subset. This does not implement message55.
+    // message48 receive subset.
     PublishResult drainOne();
     // Atomic admission stop is safe from early-close paths. Resource cleanup
     // requires close() outside the old gate and after our own operations drain.
