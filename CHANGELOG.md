@@ -9,7 +9,8 @@
 - Add Sonoma/Sequoia scan, capability, association and native driver-version reply formats, preserving strict bounds and authentication fields.
 - Bind compatibility work to the actual Broadcom primary interface instead of requiring `en1`.
 - Generate separate NIC dependency variants and combine them into one EFI package with automatic selection at Darwin 25.
-- Add optional upstream matching for five additional PCI IDs and separate, unconnected ElCap protocol codecs; full older-card support remains unfinished.
+- Add optional upstream NIC matching for five additional PCI IDs.
+- Verify anonymous ifnet call and data targets with bounded semantic checks when an exact saved layout does not match.
 - Make optional receive diagnostics depend on bridge readiness rather than a named system build.
 
 ## Source publication

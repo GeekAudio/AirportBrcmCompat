@@ -23,6 +23,7 @@ SUITES = {
         "test_runtime_build_guard",
         "test_kernel_identity",
         "test_kernel_contracts",
+        "test_ifnet_verifier_inputs",
         "test_scan_multiple_compat",
     ),
     "private-mac": (
@@ -47,11 +48,6 @@ SUITES = {
         "test_event_pipe_session",
         "test_broadcom_baseline_trace",
         "test_control_rx_windows",
-    ),
-    "legacy-wifi": (
-        "test_legacy_bsd_bridge",
-        "test_legacy_scan_multiple_bridge",
-        "test_legacy_wifi_imports",
     ),
     "build": (
         "test_build_unified_kernel_cli",

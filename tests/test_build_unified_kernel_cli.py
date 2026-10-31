@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+import plistlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -140,6 +141,18 @@ class BuildToolchainCLI(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'standalone candidate mode'):
                     builder.configure_build_mode(self.parse(*options))
 
+    def test_release_and_debug_examples_enable_core_from_sonoma_first(self):
+        for flavor in ('RELEASE', 'DEBUG'):
+            path = Path(__file__).resolve().parents[1] / 'Examples' / f'config-WiFi-{flavor}.example.plist'
+            config = plistlib.loads(path.read_bytes())
+            entries = config['Kernel']['Add']
+            self.assertEqual(entries[0]['BundlePath'], 'AirportBrcmCompat.kext')
+            self.assertEqual(entries[0]['ExecutablePath'], 'Contents/MacOS/AirportBrcmCompat')
+            self.assertEqual(entries[0]['MinKernel'], '23.0.0')
+            self.assertEqual(entries[1]['BundlePath'], 'IOLegacyWFamily.kext')
+            self.assertEqual(entries[1]['MinKernel'], '23.0.0')
+            self.assertEqual(config['Kernel']['Block'][0]['MinKernel'], '23.0.0')
+
     def test_component_review_modes_keep_current_version_without_install_claims(self):
         components = builder.configure_build_mode(self.parse('--event-pipe-components-review'))
         self.assertEqual(components['mode'], 'component-review')
@@ -197,6 +210,12 @@ class BuildToolchainCLI(unittest.TestCase):
             'baseline_control_rx_trace': True,
             'control_rx_observation_windows': True,
         })
+        self.assertNotIn('legacy_wifi_bridge', manifest)
+        build_source = Path(builder.__file__).read_text()
+        for stale in ('IO80211ElCap', 'legacy_wifi_compat', 'AirPort_Brcm4331',
+                      'AirPort_Brcm43224', 'Installer7observe', 'Runtime15setDisassociate'):
+            self.assertNotIn(stale, build_source)
+        self.assertIn("'legacy_post_observer.cpp'", build_source)
         self.assertTrue(manifest['compiled_features']['awdl_event_pipeline_and_routes'])
         self.assertTrue(manifest['compiled_features']['scan_multiple_set86_adapter'])
         self.assertTrue(manifest['compiled_features']['sae_password_carrier_subset'])

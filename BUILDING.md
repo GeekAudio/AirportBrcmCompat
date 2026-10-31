@@ -78,14 +78,20 @@ their release tag.
 
 ## Compatibility policy
 
-The minimum is Darwin 23; the plugin has no
-fixed maximum. The boot environment and underlying dependencies must themselves
-support the target system. An absent version ceiling is not proof of support.
+The compatibility core, modern NIC dependencies and the optional third-party
+NIC injector start at Darwin 23. The core has no fixed maximum.
+The boot environment and underlying dependencies must themselves support the
+target system. An absent version ceiling is not proof of support.
 
 The running inner kernel must have a valid bounded x86_64 Mach-O header and a
 unique nonzero UUID. The UUID is remembered only to detect a contradictory image
 during the same run; new UUIDs do not require a source change. Structural image
 validation does not approve a private interface.
+
+The offline ifnet verifier accepts BootKC files with `--kernel-collection` and
+standalone KDK kernels with `--kernel-image`. The input kind is explicit and is
+recorded in the report. A standalone kernel can check an instruction contract;
+it does not establish that a retail system's BootKC contains that same image.
 
 Image validation owns its bounded header snapshot. It does not allocate or read
 framework-private Mach-O objects. Before calling the runtime-resolved XNU
@@ -95,16 +101,8 @@ rejected. Header reads must complete in full, and candidate ranges must satisfy
 both segment permissions and a bounded no-fault mapping probe. The XNU reader
 is still a private interface; a missing symbol disables admission.
 
-The reproducible build uses the released resource revision in the dependency
-lock. Its version is separate from the minimum plugin API required at runtime.
-To repeat the two-release header, exported-symbol and full-build check:
-
-```sh
-python3 tools/verify_lilu_release_compatibility.py
-```
-
-This opt-in command downloads the pinned official inputs and writes evidence
-under `build/`. It does not run as part of the normal offline suite.
+The reproducible build uses resource revisions pinned in the dependency lock.
+Runtime interface admission is checked separately from the build resources.
 
 Each dependent installer checks its resolved kernel symbols, executable ranges
 and implementation contracts before routing. The supplied wireless binaries
@@ -117,17 +115,21 @@ branches, argument registers, stack slots, field offsets and reference-count
 instructions remain part of the fingerprint. Named helper targets are resolved
 separately. Two adjacent-data references also require their exact relationship
 to a resolved linker anchor; this is a layout check, not an interpretation of
-that symbol as a public data structure. Anonymous cold/post-release displacements remain in the fingerprint,
-and their targets are checked for the required mapping permissions. They are
-not tied to a nearby unrelated symbol. Changes to these anonymous layouts can
-disable the private-address adapter even when named interfaces still match.
+that symbol as a public data structure. Saved exact-layout fingerprints remain
+available without extra target excerpts. A second path permits five relocated
+panic-helper/string references only after bounded no-fault reads verify their
+complete checked instruction sequences, literals and independently resolved
+panic callee. The callback body is still hashed; the remaining anonymous
+post-release displacement stays in that fingerprint. It is not justified by a
+nearby unrelated symbol or a short code prefix. Missing auxiliary evidence,
+changed fields or unknown target content reject this second path.
 These checks recognize the implemented contracts; they cannot infer the meaning
 of a new private kernel ABI.
 
-The callback checker also recognizes two independently inspected implementations
-from Sonoma and Sequoia. Selection uses their full code contracts and resolved
+The callback checker recognizes independently inspected implementations
+from Sonoma, Sequoia and Tahoe. Selection uses their full code contracts and resolved
 symbols, without checking an OS label or UUID. These additional contracts alone
-do not alone prove whole-system support. To check explicitly supplied Apple
+do not prove whole-system support. To check explicitly supplied Apple
 kernel collections against the production validators:
 
 ```sh
@@ -141,9 +143,17 @@ file-backed bytes, symbol targets, callback offsets and mapped ranges, then
 tests byte mutations, incorrect targets and address relocation. Apple samples
 are supplied locally and are not included in the source repository.
 
-The owned-client reset instead uses its retained synchronous work-loop/gate
-scope, checking thread, owner, provider, gate binding and one-shot consumption.
-It retains the supplied legacy driver's UUID and instruction guards without
+Add `--save-excerpts build/ifnet-excerpts` with a new output directory to retain
+the bounded function bytes and symbol/segment metadata after successful image
+verification. After removing the large input images, the production validators
+can be rerun with `--contract-excerpt build/ifnet-excerpts/BootKC1.json` (repeat
+for multiple excerpts). Replay reports explicitly mark the original image as
+not reverified: they check the retained bytes against the current contracts,
+without re-extracting symbols or authenticating the recorded source hash.
+
+The owned-client reset uses its retained synchronous work-loop/gate scope,
+checking thread, owner, provider, gate binding and one-shot consumption.
+It retains the supplied wireless driver's UUID and instruction guards without
 pinning the host command-gate function body or its internal return offset.
 
 Request adapters retain their exact lengths, version fields, allowed values and
@@ -153,7 +163,7 @@ matching interfaces can continue across system updates without a version entry.
 
 The source now dispatches the observed scan-result sizes 1228/2264/2272,
 capability buffers 16/19/21 and association inputs 856/900/908. The 856-byte
-association path preserves the legacy authentication fields and admits a
+association path preserves the original authentication fields and admits a
 bounded open/WPA2 subset with no nonzero extension or grouping scope. The
 900-byte path normalizes only the verified reserved tail in an owned copy;
 the shared validator retains all other restrictions. These codecs do not by
@@ -173,19 +183,12 @@ format. Their IORegistry key is `BroadcomAwdlBaseline`, without a build suffix.
 | `src/awdl_kernel` | Native control bridge, event ownership, routing and diagnostics |
 | `src/awdl_compat` | Message codecs and bounded event-ring logic |
 | `src/unified_kernel` | One-kext module identity and shared core |
-| `src/legacy_wifi_compat` | Separate legacy request/scan/association codecs; not connected to the core loader |
 | `tests` | Offline regression tests and synthetic fixtures |
 
-`tools/verify_legacy_wifi_imports.py` audits explicitly supplied ElCap driver
-bundles and kernel collections. It distinguishes raw undefined symbols from
-verified inherited vtable slots, and reports potential co-load class conflicts
-using metaclass constructor names. Its output does not establish actual loading
-or approve blocking native system providers.
-
-`src/build_namespace.py` documents the separate namespace transformation used
-for the legacy dependencies. It requires exact original binary inputs; those
-Apple binaries are not source code and are not covered by this project's BSD
-license. Rebuilding the core does not regenerate or replace the dependency ZIP.
+`src/build_namespace.py` performs the namespace transformation for the modern
+wireless dependencies. It requires exact original binary inputs; those Apple
+binaries are not source code and are not covered by this project's BSD license.
+Rebuilding the core does not regenerate or replace the dependency ZIP.
 The offline facade mock is never linked into the kext.
 
 ## Wi-Fi dependency profiles

@@ -20,14 +20,22 @@ MOCK = r'''
 #include <string>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "src/scan_kernel/kernel_identity.hpp"
 bool allocationFails=false,missingHeader=false,missingReader=false,changeDuringCopy=false,shiftedLog=false,shiftedSleep=false;
 int allocationCount=0,freeCount=0,readCount=0;
 uint8_t *fakeHeader=nullptr;
 size_t fakeSize=0;
+uintptr_t watchedAddress=0;
+unsigned watchedReads=0;
+unsigned failWatchedReadOn=0;
 void *IOMalloc(size_t n){if(allocationFails)return nullptr;++allocationCount;return malloc(n);}
 void IOFree(void *p,size_t){++freeCount;free(p);}
 vm_size_t fakeRead(vm_offset_t source,vm_offset_t destination,vm_size_t count){
  ++readCount;
+ if(source==watchedAddress){
+  ++watchedReads;
+  if(failWatchedReadOn && watchedReads==failWatchedReadOn)return 0;
+ }
  uintptr_t begin=reinterpret_cast<uintptr_t>(fakeHeader);
  if(!begin || source<begin || source-begin>=fakeSize)return 0;
  size_t available=fakeSize-(source-begin);size_t copied=count<available?count:available;
@@ -54,10 +62,6 @@ public:
  Error getError(){return error;}
  void clearError(){error=Error::NoError;}
 };
-namespace ScanKernelIdentity {
-enum class Profile : uint32_t { Pending=0, Unsupported=1, Structural=2 };
-bool copyRunningKernelUUID(uint8_t uuid[16]);
-}
 '''
 
 HARNESS = r'''
@@ -205,6 +209,55 @@ int main(int argc,char **argv){
   assert(ScanKernelIdentity::verifyRunningKernelReadableRange(base+0x1100,16)==6);
   assert(ScanKernelIdentity::verifyRunningKernelReadableRange(UINTPTR_MAX-1,4)==6);
   assert(ScanKernelIdentity::verifyRunningKernelReadableRange(base+sizeof(storage)-1,2)==6);
+ }else if(mode=="evidence_copy"){
+  using namespace ScanKernelIdentity;
+  const uintptr_t base=reinterpret_cast<uintptr_t>(storage);
+  const uintptr_t target=base+0x180;
+  for(unsigned i=0;i<16;++i)storage[0x180+i]=static_cast<uint8_t>(0x40+i);
+  uint8_t out[16];memset(out,0xaa,sizeof(out));
+  watchedAddress=target;watchedReads=0;
+  SemanticEvidenceBudget exactBudget;exactBudget.remaining=sizeof(out)*2;
+  assert(copyRunningKernelEvidence(target,out,sizeof(out),true,&exactBudget)==0);
+  assert(exactBudget.remaining==0&&watchedReads==2);
+  assert(!memcmp(out,storage+0x180,sizeof(out)));
+  assert(copyRunningKernelEvidence(target,out,sizeof(out),true,&exactBudget)==6);
+  assert(exactBudget.remaining==0&&watchedReads==2);
+
+  SemanticEvidenceBudget exhausted;exhausted.remaining=sizeof(out)*2-1;
+  watchedReads=0;
+  assert(copyRunningKernelEvidence(target,out,sizeof(out),true,&exhausted)==6);
+  assert(exhausted.remaining==sizeof(out)*2-1&&watchedReads==0);
+  assert(copyRunningKernelEvidence(target,out,MaxSemanticEvidenceRead+1,true,&exhausted)==6);
+  assert(exhausted.remaining==sizeof(out)*2-1&&watchedReads==0);
+  assert(copyRunningKernelEvidence(target,out,sizeof(out),true,nullptr)==6);
+  assert(copyRunningKernelEvidence(target,nullptr,sizeof(out),true,&exhausted)==6);
+  assert(copyRunningKernelEvidence(target,out,0,true,&exhausted)==6);
+
+  SemanticEvidenceBudget outside;
+  watchedAddress=base+0xff8;watchedReads=0;memset(out,0xaa,sizeof(out));
+  assert(copyRunningKernelEvidence(watchedAddress,out,sizeof(out),true,&outside)==6);
+  assert(outside.remaining==MaxSemanticEvidenceBytes-sizeof(out)*2&&watchedReads==0);
+  for(uint8_t byte:out)assert(byte==0xaa);
+
+  auto *data=reinterpret_cast<segment_command_64*>(storage+sizeof(*h)+h->sizeofcmds);
+  data->cmd=LC_SEGMENT_64;data->cmdsize=sizeof(segment_command_64);
+  memcpy(data->segname,"__DATA",6);data->vmaddr=0x1000;data->vmsize=0x1000;
+  data->initprot=VM_PROT_READ;data->maxprot=VM_PROT_READ|VM_PROT_WRITE;
+  h->ncmds=3;h->sizeofcmds+=sizeof(segment_command_64);fakeSize=sizeof(storage);
+  const uintptr_t readable=base+0x1100;watchedAddress=readable;watchedReads=0;
+  SemanticEvidenceBudget readBudget;
+  assert(copyRunningKernelEvidence(readable,out,sizeof(out),false,&readBudget)==0);
+  assert(readBudget.remaining==MaxSemanticEvidenceBytes-sizeof(out)*2&&watchedReads==2);
+  watchedReads=0;SemanticEvidenceBudget wrongProtection;
+  assert(copyRunningKernelEvidence(readable,out,sizeof(out),true,&wrongProtection)==6);
+  assert(wrongProtection.remaining==MaxSemanticEvidenceBytes-sizeof(out)*2&&watchedReads==0);
+
+  reset();const uintptr_t retryTarget=reinterpret_cast<uintptr_t>(storage)+0x180;
+  watchedAddress=retryTarget;watchedReads=0;failWatchedReadOn=2;
+  memset(out,0xaa,sizeof(out));SemanticEvidenceBudget failedRead;
+  assert(copyRunningKernelEvidence(retryTarget,out,sizeof(out),true,&failedRead)==6);
+  assert(failedRead.remaining==MaxSemanticEvidenceBytes-sizeof(out)*2&&watchedReads==2);
+  for(uint8_t byte:out)assert(byte==0xaa);
  }else if(mode=="guarded_readable_range"){
   long page=sysconf(_SC_PAGESIZE);assert(page>=4096);
   void *area=mmap(nullptr,static_cast<size_t>(page)*2,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANON,-1,0);
@@ -265,7 +318,7 @@ class KernelIdentityTests(unittest.TestCase):
         cpp.write_text(MOCK + '\n' + source + '\n' + HARNESS)
         cls.binary = Path(cls.work.name) / 'identity_mock'
         built = subprocess.run(['xcrun', 'clang++', '-std=c++14', '-Wall', '-Wextra', '-Werror',
-                                str(cpp), '-o', str(cls.binary)],
+                                '-I', str(PROJECT), str(cpp), '-o', str(cls.binary)],
                                capture_output=True, text=True, timeout=30)
         if built.returncode:
             cls.work.cleanup()
@@ -308,6 +361,7 @@ class KernelIdentityTests(unittest.TestCase):
         self.scenario('malformed_range')
     def test_code_range_does_not_read_past_header_boundary(self): self.scenario('guarded_range')
     def test_readable_and_executable_segment_permissions(self): self.scenario('readable_range')
+    def test_evidence_copy_checks_segment_budget_and_reader_failures(self): self.scenario('evidence_copy')
     def test_readable_range_is_bounded_by_mapped_image(self): self.scenario('guarded_readable_range')
 
 

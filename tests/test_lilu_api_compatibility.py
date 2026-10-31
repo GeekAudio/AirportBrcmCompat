@@ -48,6 +48,21 @@ class LiluCompatibilityTests(unittest.TestCase):
                       'offsetof(PluginConfiguration, pluginStart) == 80'):
             self.assertIn(token, lilu_matrix.PLUGIN_ABI_PROBE)
 
+    def test_plugin_minimum_and_modern_wireless_watchers(self):
+        plugin = (PROJECT / 'src/scan_kernel/plugin.cpp').read_text()
+        build = (PROJECT / 'tools/build_unified_kernel.py').read_text()
+
+        self.assertIn('KernelVersion::Sonoma,', plugin)
+        self.assertNotIn('KernelVersion::Monterey,', plugin)
+        for old in ('IO80211ElCap', 'elcapWatched', 'AirPort_Brcm4331',
+                    'AirPortBrcm43224', 'LegacyWiFi::Installer'):
+            self.assertNotIn(old, plugin)
+        for modern in ('org.geekaudio.IOLegacyWFamilyKC',
+                       'com.apple.iokit.IO80211FamilyLegacy',
+                       'com.apple.driver.AirPort.BrcmNIC'):
+            self.assertIn(modern, plugin)
+        self.assertIn("'legacy_post_observer.cpp'", build)
+
     def test_vendored_public_api_contract_when_dependencies_are_prepared(self):
         headers = PROJECT / 'vendor/LiluResources/Headers'
         if not headers.is_dir():
@@ -67,7 +82,7 @@ class LiluCompatibilityTests(unittest.TestCase):
                 self.assertIn(symbol, patcher)
         self.assertIn('CompatibilityVersion {parseModuleVersion("1.2.0")}', api)
         self.assertRegex(patcher, r'static_assert\(sizeof\(KextInfo\)\s*==')
-        for name, value in (('Sonoma', 23), ('Sequoia', 24), ('Tahoe', 25)):
+        for name, value in (('Monterey', 21), ('Sonoma', 23), ('Sequoia', 24), ('Tahoe', 25)):
             self.assertRegex(kernel_versions, rf'\b{name}\s*=\s*{value}\b')
 
         config = re.search(r'struct PluginConfiguration\s*\{(.*?)\n\};', startup, re.S)

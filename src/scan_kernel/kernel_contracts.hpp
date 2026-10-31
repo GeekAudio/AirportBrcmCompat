@@ -229,11 +229,37 @@ constexpr uint32_t ClientMemoryPlanProof = 0x434D5531U; // CMU1
 // SHA-256 of the complete current 25G332 function body after only the listed
 // PC-relative call/RIP displacements are zeroed and independently resolved.
 // A different UUID/build is eligible only if its complete function contract
-// matches; a changed body fails closed. This descriptor is not claimed to be a
-// two-build fingerprint until a second raw sample is independently available.
+// matches one of the independently inspected layouts below. Provenance is in
+// validation/compatibility-contracts.json; unknown bytes fail closed.
 static const uint8_t IfnetCurrentDigest[32] = {
     0xb2,0x29,0x1b,0x21,0x49,0xc4,0x49,0xaa,0x29,0x5d,0xc2,0xfb,0x1a,0x42,0x53,0x6c,
     0xa8,0x5c,0xed,0x69,0x87,0xf1,0xfb,0x1c,0x5d,0x5e,0x35,0x33,0x76,0xaa,0xcb,0x01
+};
+// Legacy exact-layout alternatives are retained for the saved evidence set.
+// Their anonymous target displacements remain part of these digests.
+static const uint8_t IfnetCurrentAdditionalDigests[][32] = {
+    {0x04,0x9a,0x9c,0x63,0xfd,0x08,0x04,0xb1,0x70,0xd3,0x72,0xb1,0xdc,0x04,0xa2,0x44,0x2a,0x3e,0xb8,0xcd,0x24,0x0e,0xc7,0xf7,0x23,0x64,0xed,0x17,0x14,0xa4,0x03,0xae},
+    {0x32,0x86,0x2c,0x6c,0x9a,0x99,0xc7,0x2e,0x17,0x6e,0x16,0x53,0x02,0x24,0xa3,0x24,0x84,0xb4,0x65,0x1a,0x41,0xee,0x54,0xa1,0xd4,0xfd,0xb7,0x8f,0x38,0x32,0x0f,0xbd},
+    {0xbf,0xaf,0xf5,0xf9,0xe2,0x65,0x66,0x4d,0xe3,0xb7,0xc3,0x26,0x07,0x69,0x80,0x8d,0xd5,0xc3,0xa7,0x0d,0xb5,0x10,0xc6,0x25,0xe3,0xb0,0x71,0xf4,0xc4,0x75,0x61,0xf0},
+    {0x6a,0x54,0x9a,0x79,0x5e,0x5d,0x01,0x24,0xa9,0x16,0xf2,0xdd,0x8b,0x33,0x2c,0x6e,0xd7,0xd1,0x03,0xa8,0xd0,0xcf,0x21,0xde,0x40,0xf1,0x01,0xad,0x08,0xb6,0xaa,0x54},
+    {0xa1,0x27,0xee,0x3d,0x27,0x9f,0xad,0x14,0x3d,0xee,0x9a,0x5f,0xfb,0x32,0x74,0xac,0xb3,0x61,0x3c,0x9b,0x17,0x44,0x6e,0x35,0x4b,0xf4,0xf5,0x43,0x0e,0xd6,0xd3,0x9f},
+    {0x65,0xe7,0xc7,0xcf,0xf8,0xfd,0x6c,0xdc,0xb9,0x68,0x26,0xf1,0xe8,0x37,0xf6,0x33,0xfb,0x40,0x20,0x23,0x2c,0x99,0x79,0x9c,0xaf,0x3f,0xe6,0x1a,0x5d,0x6e,0x76,0x64},
+};
+// A separate bounded digest set is admitted only after bounded target reads
+// prove the five cold-path helpers and literals below. The 0x377 call target
+// remains in the digest: its nearby symbol name and shared prefix are not
+// enough to establish that callee's meaning.
+static const uint8_t IfnetCurrentSemanticDigest[32] = {
+    0xa7,0xcd,0x86,0xf6,0xe2,0xd5,0x53,0xda,0xd3,0xaa,0xed,0xba,0xe7,0x55,0xa9,0x90,
+    0x36,0xa4,0x9a,0xef,0x53,0xa2,0x1a,0xea,0xfa,0x7d,0x37,0x20,0xd1,0x0c,0x6c,0x04
+};
+static const uint8_t IfnetCurrentSemanticAdditionalDigests[][32] = {
+    {0x6e,0x04,0x93,0x94,0x48,0xc3,0x70,0x40,0x3e,0x39,0x8d,0xaa,0x64,0xf6,0x67,0x38,0xdd,0x58,0x4f,0xa9,0x9f,0xec,0x96,0x1b,0xb3,0xd9,0xcc,0xb8,0x6b,0xa9,0xb8,0x4b},
+    {0x02,0x42,0x0c,0x30,0xb0,0x1a,0xdd,0x01,0xc4,0x40,0xa4,0x48,0x57,0x8b,0xf0,0x2b,0xdc,0x8e,0x3b,0x76,0x97,0x97,0x3b,0xd1,0x5d,0x3a,0xf0,0x6c,0x3d,0xa8,0xe0,0x65},
+    {0xa6,0x4c,0x83,0x5d,0xbb,0x94,0x51,0x7d,0x04,0x50,0xbe,0x20,0xcb,0x4b,0x02,0x0a,0x7f,0xda,0xdf,0xbb,0x2d,0xc0,0xfc,0x28,0x9a,0x35,0xab,0x5e,0x3f,0x58,0x76,0x59},
+    {0xba,0x62,0xa7,0xfc,0xb3,0x68,0xa8,0xdc,0x48,0x89,0xc2,0x71,0x11,0xb4,0xaf,0x8c,0x83,0x1c,0xd5,0x58,0xa9,0xd3,0x5b,0xd2,0xc8,0x83,0xdd,0x32,0xb8,0xc3,0x80,0x83},
+    {0x90,0xa3,0xac,0xbb,0xdd,0x69,0x06,0xf5,0x39,0x54,0x19,0xef,0x38,0x31,0xd2,0x63,0x23,0xaa,0xcd,0xc5,0x8d,0x6c,0xb6,0x3e,0x63,0x20,0xef,0x53,0x72,0x62,0xf7,0xe5},
+    {0xf3,0x42,0x7a,0x33,0x4a,0x8d,0x88,0x03,0xc3,0xbc,0x50,0x2a,0xd5,0xa0,0xe1,0x30,0xb3,0xbe,0xcc,0xe3,0x25,0x49,0x56,0xd9,0x05,0x5a,0xa8,0x42,0x99,0xbf,0xbd,0x0b}
 };
 static const uint8_t RunActionCurrentDigest[32] = {
     0x21,0x08,0x61,0x39,0x88,0x8c,0xc3,0x67,0x27,0x7d,0xe4,0x87,0x40,0xbe,0x4c,0x89,
@@ -262,10 +288,10 @@ static const RelocationSpec IfnetRelocationSpecs[] = {
     {0x37f,0x380,0x384,RelocationKind::RelativeCall,"_IOLockUnlock","_lck_mtx_unlock",0}
 };
 
-// Anonymous cold panic/string references are checked for a mapped target by
-// the installer, but their displacements remain in the whole-function digest.
-// A mapped target alone does not prove the target's meaning, so these bytes
-// must not be normalized.
+// The legacy route checks these six cold panic/string references for mapping
+// and retains every displacement in its digest. The semantic route separately
+// validates five helper/string targets before normalizing those five operands;
+// 0x377 stays in both digest routes because its callee meaning is unproven.
 static const RelocationSpec IfnetMappedTargetSpecs[] = {
     {0x2de,0x2df,0x2e3,RelocationKind::RelativeCall,nullptr,nullptr,0},
     {0x2e3,0x2e6,0x2ea,RelocationKind::RipRelative,nullptr,nullptr,0},
@@ -274,6 +300,24 @@ static const RelocationSpec IfnetMappedTargetSpecs[] = {
     {0x2fe,0x2ff,0x303,RelocationKind::RelativeCall,nullptr,nullptr,0},
     {0x377,0x378,0x37c,RelocationKind::RelativeCall,nullptr,nullptr,0}
 };
+
+static const char IfnetSemanticPanicSymbol[] = "_panic";
+// These five targets are dynamic only after their literal/helper contents pass
+// validateIfnetCurrentTargetSemantics. Keep the six-entry legacy table above
+// unchanged so exact digest replay remains byte-for-byte compatible.
+static const RelocationSpec IfnetCurrentSemanticTargetSpecs[] = {
+    {0x2de,0x2df,0x2e3,RelocationKind::RelativeCall,nullptr,nullptr,0},
+    {0x2e3,0x2e6,0x2ea,RelocationKind::RipRelative,nullptr,nullptr,0},
+    {0x2ea,0x2ed,0x2f1,RelocationKind::RipRelative,nullptr,nullptr,0},
+    {0x2f6,0x2f7,0x2fb,RelocationKind::RelativeCall,nullptr,nullptr,0},
+    {0x2fe,0x2ff,0x303,RelocationKind::RelativeCall,nullptr,nullptr,0}
+};
+constexpr size_t IfnetCurrentDynamicRelocationCount=
+    sizeof(IfnetRelocationSpecs)/sizeof(IfnetRelocationSpecs[0]);
+constexpr size_t IfnetCurrentSemanticTargetCount=
+    sizeof(IfnetCurrentSemanticTargetSpecs)/sizeof(IfnetCurrentSemanticTargetSpecs[0]);
+constexpr size_t IfnetCurrentSemanticRelocationCount=
+    IfnetCurrentDynamicRelocationCount+IfnetCurrentSemanticTargetCount;
 
 static const RelocationSpec RunActionRelocationSpecs[] = {
     {0x05d,0x060,0x064,RelocationKind::RipRelative,"_gIOKitTrace",nullptr,0},
@@ -329,6 +373,198 @@ inline Status relativeTargetAt(const uint8_t *bytes, size_t size, uintptr_t base
     return target ? Status::Passed : Status::InvalidRelocation;
 }
 
+inline bool fixedIfnetCurrentDynamicRelocationLayout(const Relocation *relocations,size_t count);
+inline Status validateIfnetIoctl(const uint8_t *bytes,size_t size,uintptr_t base,
+                                 const Relocation *relocations,size_t relocationCount,
+                                 const uint8_t expectedDigest[32],IfnetIoctlPlan &plan);
+
+// Semantic fallback evidence is copied only from a target reached by a
+// checked instruction in the bounded _ifnet_ioctl/helper bodies. Production's
+// reader additionally checks the running kernel's Mach-O segment and performs
+// a no-fault wired-memory copy. The verifier supplies an equivalent bounded
+// record reader for saved image excerpts.
+constexpr size_t MaxIfnetSemanticEvidenceRead = 256;
+using IfnetSemanticEvidenceReader = bool (*)(uintptr_t address,uint8_t *destination,
+                                              size_t size,bool executable,void *context);
+
+inline bool readIfnetSemanticCString(IfnetSemanticEvidenceReader reader,void *context,
+                                     uintptr_t address,const char *exact,
+                                     const char *prefix,const char *suffix) {
+    if (!reader || !address || (!exact && !prefix && !suffix)) return false;
+    uint8_t bytes[MaxIfnetSemanticEvidenceRead] {};
+    if (!reader(address,bytes,sizeof(bytes),false,context)) return false;
+    size_t length=0;
+    while (length<sizeof(bytes) && bytes[length]) ++length;
+    if (length==sizeof(bytes)) return false;
+    if (exact && (strlen(exact)!=length || memcmp(bytes,exact,length))) return false;
+    if (prefix) {
+        const size_t prefixLength=strlen(prefix);
+        if (length<prefixLength || memcmp(bytes,prefix,prefixLength)) return false;
+    }
+    if (suffix) {
+        const size_t suffixLength=strlen(suffix);
+        if (length<suffixLength || memcmp(bytes+length-suffixLength,suffix,suffixLength)) return false;
+    }
+    return true;
+}
+
+struct IfnetMaskedByteRange { size_t offset; size_t size; };
+inline bool matchesIfnetHelperCode(const uint8_t *actual,size_t size,const uint8_t *expected,
+                                   const IfnetMaskedByteRange *masked,size_t maskedCount) {
+    if (!actual || !expected || (maskedCount && !masked)) return false;
+    for (size_t i=0;i<size;++i) {
+        bool ignored=false;
+        for (size_t j=0;j<maskedCount;++j) {
+            const auto &range=masked[j];
+            if (range.offset>size || range.size>size-range.offset) return false;
+            if (i>=range.offset && i-range.offset<range.size) { ignored=true;break; }
+        }
+        if (!ignored && actual[i]!=expected[i]) return false;
+    }
+    return true;
+}
+
+inline uint32_t readIfnetSemanticU32(const uint8_t *bytes,size_t offset) {
+    return uint32_t(bytes[offset]) | (uint32_t(bytes[offset+1])<<8U) |
+           (uint32_t(bytes[offset+2])<<16U) | (uint32_t(bytes[offset+3])<<24U);
+}
+
+inline Status validateIfnetPanicFormatter(uintptr_t target,uintptr_t panicTarget,
+                                          IfnetSemanticEvidenceReader reader,void *context) {
+    static const uint8_t expected[] = {
+        0x55,0x48,0x89,0xe5,0x89,0xd1,0x48,0x89,0xf2,0x48,0x89,0xfe,0x48,0x8d,0x3d,
+        0,0,0,0,0x4c,0x8d,0x05,0,0,0,0,0x41,0xb9,0,0,0,0,0x31,0xc0,0xe8,0,0,0,0
+    };
+    static const IfnetMaskedByteRange masked[]={{0x0f,4},{0x16,4},{0x1c,4},{0x23,4}};
+    uint8_t code[sizeof(expected)] {};
+    if (!reader || !target || !panicTarget ||
+        !reader(target,code,sizeof(code),true,context) ||
+        !matchesIfnetHelperCode(code,sizeof(code),expected,masked,sizeof(masked)/sizeof(masked[0])))
+        return Status::SemanticMismatch;
+    const uint32_t line=readIfnetSemanticU32(code,0x1c);
+    if (!line || line>0xffffU) return Status::SemanticMismatch;
+
+    uintptr_t format=0,source=0,panic=0;
+    static const RelocationSpec formatSpec={0x0c,0x0f,0x13,RelocationKind::RipRelative,nullptr,nullptr,0};
+    static const RelocationSpec sourceSpec={0x13,0x16,0x1a,RelocationKind::RipRelative,nullptr,nullptr,0};
+    static const RelocationSpec panicSpec={0x22,0x23,0x27,RelocationKind::RelativeCall,nullptr,nullptr,0};
+    if (relativeTargetAt(code,sizeof(code),target,formatSpec,format)!=Status::Passed ||
+        relativeTargetAt(code,sizeof(code),target,sourceSpec,source)!=Status::Passed ||
+        relativeTargetAt(code,sizeof(code),target,panicSpec,panic)!=Status::Passed || panic!=panicTarget ||
+        !readIfnetSemanticCString(reader,context,format,"assertion failed: %s, file: %s, line: %d @%s:%d",nullptr,nullptr) ||
+        !readIfnetSemanticCString(reader,context,source,"uipc_socket.c",nullptr,nullptr))
+        return Status::SemanticMismatch;
+    return Status::Passed;
+}
+
+inline Status validateIfnetRefcountHelper(uintptr_t target,uintptr_t panicTarget,
+                                          IfnetSemanticEvidenceReader reader,void *context,
+                                          bool overflow) {
+    static const uint8_t overflowCode[] = {
+        0x55,0x48,0x89,0xe5,0x48,0x89,0xfe,0x8b,0x17,0x48,0x8d,0x3d,0,0,0,0,
+        0x4c,0x8d,0x05,0,0,0,0,0xb9,0xff,0xff,0xff,0x0f,0x41,0xb9,0,0,0,0,
+        0x31,0xc0,0xe8,0,0,0,0
+    };
+    static const uint8_t underflowCode[] = {
+        0x55,0x48,0x89,0xe5,0x48,0x89,0xfe,0x48,0x8d,0x3d,0,0,0,0,
+        0x48,0x8d,0x15,0,0,0,0,0xb9,0,0,0,0,0x31,0xc0,0xe8,0,0,0,0
+    };
+    static const IfnetMaskedByteRange overflowMasked[]={{0x0c,4},{0x13,4},{0x1e,4},{0x25,4}};
+    static const IfnetMaskedByteRange underflowMasked[]={{0x0a,4},{0x11,4},{0x16,4},{0x1d,4}};
+    const uint8_t *expected=overflow?overflowCode:underflowCode;
+    const size_t size=overflow?sizeof(overflowCode):sizeof(underflowCode);
+    const auto *masked=overflow?overflowMasked:underflowMasked;
+    const size_t maskedCount=overflow?sizeof(overflowMasked)/sizeof(overflowMasked[0]):
+                                      sizeof(underflowMasked)/sizeof(underflowMasked[0]);
+    uint8_t code[sizeof(overflowCode)] {};
+    if (!reader || !target || !panicTarget ||
+        !reader(target,code,size,true,context) ||
+        !matchesIfnetHelperCode(code,size,expected,masked,maskedCount))
+        return Status::SemanticMismatch;
+    const uint32_t line=readIfnetSemanticU32(code,overflow?0x1e:0x16);
+    if (!line || line>0xffffU) return Status::SemanticMismatch;
+
+    uintptr_t format=0,source=0,panic=0;
+    const RelocationSpec formatSpec=overflow ?
+        RelocationSpec{0x09,0x0c,0x10,RelocationKind::RipRelative,nullptr,nullptr,0} :
+        RelocationSpec{0x07,0x0a,0x0e,RelocationKind::RipRelative,nullptr,nullptr,0};
+    const RelocationSpec sourceSpec=overflow ?
+        RelocationSpec{0x10,0x13,0x17,RelocationKind::RipRelative,nullptr,nullptr,0} :
+        RelocationSpec{0x0e,0x11,0x15,RelocationKind::RipRelative,nullptr,nullptr,0};
+    const RelocationSpec panicSpec=overflow ?
+        RelocationSpec{0x24,0x25,0x29,RelocationKind::RelativeCall,nullptr,nullptr,0} :
+        RelocationSpec{0x1c,0x1d,0x21,RelocationKind::RelativeCall,nullptr,nullptr,0};
+    const char *formatText=overflow ? "os_refcnt: overflow (rc=%p, count=%u, max=%u) @%s:%d" :
+                                      "os_refcnt: underflow (rc=%p) @%s:%d";
+    if (relativeTargetAt(code,size,target,formatSpec,format)!=Status::Passed ||
+        relativeTargetAt(code,size,target,sourceSpec,source)!=Status::Passed ||
+        relativeTargetAt(code,size,target,panicSpec,panic)!=Status::Passed || panic!=panicTarget ||
+        !readIfnetSemanticCString(reader,context,format,formatText,nullptr,nullptr) ||
+        !readIfnetSemanticCString(reader,context,source,"refcnt.c",nullptr,nullptr))
+        return Status::SemanticMismatch;
+    return Status::Passed;
+}
+
+inline Status validateIfnetCurrentTargetSemantics(const uint8_t *bytes,size_t size,uintptr_t base,
+                                                  uintptr_t panicTarget,
+                                                  IfnetSemanticEvidenceReader reader,void *context) {
+    if (!bytes || !base || !panicTarget || !reader) return Status::InvalidInput;
+    if (size!=IfnetIoctlContractBytes) return Status::Truncated;
+    uintptr_t overflow=0,busyMessage=0,sourcePath=0,assertion=0,underflow=0;
+    for (size_t i=0;i<IfnetCurrentSemanticTargetCount;++i) {
+        const auto &spec=IfnetCurrentSemanticTargetSpecs[i];
+        uintptr_t target=0;
+        const Status status=relativeTargetAt(bytes,size,base,spec,target);
+        if (status!=Status::Passed) return status;
+        switch (spec.instructionOffset) {
+            case 0x2de: overflow=target;break;
+            case 0x2e3: busyMessage=target;break;
+            case 0x2ea: sourcePath=target;break;
+            case 0x2f6: assertion=target;break;
+            case 0x2fe: underflow=target;break;
+            default: return Status::InvalidRelocation;
+        }
+    }
+    if (!overflow || !busyMessage || !sourcePath || !assertion || !underflow ||
+        !readIfnetSemanticCString(reader,context,busyMessage,"ifp->if_flt_busy != 0",nullptr,nullptr) ||
+        !readIfnetSemanticCString(reader,context,sourcePath,nullptr,"/AppleInternal/","/Sources/xnu/bsd/net/dlil_subr.c"))
+        return Status::SemanticMismatch;
+    Status status=validateIfnetRefcountHelper(overflow,panicTarget,reader,context,true);
+    if (status!=Status::Passed) return status;
+    status=validateIfnetPanicFormatter(assertion,panicTarget,reader,context);
+    if (status!=Status::Passed) return status;
+    return validateIfnetRefcountHelper(underflow,panicTarget,reader,context,false);
+}
+
+inline Status validateIfnetCurrentSemantic(const uint8_t *bytes,size_t size,uintptr_t base,
+                                           const Relocation *relocations,size_t relocationCount,
+                                           uintptr_t panicTarget,IfnetSemanticEvidenceReader reader,
+                                           void *context,IfnetIoctlPlan &plan) {
+    plan={};
+    if (!fixedIfnetCurrentDynamicRelocationLayout(relocations,relocationCount))
+        return Status::InvalidRelocation;
+    const Status semantic=validateIfnetCurrentTargetSemantics(
+        bytes,size,base,panicTarget,reader,context);
+    if (semantic!=Status::Passed) return semantic;
+    Relocation ownedRelocations[IfnetCurrentSemanticRelocationCount] {};
+    memcpy(ownedRelocations,relocations,IfnetCurrentDynamicRelocationCount*sizeof(Relocation));
+    for (size_t i=0;i<IfnetCurrentSemanticTargetCount;++i) {
+        const auto &spec=IfnetCurrentSemanticTargetSpecs[i];
+        uintptr_t target=0;
+        const Status targetStatus=relativeTargetAt(bytes,size,base,spec,target);
+        if (targetStatus!=Status::Passed) return targetStatus;
+        ownedRelocations[IfnetCurrentDynamicRelocationCount+i]={
+            spec.instructionOffset,spec.displacementOffset,spec.instructionEndOffset,target,spec.kind};
+    }
+    Status status=validateIfnetIoctl(bytes,size,base,ownedRelocations,
+        IfnetCurrentSemanticRelocationCount,IfnetCurrentSemanticDigest,plan);
+    for (size_t i=0;status==Status::FingerprintMismatch &&
+         i<sizeof(IfnetCurrentSemanticAdditionalDigests)/sizeof(IfnetCurrentSemanticAdditionalDigests[0]);++i)
+        status=validateIfnetIoctl(bytes,size,base,ownedRelocations,
+            IfnetCurrentSemanticRelocationCount,IfnetCurrentSemanticAdditionalDigests[i],plan);
+    return status;
+}
+
 using MappedTargetValidator = bool (*)(RelocationKind kind, uintptr_t target, void *context);
 inline Status validateIfnetMappedTargets(const uint8_t *bytes,size_t size,uintptr_t base,
                                          MappedTargetValidator validator,void *context) {
@@ -345,6 +581,15 @@ inline Status validateIfnetMappedTargets(const uint8_t *bytes,size_t size,uintpt
 inline bool fixedIfnetRelocationLayout(const Relocation *relocations, size_t count) {
     for (size_t i=0;i<IfnetRelocationCount;++i) if (!IfnetRelocationSpecs[i].symbol) return false;
     return sameRelocationLayout(relocations,count,IfnetRelocationSpecs,IfnetRelocationCount);
+}
+inline bool copyIfnetCurrentDynamicRelocationSpecs(RelocationSpec *out,size_t count) {
+    if (!out || count!=IfnetCurrentDynamicRelocationCount) return false;
+    for (size_t i=0;i<IfnetRelocationCount;++i) out[i]=IfnetRelocationSpecs[i];
+    return true;
+}
+inline bool fixedIfnetCurrentDynamicRelocationLayout(const Relocation *relocations,size_t count) {
+    return count==IfnetCurrentDynamicRelocationCount &&
+           fixedIfnetRelocationLayout(relocations,count);
 }
 inline bool fixedRunActionRelocationLayout(const Relocation *relocations, size_t count) {
     for (size_t i=0;i<RunActionRelocationCount;++i) if (!RunActionRelocationSpecs[i].symbol) return false;
@@ -457,8 +702,13 @@ inline Status validateIfnetCurrent(const uint8_t *bytes, size_t size, uintptr_t 
                                    IfnetIoctlPlan &plan) {
     plan = {};
     if (!fixedIfnetRelocationLayout(relocations, relocationCount)) return Status::InvalidRelocation;
-    return validateIfnetIoctl(bytes, size, base, relocations, relocationCount,
-                              IfnetCurrentDigest, plan);
+    auto status=validateIfnetIoctl(bytes, size, base, relocations, relocationCount,
+                                  IfnetCurrentDigest, plan);
+    for (size_t i=0;status==Status::FingerprintMismatch &&
+        i<sizeof(IfnetCurrentAdditionalDigests)/sizeof(IfnetCurrentAdditionalDigests[0]);++i)
+        status=validateIfnetIoctl(bytes,size,base,relocations,relocationCount,
+                                 IfnetCurrentAdditionalDigests[i],plan);
+    return status;
 }
 
 inline Status validateRunActionCurrent(const uint8_t *bytes, size_t size, uintptr_t base,

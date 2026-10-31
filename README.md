@@ -2,7 +2,7 @@
 
 博通 BCM43602 的 Wi-Fi 兼容驱动，通过 EFI 加载，不修改系统卷。自研核心以 [BSD-3-Clause](LICENSE) 开源。
 
-当前源码及仓库内核心为 **1.1.0 自动兼容候选版**：按实际内核接口和请求格式检查兼容性，不再维护系统构建号或内核 UUID 白名单。系统更新后接口仍符合已实现的契约，就能继续使用同一核心。
+当前源码及仓库内核心为 **1.1.0 自动兼容候选版**：按实际内核接口和请求格式检查兼容性，不维护系统构建号或内核 UUID 白名单。接口保持兼容时，系统更新无需单独增加版本规则。
 
 已发布的下载版本仍为 **1.0.1-rc1**，限定 25G241／25G332；下方下载不会随源码分支变化。
 
@@ -22,8 +22,8 @@
 
 | 组件 | 版本 | 用途 |
 | --- | --- | --- |
-| IOLegacyWFamily | 1.0 | 私有命名空间的旧 Skywalk 支撑层，与系统 IOSkywalkFamily 共存 |
-| IO80211FamilyLegacy | 1200.12.2b1 | 旧无线框架 |
+| IOLegacyWFamily | 1.0 | 私有命名空间的 Skywalk 支撑层，与系统 IOSkywalkFamily 共存 |
+| IO80211FamilyLegacy | 1200.12.2b1 | Wi-Fi 兼容路径使用的无线框架 |
 | AirPortBrcmNIC | 1400.1.1 | 博通网卡硬件驱动 |
 
 本项目保留系统 IOSkywalkFamily，只屏蔽系统 IO80211Family。源码中的 [Examples](Examples/README.md)
@@ -32,27 +32,29 @@
 
 蓝牙支持请参考 [Acidanthera 作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext)。
 
-## 支持范围
+## 兼容对应表
 
-当前实测网卡为 Intel x86_64 上的 BCM943602CDP / BCM43602。随包 AirPortBrcmNIC 的 PCI 匹配项还有：
+适用于 Intel x86_64。下表按 OCLP Modern Wireless 中的 Broadcom 驱动家族整理；这些 PCI ID 的 Vendor ID 为 `14e4`。
+表中列出目标系统大版本，是否可用仍取决于运行时接口和请求格式检查。
+**候选适配**表示当前源码仍在完善该路径。
+已发布的 1.0.1-rc1 仍限定 25G241／25G332，已有功能基线的硬件是 BCM943602CDP / BCM43602。
 
-| PCI ID | 芯片 | 项目状态 |
-| --- | --- | --- |
-| `14e4:43ba` | BCM43602 | 已实测 |
-| `14e4:43a3` | BCM4350 | 随包驱动 plist 匹配，未实测 |
-| `14e4:43a0` | BCM4360 | 随包驱动 plist 匹配，未实测 |
+| 网卡 / 驱动家族 | PCI Device ID | Sonoma 14 | Sequoia 15 | Tahoe 26 | 依赖方案 |
+| --- | --- | --- | --- | --- | --- |
+| BCM43602、BCM4350、BCM4360 | `43ba`、`43a3`、`43a0` | 候选适配 | 候选适配 | 候选适配；BCM43602 有 25G332 功能基线 | 现代 NIC |
+| BCM94331、BCM943224 | `4331`、`4353` | 候选适配 | 候选适配 | 候选适配 | 现代 NIC＋可选匹配组件 |
+| BCM43225、BCM4352 | `4357`、`43b1`、`43b2` | 候选适配 | 候选适配 | 候选适配 | 现代 NIC＋可选匹配组件 |
 
-本项目不代表支持所有 Broadcom 网卡；BCM4352、BCM4331、其他 Broadcom Wi-Fi 家族和 USB Wi-Fi 不会自动获得支持。此驱动匹配 PCI 设备；[OCLP 的 Broadcom PCI ID 分类](https://github.com/dortania/OpenCore-Legacy-Patcher/blob/main/opencore_legacy_patcher/datasets/pci_data.py#L1162-L1194)列出其他驱动类别。
+所有方案均通过 EFI/kext 加载，不替换系统无线服务。原生可用的组合保持原样；较新的 AppleBCMWLAN 家族、没有对应 Apple 驱动的芯片及 USB Wi-Fi 不在此表范围内。
+PCI 匹配不等于硬件功能已验证。分类依据和各路径进展见[兼容范围与上游依据](COMPATIBILITY.md)。
 
-扩展范围按「网卡＋系统是否需要恢复无线支持」划分，原生可用的组合保持原样。详见[兼容范围与上游依据](COMPATIBILITY.md)。
-
-- 候选核心从 Darwin 23 开始检查实际接口；Sonoma／Sequoia 与 Tahoe 使用各自的 NIC 依赖变体。
+- 核心和现代无线依赖的最低目标为 Darwin 23；Sonoma／Sequoia 与 Tahoe 使用各自的 NIC 依赖变体。
 - 内核映像结构、关键函数实现、随包驱动及请求格式分别检查。检查失败时，不启用对应适配功能。
 - 当前源码按实际博通主接口身份匹配 `en0`、`en1` 等名称；已发布的旧下载版本仍使用其原有接口限制。
-- 接口没有改变的系统更新无需添加版本号和 UUID；新的内核实现或协议变化仍可能需要开发适配，不能保证所有未来系统自动可用。
+- 接口没有改变的系统更新无需添加版本号和 UUID；新的内核实现或协议变化仍可能需要开发适配。
 - 启动环境和底层依赖仍须支持目标系统。
 - 1.0.1-rc1 的 Test023r2 在 25G332 下完成双向 AirDrop 实际收件，32 KiB 回传文件 SHA-256 一致；这是该版本的功能基线。
-- SAE 接受已核对的密码载荷子集：selected auth=4096、cipher=10、密码 8–63 字节、PMK 长度 32，策略掩码保留原值。
+- 现代 NIC 路径的 SAE 接受已核对的密码载荷子集：selected auth=4096、cipher=10、密码 8–63 字节、PMK 长度 32，策略掩码保留原值。
 
 ## 源码与构建
 

@@ -7,7 +7,6 @@ import unittest
 PROJECT = Path(__file__).resolve().parents[1]
 src = (PROJECT / 'src/scan_kernel/lifecycle.cpp').read_text()
 diag = (PROJECT / 'src/scan_kernel/diagnostics.hpp').read_text()
-identity = (PROJECT / 'src/scan_kernel/kernel_identity.hpp').read_text()
 src='\n'.join(line for line in src.splitlines() if not line.startswith('#include '))
 preamble=r'''
 #include <cstdint>
@@ -175,9 +174,10 @@ class LifecycleOfflineTests(unittest.TestCase):
         cls.work = tempfile.TemporaryDirectory(prefix='skyscan-lifecycle-offline-', dir='/private/tmp')
         cls.source = Path(cls.work.name) / 'lifecycle_mock.cpp'
         cls.binary = Path(cls.work.name) / 'lifecycle_mock'
-        cls.source.write_text(preamble + '\n' + identity + '\n' + identity_mock + '\n' + diag + '\n' + src + '\n' + post)
+        cls.source.write_text(preamble + '\n#include "src/scan_kernel/kernel_identity.hpp"\n' +
+                              identity_mock + '\n' + diag + '\n' + src + '\n' + post)
         compiled = subprocess.run(['xcrun', 'clang++', '-std=c++14', '-Wall', '-Wextra', '-Werror',
-                                   '-Wno-unused-parameter', str(cls.source), '-o', str(cls.binary)],
+                                   '-Wno-unused-parameter', '-I', str(PROJECT), str(cls.source), '-o', str(cls.binary)],
                                   capture_output=True, text=True, timeout=30)
         if compiled.returncode:
             cls.work.cleanup()

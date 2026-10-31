@@ -6,40 +6,43 @@
   "kernel_admission": "structural identity and per-feature ABI contracts",
   "validation_scope": "offline",
   "all_target_minor_versions_completed": false,
-  "older_driver_families_completed": false,
   "variants": {
     "RELEASE": {
-      "binary_sha256": "7e0f18123c00785254f138119de99517ad683c385d56fb231190610a113c0276",
-      "uuid": "802A92D1-20AC-3D17-9D27-C825292DD6F6",
+      "binary_sha256": "11e47b75001c64fe33e5082bfa66223dd35d6e2cb6510b4f21badbcc730aef2d",
+      "uuid": "1FC4A798-CB51-3550-84EF-27CB0A7F0F26",
       "compiler_debug_macro": false,
       "baseline_trace": false,
       "control_rx_windows": false,
-      "zip_filename": "AirportBrcmCompat-1.1.0-cross-version-RELEASE.zip",
-      "zip_sha256": "ba3fd99a4fa5de579446eae4e3155a020ca902ad9e3c8c29812b948261a4612c"
+      "zip_filename": "AirportBrcmCompat-1.1.0-modern-main-RELEASE.zip",
+      "zip_sha256": "5ab313a043111ec53a4b8c89e4656dccff7760122af7121e842c3f7cd452ebec",
+      "source_hashes_verified": 73,
+      "artifact_hashes_verified": 3
     },
     "DEBUG": {
-      "binary_sha256": "e498fd00a4041d68d53d2f94fe746b56ee2cb9f8e2049d14b0418f78ebeb6f1a",
-      "uuid": "E599CEA1-259C-30CC-B557-D492AEFF4F17",
+      "binary_sha256": "eea56e07662abb72c3976183080d2c08affb4ddc758448e1b0f558fd9c2942cd",
+      "uuid": "88AECD1A-BE72-3706-945E-D0D6832A0D44",
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "AirportBrcmCompat-1.1.0-cross-version-DEBUG.zip",
-      "zip_sha256": "84b33d87b32126adae26df2953f769245bbc95d198d7411e36166e5af7ca4cb8"
+      "zip_filename": "AirportBrcmCompat-1.1.0-modern-main-DEBUG.zip",
+      "zip_sha256": "96156954cec83a5afe5a2b4172c286e1656824027257d7b1307ee825e3b55052",
+      "source_hashes_verified": 74,
+      "artifact_hashes_verified": 3
     }
   },
   "checks": {
-    "offline_tests_passed": 304,
-    "kernel_collection_samples": [
-      "23J631",
-      "24H232",
-      "25G332"
-    ],
-    "ifnet_contracts_passed": 3,
-    "rejected_ifnet_byte_mutations": 2464,
-    "rejected_ifnet_named_target_changes": 42,
-    "kernel_image_parser_target_samples_passed": 3,
+    "offline_tests_passed": 308,
+    "offline_test_seconds": 45.284,
+    "offline_test_failures": 0,
+    "offline_test_errors": 0,
+    "offline_test_skips": 0,
+    "offline_test_log_sha256": "80c71643b0051486c195be78130383a95090c2601509ffca7a17cd0c3d18427f",
+    "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
+    "ifnet_contracts_passed": 21,
+    "rejected_ifnet_byte_mutations": 18240,
+    "rejected_ifnet_named_target_changes": 302,
+    "ifnet_original_images_reverified": false,
     "framework_api_build_versions": [
-      "1.7.1",
       "1.7.2"
     ],
     "framework_private_object_imports": 0,
@@ -47,6 +50,7 @@
       "RELEASE",
       "DEBUG"
     ],
+    "signature_verification_scope": "Clean ZIP extraction; repository file bytes matched to signed artifact manifests",
     "compatibility_contract_evidence": "validation/compatibility-contracts.json"
   },
   "development_dependency_packages": {
@@ -60,5 +64,6 @@
       "zip_sha256": "ad9136aad16aaec32918465c49e2a51aa8e34104cf10d40cd8713f487ca36f41",
       "published_release": false
     }
-  }
+  },
+  "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only"
 }

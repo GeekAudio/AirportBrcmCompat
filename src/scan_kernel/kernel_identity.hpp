@@ -1,6 +1,7 @@
 #ifndef SKYWALK_SCAN_KERNEL_IDENTITY_HPP
 #define SKYWALK_SCAN_KERNEL_IDENTITY_HPP
 
+#include <stddef.h>
 #include <stdint.h>
 
 class KernelPatcher;
@@ -12,6 +13,16 @@ class KernelPatcher;
 // 0: structural identity; 3: allocation; 4: running-header/range acquisition;
 // 5: malformed image or UUID changed during this run; 6: invalid target range.
 namespace ScanKernelIdentity {
+// A per-admission byte budget for semantic checks that inspect a few bytes
+// from already-resolved kernel targets. The copy API below charges both its
+// no-fault range probe and the final copy against this budget.
+enum : uint32_t {
+    MaxSemanticEvidenceBytes = 8192,
+    MaxSemanticEvidenceRead = 256
+};
+struct SemanticEvidenceBudget {
+    uint32_t remaining = MaxSemanticEvidenceBytes;
+};
 enum class Profile : uint32_t {
     Pending = 0,
     Unsupported = 1,
@@ -38,6 +49,11 @@ int32_t verifyRunningKernelCodeRange(uintptr_t address,uint64_t needed);
 // Same bounded image and UUID checks, requiring the complete candidate range
 // to fit a running readable Mach-O segment and mapped wired memory.
 int32_t verifyRunningKernelReadableRange(uintptr_t address,uint64_t needed);
+// Copy a small, caller-bounded excerpt from a target already required to lie
+// in the running kernel image. This uses the resolved no-fault wired reader;
+// it never directly dereferences the supplied target address.
+int32_t copyRunningKernelEvidence(uintptr_t address,void *destination,size_t size,
+                                  bool executable,SemanticEvidenceBudget *budget);
 }
 
 #endif
