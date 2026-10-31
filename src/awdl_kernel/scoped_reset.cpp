@@ -1,12 +1,14 @@
 #include "scoped_reset.hpp"
 #include "native_control_bridge.hpp"
 #include "../scan_kernel/kernel_identity.hpp"
+#include "../scan_kernel/kernel_contracts.hpp"
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOLocks.h>
 #include <kern/thread.h>
 #include <machine/machine_routines.h>
 #include <mach-o/loader.h>
+#include <sys/errno.h>
 
 // The old gated function's first14 bytes include a relative branch. Lilu copies
 // its trampoline prologue without relocating branches. This exact PIC prefix
@@ -38,7 +40,6 @@ constexpr uint8_t ResetPrefix[]={0x55,0x48,0x89,0xe5,0x41,0x56,0x53,0x49,0x89,0x
 constexpr uint8_t GatedBody[]={0x55,0x48,0x89,0xe5,0x48,0x83,0xbe,0xa0,0,0,0,0,
     0x74,0x13,0x48,0xc7,0x86,0xa0,0,0,0,0,0,0,0,0x48,0x89,0xf7,
     0xe8,0x05,0,0,0,0x31,0xc0,0x5d,0xc3,0x90};
-constexpr uint8_t RunCall[]={0x41,0xff,0xd7,0x48,0xc7,0xc1,0x00,0xff,0xff,0xff};
 ClientRegistry *registry=nullptr;
 IOSimpleLock *scopeLock=nullptr;
 Reset originalReset=nullptr;
@@ -164,6 +165,49 @@ IOReturn resetAction(OSObject *,void *argument,void *,void *,void *) {
     } else retireOwnProvider(lease);
     return kIOReturnSuccess;
 }
+uintptr_t resolveKernelSymbol(KernelPatcher &patcher,const char *name) {
+    if (!name) return 0;
+    patcher.clearError();
+    const auto target=patcher.solveSymbol(KernelPatcher::KernelID,name);
+    const bool valid=target && patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    return valid?static_cast<uintptr_t>(target):0;
+}
+bool addSignedAddress(uintptr_t base,intptr_t addend,uintptr_t &target) {
+    if (addend>=0) {
+        const uintptr_t amount=static_cast<uintptr_t>(addend);
+        if (base>UINTPTR_MAX-amount) return false;
+        target=base+amount;
+    } else {
+        const uintptr_t amount=static_cast<uintptr_t>(-(addend+1))+1U;
+        if (base<amount) return false;
+        target=base-amount;
+    }
+    return true;
+}
+int resolveRunActionRelocations(KernelPatcher &patcher,const uint8_t *bytes,uintptr_t base,
+                                KernelContracts::Relocation *out) {
+    if (!bytes || !base || !out) return EINVAL;
+    for (size_t i=0;i<KernelContracts::RunActionRelocationCount;++i) {
+        const auto &spec=KernelContracts::RunActionRelocationSpecs[i];
+        uintptr_t target=0;
+        if (spec.symbol) {
+            uintptr_t symbol=resolveKernelSymbol(patcher,spec.symbol);
+            if (!symbol && spec.alias) symbol=resolveKernelSymbol(patcher,spec.alias);
+            if (!symbol || !addSignedAddress(symbol,spec.addend,target)) return EOPNOTSUPP;
+        } else {
+            const auto status=KernelContracts::relativeTargetAt(bytes,KernelContracts::RunActionContractBytes,
+                                                                 base,spec,target);
+            if (status!=KernelContracts::Status::Passed) return EOPNOTSUPP;
+        }
+        const int32_t range=spec.kind==KernelContracts::RelocationKind::RelativeCall ?
+            ScanKernelIdentity::verifyRunningKernelCodeRange(target,1) :
+            ScanKernelIdentity::verifyRunningKernelReadableRange(target,1);
+        if (range) return range;
+        out[i]={spec.instructionOffset,spec.displacementOffset,spec.instructionEndOffset,target,spec.kind};
+    }
+    return 0;
+}
 void wrappedReset(IOUserClient *client) {
     if (!__atomic_load_n(&enabled,__ATOMIC_ACQUIRE)) {originalReset(client);return;}
     NativeControlBridge::markClientClosing(client);
@@ -191,21 +235,30 @@ void resetFailedStart(IOUserClient *client) {if (ready()) wrappedReset(client);}
 bool install(KernelPatcher &patcher,ClientRegistry &clients,size_t index,
              mach_vm_address_t base,size_t size) {
     if (attempted) return ready();attempted=true;
-    if (!image(base,size) || ScanKernelIdentity::verifyRunningKernelIdentity()) return false;
+    if (!image(base,size)) return false;
     patcher.clearError();
     auto reset=patcher.solveSymbol(index,ResetSymbol,base,size);
     auto gated=patcher.solveSymbol(index,GatedSymbol,base,size);
     auto run=patcher.solveSymbol(KernelPatcher::KernelID,RunSymbol);
     if (patcher.getError()!=KernelPatcher::Error::NoError || reset!=base+0xa652c ||
         gated!=base+0xb4974 || !run ||
-        ScanKernelIdentity::verifyRunningKernelCodeRange(run,0xb0) ||
         memcmp(reinterpret_cast<void *>(reset),ResetPrefix,sizeof(ResetPrefix)) ||
-        memcmp(reinterpret_cast<void *>(gated),GatedBody,sizeof(GatedBody)) ||
-        memcmp(reinterpret_cast<void *>(run+0xa5),RunCall,sizeof(RunCall))) {
+        memcmp(reinterpret_cast<void *>(gated),GatedBody,sizeof(GatedBody))) {
         patcher.clearError();return false;
     }
+    if (ScanKernelIdentity::verifyRunningKernelCodeRange(run,KernelContracts::RunActionContractBytes))
+        return false;
+    KernelContracts::Relocation relocations[KernelContracts::RunActionRelocationCount] {};
+    const auto relocationStatus=resolveRunActionRelocations(patcher,
+        reinterpret_cast<const uint8_t *>(run),run,relocations);
+    if (relocationStatus) {patcher.clearError();return false;}
+    KernelContracts::RunActionPlan contract;
+    const auto contractStatus=KernelContracts::validateRunActionCurrent(
+        reinterpret_cast<const uint8_t *>(run),KernelContracts::RunActionContractBytes,
+        run,relocations,KernelContracts::RunActionRelocationCount,contract);
+    if (contractStatus!=KernelContracts::Status::Passed) {patcher.clearError();return false;}
     scopeLock=IOSimpleLockAlloc();if (!scopeLock) return false;
-    registry=&clients;actionReturn=run+0xa8;
+    registry=&clients;actionReturn=contract.actionReturnPC;
     airport_awdl_original_gated_tail=gated+14;
     // No original trampoline is requested for the branch-containing gated
     // prefix. The validated PIC bridge above preserves its original behavior.

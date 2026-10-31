@@ -1,45 +1,15 @@
 #include <Headers/kern_mach.hpp>
 #include <mach-o/loader.h>
+#include <mach/vm_prot.h>
+#include <string.h>
 #include "kernel_identity.hpp"
 
 namespace ScanKernelIdentity {
 namespace {
-constexpr uint8_t Kernel25G241UUID[16] = {
-    0x12, 0x91, 0xd4, 0x4a, 0xc0, 0xcd, 0x3a, 0xc7,
-    0xa9, 0xe4, 0xca, 0x27, 0x49, 0xb3, 0x39, 0x59
-};
-constexpr uint8_t Kernel25G332UUID[16] = {
-    0x28, 0x26, 0x7f, 0xd5, 0x3e, 0x1e, 0x36, 0x86,
-    0x8a, 0x1c, 0xe7, 0x3e, 0x24, 0x66, 0xfc, 0xfb
-};
-volatile uint32_t selectedProfile = static_cast<uint32_t>(Profile::Unsupported);
+enum : uint32_t { UUIDEmpty=0, UUIDWriting=1, UUIDVerified=2, UUIDRejected=3 };
+volatile uint32_t identityState=UUIDEmpty;
+uint8_t cachedUUID[16] {};
 
-bool compiledProfile(Profile profile) {
-#if defined(AIRPORT_BRCM_DUAL_PROFILE_25G241_25G332)
-    return profile == Profile::Build25G241 || profile == Profile::Build25G332;
-#elif defined(AIRPORT_BRCM_BASELINE_25G332)
-    return profile == Profile::Build25G332;
-#else
-    return profile == Profile::Build25G241;
-#endif
-}
-
-Profile profileForUUID(const uint8_t *uuid) {
-    if (!uuid) return Profile::Unsupported;
-    if (!memcmp(uuid, Kernel25G241UUID, sizeof(Kernel25G241UUID)))
-        return compiledProfile(Profile::Build25G241) ? Profile::Build25G241 : Profile::Unsupported;
-    if (!memcmp(uuid, Kernel25G332UUID, sizeof(Kernel25G332UUID)))
-        return compiledProfile(Profile::Build25G332) ? Profile::Build25G332 : Profile::Unsupported;
-    return Profile::Unsupported;
-}
-
-bool rememberProfile(Profile profile) {
-    if (profile == Profile::Unsupported) return false;
-    uint32_t expected = static_cast<uint32_t>(Profile::Unsupported);
-    if (__atomic_compare_exchange_n(&selectedProfile, &expected, static_cast<uint32_t>(profile),
-                                    false, __ATOMIC_RELEASE, __ATOMIC_ACQUIRE)) return true;
-    return expected == static_cast<uint32_t>(profile);
-}
 // Checked against the actual release Lilu 1.7.3 object allocation and member
 // offsets, not just a header declaration. Reaudit if that Lilu build changes.
 static_assert(sizeof(MachInfo) == 192, "Pinned Lilu MachInfo ABI changed");
@@ -60,108 +30,215 @@ struct OwnedInfo {
     OwnedInfo &operator=(const OwnedInfo &) = delete;
 };
 
-Profile matchingImage(const uint8_t *bytes, size_t range) {
-    const auto *header = reinterpret_cast<const mach_header_64 *>(bytes);
-    if (header->magic != MH_MAGIC_64 || header->cputype != CPU_TYPE_X86_64 ||
-        header->filetype != MH_EXECUTE ||
-        header->sizeofcmds > range - sizeof(*header) ||
-        header->ncmds > header->sizeofcmds / sizeof(load_command)) return Profile::Unsupported;
+bool nonzeroUUID(const uint8_t uuid[16]) {
+    uint8_t bits=0;
+    for (size_t i=0;i<16;++i) bits|=uuid[i];
+    return bits!=0;
+}
 
-    size_t offset = sizeof(*header);
-    const size_t end = offset + header->sizeofcmds;
-    unsigned found = 0;
-    Profile matched = Profile::Unsupported;
-    for (uint32_t index = 0; index < header->ncmds; ++index) {
-        if (offset > end || end - offset < sizeof(load_command)) return Profile::Unsupported;
-        const auto *command = reinterpret_cast<const load_command *>(bytes + offset);
-        if (command->cmdsize < sizeof(load_command) || command->cmdsize % 8 != 0 ||
-            command->cmdsize > end - offset) return Profile::Unsupported;
-        if (command->cmd == LC_UUID) {
-            if (command->cmdsize != sizeof(uuid_command) || ++found != 1)
-                return Profile::Unsupported;
-            matched = profileForUUID(reinterpret_cast<const uuid_command *>(command)->uuid);
-            if (matched == Profile::Unsupported) return Profile::Unsupported;
-        }
-        offset += command->cmdsize;
+bool segmentShape(const segment_command_64 *segment,size_t commandSize) {
+    if (commandSize<sizeof(*segment)) return false;
+    const size_t available=commandSize-sizeof(*segment);
+    if (segment->nsects>available/sizeof(section_64) ||
+        available!=segment->nsects*sizeof(section_64) ||
+        segment->vmaddr>UINT64_MAX-segment->vmsize ||
+        segment->filesize>segment->vmsize ||
+        segment->fileoff>UINT64_MAX-segment->filesize) return false;
+    const auto *sections=reinterpret_cast<const section_64 *>(segment+1);
+    for (uint32_t i=0;i<segment->nsects;++i) {
+        const auto &section=sections[i];
+        if (section.addr<segment->vmaddr || section.addr-segment->vmaddr>segment->vmsize ||
+            section.size>segment->vmsize-(section.addr-segment->vmaddr)) return false;
     }
-    return offset == end && found == 1 ? matched : Profile::Unsupported;
+    return true;
+}
+
+// Structural identity only: bounded x86_64 kernel Mach-O with one nonzero
+// LC_UUID. The UUID is cached to detect an identity change during this boot;
+// it does not imply support for any kernel, OS build, or private ABI.
+bool parseKernelHeader(const uint8_t *bytes,size_t range,uint8_t uuid[16]) {
+    if (!bytes || !uuid || range<sizeof(mach_header_64)) return false;
+    const auto *header=reinterpret_cast<const mach_header_64 *>(bytes);
+    if (header->magic!=MH_MAGIC_64 || header->cputype!=CPU_TYPE_X86_64 ||
+        header->filetype!=MH_EXECUTE || header->sizeofcmds>range-sizeof(*header) ||
+        !header->ncmds || header->ncmds>header->sizeofcmds/sizeof(load_command)) return false;
+
+    const size_t end=sizeof(*header)+header->sizeofcmds;
+    size_t offset=sizeof(*header);
+    unsigned uuidCount=0;
+    uint8_t foundUUID[16] {};
+    for (uint32_t i=0;i<header->ncmds;++i) {
+        if (offset>end || end-offset<sizeof(load_command)) return false;
+        const auto *command=reinterpret_cast<const load_command *>(bytes+offset);
+        if (command->cmdsize<sizeof(*command) || command->cmdsize%8 ||
+            command->cmdsize>end-offset) return false;
+        if (command->cmd==LC_UUID) {
+            if (command->cmdsize!=sizeof(uuid_command) || ++uuidCount!=1) return false;
+            memcpy(foundUUID,reinterpret_cast<const uuid_command *>(command)->uuid,sizeof(foundUUID));
+        } else if (command->cmd==LC_SEGMENT_64) {
+            if (!segmentShape(reinterpret_cast<const segment_command_64 *>(command),command->cmdsize))
+                return false;
+        }
+        offset+=command->cmdsize;
+    }
+    if (offset!=end || uuidCount!=1 || !nonzeroUUID(foundUUID)) return false;
+    memcpy(uuid,foundUUID,sizeof(foundUUID));
+    return true;
+}
+
+bool rememberUUID(const uint8_t uuid[16]) {
+    uint32_t state=__atomic_load_n(&identityState,__ATOMIC_ACQUIRE);
+    if (state==UUIDEmpty) {
+        uint32_t expected=UUIDEmpty;
+        if (__atomic_compare_exchange_n(&identityState,&expected,UUIDWriting,false,
+                                        __ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE)) {
+            memcpy(cachedUUID,uuid,sizeof(cachedUUID));
+            __atomic_store_n(&identityState,UUIDVerified,__ATOMIC_RELEASE);
+            return true;
+        }
+        state=expected;
+    }
+    if (state==UUIDWriting || state==UUIDRejected) return false;
+    if (state!=UUIDVerified) return false;
+    if (!memcmp(cachedUUID,uuid,sizeof(cachedUUID))) return true;
+    uint32_t expected=UUIDVerified;
+    __atomic_compare_exchange_n(&identityState,&expected,UUIDRejected,false,
+                                __ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE);
+    return false;
+}
+
+void rejectCachedIdentity() {
+    uint32_t expected=UUIDVerified;
+    __atomic_compare_exchange_n(&identityState,&expected,UUIDRejected,false,
+                                __ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE);
+}
+
+int32_t runningKernelUUID(uint8_t uuid[16]) {
+    OwnedInfo owned(MachInfo::create(true,"kernel"));
+    if (!owned.info) return 3;
+    if (owned.info->getRunningAddresses()!=KERN_SUCCESS) return 4;
+    uint8_t *header=nullptr;
+    size_t size=0;
+    owned.info->getRunningPosition(header,size);
+    if (!header || size<sizeof(mach_header_64) ||
+        reinterpret_cast<uintptr_t>(header)%alignof(mach_header_64)!=0) return 4;
+    const size_t headerRange=size<MachInfo::HeaderSize?size:MachInfo::HeaderSize;
+    if (reinterpret_cast<uintptr_t>(header)>UINTPTR_MAX-headerRange) return 4;
+    return parseKernelHeader(header,headerRange,uuid)?0:5;
 }
 }
 
 Profile currentProfile() {
-    return static_cast<Profile>(__atomic_load_n(&selectedProfile, __ATOMIC_ACQUIRE));
+    switch (__atomic_load_n(&identityState,__ATOMIC_ACQUIRE)) {
+        case UUIDVerified:return Profile::Structural;
+        case UUIDRejected:return Profile::Unsupported;
+        default:return Profile::Pending;
+    }
 }
 
 int32_t identifyRunningKernelProfile(Profile *profile) {
     if (!profile) return 4;
-    *profile = Profile::Unsupported;
-    // Public Lilu API, independent object. No filesystem init, direct private
-    // KPI import, mutation of the patcher's KernelID object, or fallback pin.
-    OwnedInfo owned(MachInfo::create(true, "kernel"));
-    if (!owned.info) return 3;
-    if (owned.info->getRunningAddresses() != KERN_SUCCESS) return 4;
-    uint8_t *header = nullptr;
-    size_t size = 0;
-    owned.info->getRunningPosition(header, size);
-    if (!header || size < sizeof(mach_header_64) ||
-        reinterpret_cast<uintptr_t>(header) % alignof(mach_header_64) != 0) return 4;
-    // Lilu reports the image span, which may include gaps. The UUID parser is
-    // restricted to its header window; it never walks that whole span.
-    const size_t headerRange = size < MachInfo::HeaderSize ? size : MachInfo::HeaderSize;
-    if (reinterpret_cast<uintptr_t>(header) > UINTPTR_MAX - headerRange) return 4;
-    const Profile matched = matchingImage(header, headerRange);
-    if (matched == Profile::Unsupported || !rememberProfile(matched)) return 5;
-    *profile = matched;
+    *profile=Profile::Pending;
+    uint8_t uuid[16] {};
+    const int32_t status=runningKernelUUID(uuid);
+    if (status) {
+        if (status==5) rejectCachedIdentity();
+        *profile=Profile::Unsupported;
+        return status;
+    }
+    if (!rememberUUID(uuid)) {
+        *profile=Profile::Unsupported;
+        return 5;
+    }
+    *profile=Profile::Structural;
     return 0;
 }
 
-int32_t verifyRunningKernelIdentity() {
-    Profile profile = Profile::Unsupported;
-    return identifyRunningKernelProfile(&profile);
+bool copyRunningKernelUUID(uint8_t uuid[16]) {
+    if (!uuid) return false;
+    memset(uuid,0,16);
+    if (__atomic_load_n(&identityState,__ATOMIC_ACQUIRE)!=UUIDVerified) return false;
+    memcpy(uuid,cachedUUID,16);
+    if (__atomic_load_n(&identityState,__ATOMIC_ACQUIRE)==UUIDVerified) return true;
+    memset(uuid,0,16);
+    return false;
 }
 
-int32_t verifyRunningKernelCodeRange(uintptr_t address,uint64_t needed) {
+int32_t verifyRunningKernelIdentity() {
+    Profile state=Profile::Pending;
+    return identifyRunningKernelProfile(&state);
+}
+
+namespace {
+int32_t verifyRunningKernelRange(uintptr_t address,uint64_t needed,uint32_t requiredProtection) {
     if (!address || !needed || address>UINTPTR_MAX-needed) return 6;
     OwnedInfo owned(MachInfo::create(true,"kernel"));
     if (!owned.info) return 3;
     if (owned.info->getRunningAddresses()!=KERN_SUCCESS) return 4;
-    uint8_t *bytes=nullptr;size_t span=0;owned.info->getRunningPosition(bytes,span);
+    uint8_t *bytes=nullptr;
+    size_t span=0;
+    owned.info->getRunningPosition(bytes,span);
     if (!bytes || span<sizeof(mach_header_64) ||
-        reinterpret_cast<uintptr_t>(bytes)%alignof(mach_header_64)) return 4;
-    const size_t range=span<MachInfo::HeaderSize?span:MachInfo::HeaderSize;
-    if (reinterpret_cast<uintptr_t>(bytes)>UINTPTR_MAX-range) return 5;
-    const Profile matched = matchingImage(bytes,range);
-    if (matched == Profile::Unsupported || !rememberProfile(matched)) return 5;
+        reinterpret_cast<uintptr_t>(bytes)%alignof(mach_header_64)!=0) return 4;
+    const uintptr_t imageBase=reinterpret_cast<uintptr_t>(bytes);
+    if (imageBase>UINTPTR_MAX-span) return 5;
+    const size_t headerRange=span<MachInfo::HeaderSize?span:MachInfo::HeaderSize;
+    uint8_t uuid[16] {};
+    if (!parseKernelHeader(bytes,headerRange,uuid)) {
+        rejectCachedIdentity();return 5;
+    }
+    if (!rememberUUID(uuid)) return 5;
+
     const auto *header=reinterpret_cast<const mach_header_64 *>(bytes);
     const size_t end=sizeof(*header)+header->sizeofcmds;
-    uintptr_t slide=0;unsigned textFound=0;
+    uintptr_t slide=0;
+    unsigned textCount=0;
     for (size_t offset=sizeof(*header);offset<end;) {
-        const auto *cmd=reinterpret_cast<const load_command *>(bytes+offset);
-        if (cmd->cmd==LC_SEGMENT_64) {
-            if (cmd->cmdsize<sizeof(segment_command_64)) return 6;
-            const auto *seg=reinterpret_cast<const segment_command_64 *>(cmd);
-            static const char text[16]="__TEXT";
-            if (!memcmp(seg->segname,text,16)) {
-                if (++textFound!=1 || reinterpret_cast<uintptr_t>(bytes)<seg->vmaddr) return 6;
-                slide=reinterpret_cast<uintptr_t>(bytes)-seg->vmaddr;
+        const auto *command=reinterpret_cast<const load_command *>(bytes+offset);
+        if (command->cmd==LC_SEGMENT_64) {
+            const auto *segment=reinterpret_cast<const segment_command_64 *>(command);
+            static const char textName[16]="__TEXT";
+            if (!memcmp(segment->segname,textName,sizeof(textName))) {
+                if (++textCount!=1 || !segment->vmsize ||
+                    !(segment->initprot&VM_PROT_EXECUTE) ||
+                    !(segment->maxprot&VM_PROT_EXECUTE) ||
+                    reinterpret_cast<uintptr_t>(bytes)<segment->vmaddr) return 6;
+                slide=reinterpret_cast<uintptr_t>(bytes)-segment->vmaddr;
             }
         }
-        offset+=cmd->cmdsize;
+        offset+=command->cmdsize;
     }
-    if (textFound!=1) return 6;
+    if (textCount!=1) return 6;
+
+    if (address<imageBase || address-imageBase>span ||
+        needed>span-(address-imageBase)) return 6;
+
     for (size_t offset=sizeof(*header);offset<end;) {
-        const auto *cmd=reinterpret_cast<const load_command *>(bytes+offset);
-        if (cmd->cmd==LC_SEGMENT_64) {
-            const auto *seg=reinterpret_cast<const segment_command_64 *>(cmd);
-            if ((seg->initprot&4) && (seg->maxprot&4) && seg->vmaddr<=UINTPTR_MAX-slide) {
-                const uintptr_t begin=seg->vmaddr+slide;
-                if (seg->vmsize && seg->vmsize<=UINTPTR_MAX-begin &&
-                    address>=begin && address-begin<=seg->vmsize &&
-                    needed<=seg->vmsize-(address-begin)) return 0;
+        const auto *command=reinterpret_cast<const load_command *>(bytes+offset);
+        if (command->cmd==LC_SEGMENT_64) {
+            const auto *segment=reinterpret_cast<const segment_command_64 *>(command);
+            if ((segment->initprot&requiredProtection)==requiredProtection &&
+                (segment->maxprot&requiredProtection)==requiredProtection &&
+                segment->vmsize && segment->vmaddr<=UINTPTR_MAX-slide) {
+                const uintptr_t begin=static_cast<uintptr_t>(segment->vmaddr)+slide;
+                if (segment->vmsize<=UINTPTR_MAX-begin && address>=begin &&
+                    address-begin<=segment->vmsize &&
+                    needed<=segment->vmsize-(address-begin)) {
+                    return 0;
+                }
             }
         }
-        offset+=cmd->cmdsize;
+        offset+=command->cmdsize;
     }
     return 6;
+}
+}
+
+int32_t verifyRunningKernelCodeRange(uintptr_t address,uint64_t needed) {
+    return verifyRunningKernelRange(address,needed,VM_PROT_EXECUTE);
+}
+
+int32_t verifyRunningKernelReadableRange(uintptr_t address,uint64_t needed) {
+    return verifyRunningKernelRange(address,needed,VM_PROT_READ);
 }
 }

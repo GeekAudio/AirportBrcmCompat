@@ -23,18 +23,15 @@ bool exactClass(const IOService *service,const char *name) {
 }
 }
 uintptr_t registryOwner() { return __atomic_load_n(&lockOwner,__ATOMIC_ACQUIRE); }
-int CallbackPin::prepare(const uint8_t *function,size_t size,bool identity,int (*build)()) {
+int CallbackPin::prepare(const KernelContracts::IfnetIoctlPlan &contract,
+                         int (*build)()) {
     if (configured || registry || returnPC) return EBUSY;
-    if (!function || !identity || !build || size<0x218 ||
-        reinterpret_cast<uintptr_t>(function)>UINTPTR_MAX-0x218) return EINVAL;
-    // Same UUID's standalone and BootKC kernel bytes agree. Use symbol-relative
-    // offsets; never add the standalone base or BootKC's 0xe8000 delta manually.
-    const uint8_t guard[]={0x48,0x8b,0x7d,0xd0,0x48,0x8b,0x87,0x80,0x02,0,0,
-        0x48,0x85,0xc0,0x74,0x0d,0x48,0x8b,0x75,0xc0,0x48,0x8b,0x55,0xb8,
-        0xff,0xd0,0x41,0x89,0xc6,0x41,0x83,0xfc,0x66};
-    if (memcmp(function+0x1f7,guard,sizeof(guard))) return EOPNOTSUPP;
+    if (!build || contract.proofTag!=KernelContracts::IfnetPlanProof ||
+        !contract.imageBase || contract.imageSpan!=KernelContracts::IfnetIoctlContractBytes ||
+        contract.imageBase>UINTPTR_MAX-0x211 ||
+        contract.callbackReturnPC!=contract.imageBase+0x211) return EINVAL;
     registry=IOLockAlloc();if (!registry) return ENOMEM;
-    runtimeBuild=build;returnPC=reinterpret_cast<uintptr_t>(function)+0x211;
+    runtimeBuild=build;returnPC=contract.callbackReturnPC;
     // Startup-only publication, before a wrapper can create scopes.
     configured=this;return 0;
 }

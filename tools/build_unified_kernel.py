@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build one compatibility kext for review or an explicit experimental test; never install/load it."""
+"""Build a kext package; an unqualified build selects the automatic 1.1.0 candidate. Never install/load it."""
 import argparse
 import hashlib
 import json
@@ -16,66 +16,113 @@ SDK_ENV='AIRPORT_BRCM_MAC_KERNEL_SDK'
 LILU_ENV='AIRPORT_BRCM_LILU_RESOURCES'
 NAME='AirportBrcmCompat'
 IDENTIFIER='org.geekaudio.'+NAME
-VERSION='0.1.12'
+VERSION='1.1.0'
 LIBRARIES={'as.vit9696.Lilu':'1.7.3','com.apple.kpi.bsd':'19.0.0','com.apple.kpi.iokit':'19.0.0',
            'com.apple.kpi.libkern':'19.0.0','com.apple.kpi.mach':'19.0.0',
            'com.apple.kpi.unsupported':'19.0.0','com.apple.iokit.IONetworkingFamily':'3.4'}
-DUAL_PROFILE_KERNELS=(
-    {'build':'25G241','kernel_uuid':'1291D44A-C0CD-3AC7-A9E4-CA2749B33959'},
-    {'build':'25G332','kernel_uuid':'28267FD5-3E1E-3686-8A1C-E73E2466FCFB'},
-)
 
-def dual_profile_info_metadata(baseline_trace, scan_multiple=False, sae=False, control_windows=False):
-    profiles=';'.join(item['build']+':'+item['kernel_uuid'] for item in DUAL_PROFILE_KERNELS)
+def automatic_compatibility_info_metadata(baseline_trace, control_windows):
     return {
-        'AirportBrcmDevelopmentStatus':('Test023-ControlRX-Windows-DualProfile-Candidate' if control_windows else
-                                       'Test022-SAE-Subset-DualProfile-Candidate' if sae else
-                                       'Test021-HotspotScan-DualProfile-Candidate' if scan_multiple else
-                                       'Test020-DualProfile-Candidate'),
-        'AirportBrcmDualProfileMode':1,
-        'AirportBrcmSupportedBuilds':','.join(item['build'] for item in DUAL_PROFILE_KERNELS),
-        'AirportBrcmKernelProfiles':profiles,
-        'AirportBrcmBaselineTrace':'25G332-only' if baseline_trace else 'Disabled',
+        'AirportBrcmDevelopmentStatus':'AutomaticABICandidate-1.1.0',
+        'AirportBrcmAutomaticCompatibility':1,
+        'AirportBrcmKernelIdentityPolicy':'ABIContractProbesFailClosed',
+        'AirportBrcmMinimumDarwinKernelVersion':'25.0.0',
+        'AirportBrcmRequestSchemaPolicy':'StrictFailClosed',
+        'AirportBrcmStrictRequestSchemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
         'AirportBrcmBaselineTraceConfigured':1 if baseline_trace else 0,
-        'AirportBrcmScanMultipleCompatConfigured':1 if scan_multiple else 0,
-        'AirportBrcmSaeCompatConfigured':1 if sae else 0,
         'AirportBrcmControlRxWindowsConfigured':1 if control_windows else 0,
     }
 
-def dual_profile_manifest_metadata(baseline_trace, scan_multiple=False, sae=False, control_windows=False):
+def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
     return {
-        'candidate':('Test023-ControlRX-Windows-DualProfile' if control_windows else
-                     'Test022-SAE-Subset-DualProfile' if sae else
-                     'Test021-HotspotScan-DualProfile' if scan_multiple else 'Test020-DualProfile'),
-        'purpose':'Exact 25G241 and 25G332 build/inner-kernel UUID compatibility candidate',
-        'supported_builds':[item['build'] for item in DUAL_PROFILE_KERNELS],
-        'kernel_profiles':[dict(item) for item in DUAL_PROFILE_KERNELS],
+        'candidate':'AutomaticABICompatibility-1.1.0',
+        'purpose':'Automatic kernel ABI-probe compatibility candidate with strict request schemas',
+        'compatibility_policy':{
+            'kernel_admission':'All required ABI contract probes must pass; an unknown UUID alone never admits compatibility.',
+            'probe_policy':'Probe the active kernel contract, then retain independent exact checks for each wireless dependency image.',
+            'failure_behavior':'Kernel probe failures prevent compatibility admission; requests outside the strict schemas are not adapted.',
+            'minimum_darwin_kernel_version':'25.0.0',
+            'request_schema_policy':'strict-fail-closed',
+            'strict_request_schemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
+            'wireless_dependency_images':'Existing per-image UUID, layout, instruction and call-target pins remain required.',
+        },
         'release_ready':False,
         'runtime_validated':False,
-        'baseline_trace_enabled':bool(baseline_trace),
+        'minimum_darwin_kernel_version':'25.0.0',
         'baseline_trace_schema':2 if baseline_trace else None,
-        'baseline_trace_profile':'25G332-only' if baseline_trace else None,
-        'scan_multiple_compat_enabled':bool(scan_multiple),
-        'scan_multiple_native_size':0x14e8 if scan_multiple else None,
-        'scan_multiple_legacy_size':0x14e0 if scan_multiple else None,
-        'scan_multiple_nonzero_min_timestamp':'refuse' if scan_multiple else None,
-        'sae_compat_enabled':bool(sae),
-        'sae_subset':({'selected_upper':4096,'cipher':10,'password_length_min':8,'password_length_max':63,
-                       'pmk_length':32,'allowed_auth_masks':[0,4,0x40000004],
-                       'selected_auth_preserved':True,'runtime_sae_validated':False} if sae else None),
-        'control_rx_windows':({'schema':1,'bank_limit':4,'bank_reuse':False,'reset_allowed':False,
-                               'max_seconds':120,'sample_limit':256,'sampling':'per-subtype time-thinned',
-                               'clock':'mach_absolute_time_ns_excludes_sleep','source_alias':'window-keyed SipHash24 six-byte input',
-                               'control_rx_only':True,'runtime_validated':False} if control_windows else None),
-        'remaining':'Each exact build/UUID pair still requires separate boot and functional regression; HTTP, AirDrop peer visibility and bidirectional transfer remain unverified.'
+        'scan_multiple_native_size':0x14e8,
+        'scan_multiple_legacy_size':0x14e0,
+        'scan_multiple_nonzero_min_timestamp':'refuse',
+        'sae_subset':{'selected_upper':4096,'cipher':10,'password_length_min':8,'password_length_max':63,
+                      'pmk_length':32,'allowed_auth_masks':[0,4,0x40000004],
+                      'selected_auth_preserved':True},
+        'control_rx_windows_policy':({'schema':1,'bank_limit':4,'bank_reuse':False,'reset_allowed':False,
+                                      'max_seconds':120,'sample_limit':256,'sampling':'per-subtype time-thinned',
+                                      'clock':'mach_absolute_time_ns_excludes_sleep','source_alias':'window-keyed SipHash24 six-byte input',
+                                      'control_rx_only':True} if control_windows else None),
+        'compiled_features':{
+            'automatic_kernel_abi_probe_gate':True,
+            'wifi_private_mac_bridge':True,
+            'native_control_endpoint':True,
+            'scan_multiple_set86_adapter':True,
+            'sae_password_carrier_subset':True,
+            'awdl_event_pipeline_and_routes':True,
+            'baseline_control_rx_trace':bool(baseline_trace),
+            'control_rx_observation_windows':bool(control_windows),
+        },
+        'native_empty_query_policy':'Selectors1/5/7 accept a nonnull unused inline input pointer when length is exactly0; pointer is never read. All descriptor/scalar/async/output constraints remain.',
+        'native_ool_input_policy':'Borrowed synchronous MIG input descriptor: balanced prepare/complete around one owned snapshot read, outside the old WorkLoop/gate; no descriptor release or retained mapping.',
+        'bounded_closing_policy':'Retain at most8 authorized Closing records until reboot; no automatic record removal or late old-table dispatch; subsequent admission may be refused.',
+        'linked_inactive_cores':['Strict message55 recovery codec: no proven observer source'],
+        'validation_scope':'offline'
     }
+
+def apply_automatic_compatibility_manifest(base, baseline_trace, control_windows):
+    """Replace stale historical summary fields with the compiled 1.1.0 feature set."""
+    base.update(automatic_compatibility_manifest_metadata(baseline_trace,control_windows))
+    base['ready_for_install']=False
+    for key in ('awdl_backend_active','native_control_runtime_validated','native_control_only',
+                'active_behavior','remaining','colocated_scope_policy','association_policy_survey',
+                'dhcp_device_type_policy','original_driver_dependencies'):
+        base.pop(key,None)
+    return base
+
+def validate_automatic_compatibility_metadata(info, manifest):
+    expected_info=automatic_compatibility_info_metadata(
+        bool(info.get('AirportBrcmBaselineTraceConfigured')),
+        bool(info.get('AirportBrcmControlRxWindowsConfigured')))
+    if any(info.get(key)!=value for key,value in expected_info.items()):
+        raise ValueError('Automatic compatibility Info.plist policy mismatch')
+    if manifest.get('minimum_darwin_kernel_version')!='25.0.0' or \
+       manifest.get('runtime_validated') is not False or \
+       manifest.get('release_ready') is not False or \
+       manifest.get('ready_for_install') is not False:
+        raise ValueError('Automatic compatibility cannot claim a wider OS range or runtime validation')
+    expected_manifest=automatic_compatibility_manifest_metadata(
+        bool(manifest.get('compiled_features',{}).get('baseline_control_rx_trace')),
+        bool(manifest.get('compiled_features',{}).get('control_rx_observation_windows')))
+    if any(manifest.get(key)!=value for key,value in expected_manifest.items()):
+        raise ValueError('Automatic compatibility manifest policy mismatch')
+    if ('AirportBrcmSupportedBuilds' in info or 'AirportBrcmKernelProfiles' in info or
+        'AirportBrcmMaximumDarwinKernelVersion' in info or
+        any(key in manifest for key in ('supported_build','supported_builds','kernel_profiles',
+                                        'maximum_darwin_kernel_version'))):
+        raise ValueError('Automatic compatibility metadata cannot contain a build allowlist or maximum OS version')
+    historical=('awdl_backend_active','native_control_runtime_validated','native_control_only',
+                'active_behavior','remaining','colocated_scope_policy','association_policy_survey',
+                'dhcp_device_type_policy','original_driver_dependencies')
+    if any(key in manifest for key in historical):
+        raise ValueError('Automatic compatibility manifest contains a stale historical summary')
+    if 'No event capability advertised' in manifest.get('native_empty_query_policy',''):
+        raise ValueError('Automatic compatibility manifest contradicts its compiled event features')
+    return True
 
 def bundle_info():
     return {'CFBundleDevelopmentRegion':'en','CFBundleExecutable':NAME,'CFBundleIdentifier':IDENTIFIER,
             'CFBundleInfoDictionaryVersion':'6.0','CFBundleName':NAME,'CFBundlePackageType':'KEXT',
             'CFBundleShortVersionString':'1.0' if VERSION=='1.0.0' else VERSION,
             'CFBundleVersion':VERSION,'OSBundleRequired':'Root',
-            'OSBundleLibraries':dict(LIBRARIES),'AirportBrcmDevelopmentStatus':'NativeControl-Test014-EmptyQueryFix-EventPipeDisabled',
+            'OSBundleLibraries':dict(LIBRARIES),'AirportBrcmDevelopmentStatus':'StaticReview-1.1.0',
             'IOKitPersonalities':{IDENTIFIER:{'CFBundleIdentifier':IDENTIFIER,'IOClass':NAME,
                 'IOMatchCategory':NAME,'IOProviderClass':'IOResources','IOResourceMatch':'IOKit'}}}
 
@@ -197,67 +244,64 @@ def build_parser():
                         help=f'MacKernelSDK root (or ${SDK_ENV}; default: vendor/MacKernelSDK)')
     parser.add_argument('--lilu-resources',type=Path,
                         help=f'Lilu headers/resources (or ${LILU_ENV}; default: vendor/LiluResources)')
-    parser.add_argument('--test-candidate',action='store_true',
-                        help='Mark the exact package as an experimental Test014 candidate, not a validated release')
     parser.add_argument('--event-pipe-components-review',action='store_true',
                         help='Compile/link the real event components for offline review; no event routing or installation')
     parser.add_argument('--event-pipe-routes-review',action='store_true',
                         help='Compile/link experimental routes for offline review; router capability remains disabled')
-    parser.add_argument('--event-pipe-test-candidate',action='store_true',
-                        help='Build experimental Test018 bounded legacy channel-flags support; runtime install pins decide capability, never install/load here')
-    parser.add_argument('--release-version',choices=('1.0.0',),
-                        help='Rebuild the accepted Test018 feature set with release version metadata')
-    parser.add_argument('--baseline-25g332',action='store_true',
-                        help='Build the exact 25G332 Broadcom control-RX diagnostic profile; never install here')
-    parser.add_argument('--dual-profile-test-candidate',action='store_true',
-                        help='Build Test020 candidate gated by the exact 25G241/build-UUID or 25G332/build-UUID pair')
+    parser.add_argument('--automatic-compatibility',action='store_true',
+                        help='Build the 1.1.0 candidate with automatic ABI probes, scan-multiple and strict SAE compatibility (the default mode)')
     parser.add_argument('--baseline-trace',action='store_true',
-                        help='Include schema-2 numeric control-RX trace; dual-profile builds collect it only on 25G332')
-    parser.add_argument('--hotspot-scan-compat',action='store_true',
-                        help='Explicit Test021 SET86 adapter; requires the dual-profile candidate and refuses nonzero minimum timestamps')
-    parser.add_argument('--sae-compat',action='store_true',
-                        help='Explicit Test022 narrow SAE password-carrier candidate; requires dual-profile and hotspot-scan compatibility')
+                        help='Include optional schema-2 numeric control-RX trace; requires automatic compatibility mode')
     parser.add_argument('--control-rx-windows',action='store_true',
-                        help='Explicit Test023 root-armed immutable control-RX windows; requires dual-profile, baseline-trace and hotspot-scan compatibility')
+                        help='Include optional root-armed control-RX windows; requires automatic mode and --baseline-trace')
     parser.add_argument('--build-flavor',choices=('RELEASE','DEBUG'),default='RELEASE',
                         help='Real compiler DEBUG macro for the diagnostic flavor; never installs a build')
     return parser
+
+def configure_build_mode(args):
+    """Resolve CLI modes before touching toolchains or building an artifact."""
+    review = args.event_pipe_components_review or args.event_pipe_routes_review
+    automatic = args.automatic_compatibility
+    if not automatic and not review and not args.baseline_trace and not args.control_rx_windows:
+        # Keep an unqualified build on the current candidate path. Historical
+        # component review modes remain explicit and cannot silently shadow it.
+        automatic = True
+
+    if automatic:
+        if review:
+            raise ValueError('Automatic compatibility is a standalone candidate mode')
+        if args.control_rx_windows and not args.baseline_trace:
+            raise ValueError('Control RX windows require --baseline-trace')
+        args.automatic_compatibility = True
+        args.event_pipe_routes_review = True
+        args.event_pipe_components_review = True
+        return {'mode':'automatic-compatibility','version':'1.1.0','ready_for_install':False}
+
+    if args.baseline_trace or args.control_rx_windows:
+        raise ValueError('--baseline-trace and --control-rx-windows require --automatic-compatibility')
+    args.event_pipe_components_review = args.event_pipe_components_review or args.event_pipe_routes_review
+    return {'mode':'component-review','version':'1.1.0','ready_for_install':False}
+
+def compatibility_compile_defines(args):
+    """Return feature macros selected by the resolved candidate mode."""
+    defines=[]
+    if args.automatic_compatibility:
+        defines += ['-DAIRPORT_BRCM_SCAN_MULTIPLE=1','-DAIRPORT_BRCM_SAE_COMPAT=1']
+    if args.baseline_trace:
+        defines.append('-DAIRPORT_BRCM_BASELINE_TRACE=1')
+    if args.control_rx_windows:
+        defines.append('-DAIRPORT_BRCM_BASELINE_WINDOW=1')
+    return defines
 
 def main():
     global VERSION
     parser=build_parser()
     args=parser.parse_args();output=args.output.absolute()
-    if args.hotspot_scan_compat and not args.dual_profile_test_candidate:
-        raise ValueError('Hotspot scan compatibility requires the explicit dual-profile candidate')
-    if args.sae_compat and not (args.dual_profile_test_candidate and args.hotspot_scan_compat):
-        raise ValueError('SAE subset requires the explicit dual-profile and hotspot-scan candidate')
-    if args.control_rx_windows and not (args.dual_profile_test_candidate and args.baseline_trace and args.hotspot_scan_compat):
-        raise ValueError('Control RX windows require dual-profile, baseline-trace and hotspot-scan compatibility')
-    if args.dual_profile_test_candidate:
-        if (args.baseline_25g332 or args.test_candidate or args.event_pipe_components_review or
-            args.event_pipe_routes_review or args.event_pipe_test_candidate or args.release_version):
-            raise ValueError('Dual-profile Test020 is its own explicit candidate mode')
-        args.event_pipe_test_candidate=True
-    if args.baseline_trace and not (args.baseline_25g332 or args.dual_profile_test_candidate):
-        raise ValueError('Baseline trace is supported only by an explicit 25G332 or dual-profile candidate')
-    if args.baseline_25g332 and (not args.event_pipe_test_candidate or args.release_version):
-        raise ValueError('25G332 baseline requires the explicit event candidate and excludes release metadata')
-    if args.release_version and not args.event_pipe_test_candidate:
-        raise ValueError('Release metadata requires the accepted Test018 feature set')
-    if args.event_pipe_test_candidate and (args.test_candidate or args.event_pipe_components_review or args.event_pipe_routes_review):
-        raise ValueError('Select one explicit candidate or review mode')
-    if args.event_pipe_test_candidate:
-        VERSION='0.1.16';args.event_pipe_routes_review=True
-    if args.release_version:
-        VERSION=args.release_version
-    if args.baseline_25g332:
-        VERSION='1.0.1'
-        args.baseline_trace=True
-    if args.dual_profile_test_candidate:
-        VERSION='1.0.1'
-    args.event_pipe_components_review=args.event_pipe_components_review or args.event_pipe_routes_review
-    if args.test_candidate and args.event_pipe_components_review:
-        raise ValueError('Unwired component review cannot be marked ready for installation')
+    try:
+        build_mode=configure_build_mode(args)
+    except ValueError as error:
+        parser.error(str(error))
+    VERSION=build_mode['version']
     if output.exists() or output.suffix.lower()!='.zip' or any(
         p in output.parts for p in ('EFI','OC')):
         raise ValueError('Use a new ZIP path outside EFI/OC')
@@ -289,18 +333,7 @@ def main():
             '-Wno-unused-parameter','-Wno-unknown-warning-option','-Wno-ignored-attributes']
     if args.build_flavor=='DEBUG':
         common.append('-DDEBUG=1')
-    if args.baseline_25g332:
-        common.append('-DAIRPORT_BRCM_BASELINE_25G332=1')
-    if args.dual_profile_test_candidate:
-        common.append('-DAIRPORT_BRCM_DUAL_PROFILE_25G241_25G332=1')
-    if args.baseline_trace:
-        common.append('-DAIRPORT_BRCM_BASELINE_TRACE=1')
-    if args.hotspot_scan_compat:
-        common.append('-DAIRPORT_BRCM_SCAN_MULTIPLE=1')
-    if args.sae_compat:
-        common.append('-DAIRPORT_BRCM_SAE_COMPAT=1')
-    if args.control_rx_windows:
-        common.append('-DAIRPORT_BRCM_BASELINE_WINDOW=1')
+    common += compatibility_compile_defines(args)
     with tempfile.TemporaryDirectory(prefix='airport-brcm-review-') as temporary:
         work=Path(temporary);bundle=work/(NAME+'.kext')
         executable=bundle/'Contents/MacOS'/NAME;executable.parent.mkdir(parents=True)
@@ -313,7 +346,7 @@ def main():
                     '-DAIRPORT_BRCM_PRIVATE_MAC=1',
                     '-DAIRPORT_BRCM_NATIVE_CONTROL=1',
                     *(['-DAIRPORT_BRCM_EVENT_PIPE=1'] if args.event_pipe_routes_review else []),
-                    *(['-DAIRPORT_BRCM_EVENT_PIPE_CANDIDATE=1'] if args.event_pipe_test_candidate else []),
+                    *(['-DAIRPORT_BRCM_EVENT_PIPE_CANDIDATE=1'] if args.automatic_compatibility else []),
                     '-DLILU_CUSTOM_KMOD_INIT=1','-DLILU_CUSTOM_IOKIT_INIT=1',
                     '-Wno-stdlibcxx-not-found'] if path.suffix=='.cpp' else ['xcrun','clang','-std=c11'])
             run(flags+common+['-c',path,'-o',obj]);objects.append(obj)
@@ -321,13 +354,8 @@ def main():
              '-no_fixup_chains','-o',executable,*objects,'-L',SDK/'Library/universal','-lkmodc++','-lkmod'])
         info=bundle_info()
         info['AirportBrcmBuildFlavor']=args.build_flavor
-        if args.event_pipe_test_candidate:
-            info['AirportBrcmDevelopmentStatus']='NativeEventPipe-Test018-ChannelFlags-Experimental'
-            if args.baseline_25g332:
-                info['AirportBrcmDevelopmentStatus']='25G332-Baseline019-ControlRX-Diagnostics'
-                info['AirportBrcmBaselineBuild']='25G332-Baseline019'
-            elif args.dual_profile_test_candidate:
-                info.update(dual_profile_info_metadata(args.baseline_trace,args.hotspot_scan_compat,args.sae_compat,args.control_rx_windows))
+        if args.automatic_compatibility:
+            info.update(automatic_compatibility_info_metadata(args.baseline_trace,args.control_rx_windows))
         elif args.event_pipe_components_review:
             info['AirportBrcmDevelopmentStatus']=('EventPipe-Routes-CapabilityDisabled-Review'
                 if args.event_pipe_routes_review else 'EventPipe-Components-Unwired-Review')
@@ -347,30 +375,18 @@ def main():
                  for p in (source/directory).glob('*') if p.suffix in ('.h','.hpp') and p.name!='facade_mock.h']
         manifest={'schema':1,'identifier':IDENTIFIER,'version':VERSION,
                   'build_flavor':args.build_flavor,'compiler_debug_macro':args.build_flavor=='DEBUG',
-                  'supported_build':'25G332' if args.baseline_25g332 else '25G241',
-                  'supported_kernel':'25.6.0','one_self_developed_kext':True,'executable_count':1,
-                  'kmod_info_count':1,'ready_for_install':args.test_candidate,'installed':False,
-                  'purpose':'experimental Test014 zero-length native query input repair boot test' if args.test_candidate else 'static review only',
-                  'runtime_validated':False,'awdl_backend_active':False,
+                  'minimum_darwin_kernel_version':'25.0.0',
+                  'one_self_developed_kext':True,'executable_count':1,
+                  'kmod_info_count':1,'ready_for_install':build_mode['ready_for_install'],'installed':False,
+                  'purpose':'static review only',
+                  'runtime_validated':False,
                   'metadata_review':metadata,
-                  'active_behavior':'Preserved Test011 Wi-Fi/private-MAC bridge plus real old AsyncUC native type0 control endpoint, real GET43 and strict selector1/5/7=false. No event-pipe capability advertised.',
-                  'native_control_runtime_validated':False,
-                  'native_control_only':True,
-                  'native_empty_query_policy':'Selectors1/5/7 accept a nonnull unused inline input pointer when length is exactly0; pointer is never read. All descriptor/scalar/async/output constraints remain. No event capability advertised.',
-                  'native_ool_input_policy':'Borrowed synchronous MIG input descriptor: balanced prepare/complete around one owned snapshot read, outside the old WorkLoop/gate; no descriptor release or retained mapping.',
-                  'bounded_closing_policy':'Retain at most8 authorized Closing records until reboot; no automatic record removal or late old-table dispatch; subsequent admission may be refused. Experimental control validation only.',
-                  'linked_inactive_cores':['AWDL bounded event ring and proven message46/47 codecs'],
-                  'remaining':'native control runtime admission/GET43/close and Wi-Fi/Handoff regression validation; actual event source, pipe, notifications and AirDrop transfer remain incomplete',
-                  'colocated_scope_policy':'Unsupported network-group event suppression and current-scope GET387; scoped hint retained and only a strict idle/disconnected private join may use legacy default link events. No roaming equivalence claimed.',
-                  'association_policy_survey':'Only bounded policy enums/counts/lengths. No MAC/BSSID/SSID/scope text/key/IE contents. Does not change admission.',
-                  'dhcp_device_type_policy':'Known native469 bit40 is an allow request, not MAC validity. Kept in the scoped plan; legacy GET552 remains unsupported and IPConfiguration uses its proven conservative false fallback. Full allow=true behavior is not implemented.',
-                  'original_driver_dependencies':'preserved separately; no legacy binary or Lilu merged into this executable',
                   'sources':{str(p.relative_to(PROJECT)):hashlib.sha256(p.read_bytes()).hexdigest()
                              for p in sorted(set(cpp+c+headers))},
                   'nm_undefined':run(['xcrun','nm','-u',executable]).splitlines(),
                   'files':{str(p.relative_to(work)):hashlib.sha256(p.read_bytes()).hexdigest()
                            for p in bundle.rglob('*') if p.is_file()}}
-        if args.event_pipe_components_review:
+        if args.event_pipe_components_review and not args.automatic_compatibility:
             manifest.update({
                 'purpose':'offline actual-SDK event component compile/link review; no event routes installed',
                 'event_pipe_components_linked':True,'event_pipe_routes_installed':False,
@@ -381,46 +397,16 @@ def main():
                     'strict message55 recovery codec has no proven observer source'],
                 'remaining':'Real IOUC selector/map/lifecycle routing and same-connection pipe reinitialization '
                     'are not installed. No event capability, AirDrop transfer or runtime safety claim.'})
-        if args.event_pipe_test_candidate:
-            manifest.update({
-                'purpose':'experimental Test018 bounded legacy channel-flags support after Test017 actual bit10 rejections',
-                'ready_for_install':True,'native_control_only':False,
-                'event_pipe_candidate_enabled':True,
-                'mapped_image_policy':'KC file offsets are container metadata; instruction access uses the bounded mapped base and fixed VM-relative offsets. UUID, text extents, code and exact external-call target pins remain mandatory.',
-                'install_diagnostics':'Pointer-free progress for router/observer preparation, image and external-call pins, memory method range/guard/route; failures keep selector5 false.',
-                'codec_diagnostics':'Pointer-free received/rejected/committed counters by message46/47/48/other, codec error enum and message48 rejection bitmaps. No MAC/SSID/peer/body/metadata values. Last fields select the newest allocated resident Session with the respective observation, not a cross-worker timestamp. Diagnostics do not decide admission; channel subset is described separately. Lifecycle unchanged.',
-                'channel_flags_policy':'Exactly one legacy band0x8/0x10 and one width0x1/0x2/0x4/0x400 (10/20/40/80MHz), optional DFS0x100, extension0x200 only with40MHz. Twenty finite structural combinations of producer-written bits, not a regulatory or RF-support claim. No widthless/160MHz/80+80/new native flags. All other metadata/frame/version/TLV/ownership/lifecycle checks remain.',
-                'active_behavior':'Preserved Wi-Fi/private-address bridge and zero-input query fix; '
-                    'conditionally installed real46/47/strict48 observer, native ring mappings, '
-                    'zero-argument async notification and resident thread-call consumer.',
-                'event_pipe_capability_policy':'True only after real control/reset, observer and '
-                    'pinned kernel memory route installation plus prepared nonretiring router. '
-                    'Partial setup keeps selector5 false. Initialization/subscription is a separate runtime test.',
-                'event_pipe_reinitialization':'Same active UC gets at most8 fresh resident Sessions; '
-                    'old Closed Session/MD/pages/right/worker are never reused. Reopen requires '
-                    'real registry/owner/GET43/pins, old typed worker stopped+SessionClosed and '
-                    'observer drain. Failed unbound creation may fail closed until reboot.',
-                'linked_inactive_cores':['Strict message55 recovery codec: no proven observer source'],
-                'remaining':'Real boot, IOUC init/map/subscribe, captured native events/notifications, '
-                    'same-connection reinit and Wi-Fi/private-address/Handoff regression; '
-                    'bidirectional AirDrop file transfer and full body/data-plane coverage remain unverified.'})
-        if args.baseline_25g332:
-            manifest.update(candidate='25G332-Baseline019',
-                purpose='Exact macOS26.7.2 compatibility and bounded Broadcom control-RX baseline boot test',
-                release_ready=False,runtime_validated=False,
-                diagnostic_scope='Owned message48 receive snapshots only; numeric PSF/MIF and address-equality summaries. No raw addresses, payloads, hostnames, synthetic events or new RF commands.',
-                kernel_identity='28267FD5-3E1E-3686-8A1C-E73E2466FCFB',
-                remaining='Boot/load, Wi-Fi, native event consumer, actual peer transfer and diagnostic values remain untested on this profile.')
-        if args.dual_profile_test_candidate:
-            manifest.pop('supported_build',None)
-            manifest.update(dual_profile_manifest_metadata(args.baseline_trace,args.hotspot_scan_compat,args.sae_compat,args.control_rx_windows))
+        if args.automatic_compatibility:
+            apply_automatic_compatibility_manifest(manifest,args.baseline_trace,args.control_rx_windows)
+            validate_automatic_compatibility_metadata(info,manifest)
         output.parent.mkdir(parents=True,exist_ok=True)
         with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as archive:
             for p in sorted(bundle.rglob('*')):
                 if p.is_file():archive.write(p,str(p.relative_to(work)))
             archive.writestr('build-manifest.json',json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'output':str(output),'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
-                      'single_kext':True,'ready_for_install':args.test_candidate or args.event_pipe_test_candidate,
+                      'single_kext':True,'ready_for_install':build_mode['ready_for_install'],
                       'runtime_validated':False}))
 
 if __name__=='__main__':main()

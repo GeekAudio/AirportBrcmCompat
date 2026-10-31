@@ -20,6 +20,7 @@ SUITES = {
         "test_scan_lifecycle",
         "test_runtime_build_guard",
         "test_kernel_identity",
+        "test_kernel_contracts",
         "test_scan_multiple_compat",
     ),
     "private-mac": (

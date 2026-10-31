@@ -15,9 +15,7 @@
 #if defined(AIRPORT_BRCM_BASELINE_TRACE)
 #include "../awdl_kernel/baseline_trace.hpp"
 #endif
-#if defined(AIRPORT_BRCM_BASELINE_TRACE) || defined(AIRPORT_BRCM_DUAL_PROFILE_25G241_25G332)
 #include "kernel_identity.hpp"
-#endif
 #if defined(AIRPORT_BRCM_NATIVE_CONTROL)
 #include "../awdl_kernel/native_control_bridge.hpp"
 #include "../awdl_kernel/scoped_reset.hpp"
@@ -247,17 +245,15 @@ void publish() {
         valid &= snapshot->setObject("PluginInitEntered", __atomic_load_n(&pluginInitEntered, __ATOMIC_ACQUIRE) ? kOSBooleanTrue : kOSBooleanFalse);
         valid &= snapshot->setObject("PluginInitReturned", __atomic_load_n(&pluginInitReturned, __ATOMIC_ACQUIRE) ? kOSBooleanTrue : kOSBooleanFalse);
         valid &= snapshot->setObject("ObserverActive", kOSBooleanTrue);
-#if defined(AIRPORT_BRCM_DUAL_PROFILE_25G241_25G332)
-        const auto profile=ScanKernelIdentity::currentProfile();
-        const uint32_t profileBuild=profile==ScanKernelIdentity::Profile::Build25G241 ? 241U :
-                                    profile==ScanKernelIdentity::Profile::Build25G332 ? 332U : 0U;
-        valid &= addNumber(snapshot,"DualProfileMode",1);
-        valid &= addNumber(snapshot,"KernelProfile",profileBuild);
+        // Structural image validation is a prerequisite, not a statement that
+        // every bridge is compatible. Each installer reports its own result.
+        valid &= addNumber(snapshot,"AutomaticCompatibility",1);
+        valid &= addNumber(snapshot,"KernelImageState",
+            static_cast<uint32_t>(ScanKernelIdentity::currentProfile()));
 #if defined(AIRPORT_BRCM_BASELINE_TRACE)
         valid &= addNumber(snapshot,"BaselineTraceConfigured",1);
 #else
         valid &= addNumber(snapshot,"BaselineTraceConfigured",0);
-#endif
 #endif
 #if defined(AIRPORT_BRCM_SAE_COMPAT)
         valid &= addNumber(snapshot,"SaeCompatConfigured",1);
@@ -335,8 +331,7 @@ void PRODUCT_NAME::stop(IOService *provider) {
 IOReturn PRODUCT_NAME::setProperties(OSObject *properties) {
     if (!PrivateMAC::currentCredentialIsRoot()) return kIOReturnNotPrivileged;
     if (ml_at_interrupt_context() || !ml_get_interrupts_enabled()) return kIOReturnNotPermitted;
-    if (ScanKernelIdentity::currentProfile()!=ScanKernelIdentity::Profile::Build25G332 ||
-        !AWDLKernel::NativeControlBridge::ready()) return kIOReturnNotReady;
+    if (!AWDLKernel::NativeControlBridge::ready()) return kIOReturnNotReady;
     const auto *outer=OSDynamicCast(OSDictionary,properties);
     if (!outer || outer->getCount()!=1) return kIOReturnBadArgument;
     const auto *request=OSDynamicCast(OSDictionary,outer->getObject("AirportBrcmArmObservation"));
@@ -412,7 +407,7 @@ bool PRODUCT_NAME::serializeProperties(OSSerialize *serialize) const {
     // Snapshot only on property serialization, never from an IRQ, RX hook, or
     // event-pipe publish path. These numeric fields describe bounded control
     // RX observations only; they are not control-TX or RF acknowledgements.
-    if (ScanKernelIdentity::currentProfile()==ScanKernelIdentity::Profile::Build25G332) {
+    if (AWDLKernel::NativeControlBridge::ready()) {
       OSDictionary *baseline=OSDictionary::withCapacity(80);
       if (baseline) {
         const auto values=AWDLKernel::BaselineTrace::snapshot();
@@ -526,13 +521,13 @@ bool PRODUCT_NAME::serializeProperties(OSSerialize *serialize) const {
         };
         baselineValid &= addSubtypeSummary("Psf",values.psf);
         baselineValid &= addSubtypeSummary("Mif",values.mif);
-        if (baselineValid) all->setObject("BroadcomAwdlBaseline25G332",baseline);
+        if (baselineValid) all->setObject("BroadcomAwdlBaseline",baseline);
         baseline->release();
       }
     }
 #endif
 #if defined(AIRPORT_BRCM_BASELINE_WINDOW)
-    if (ScanKernelIdentity::currentProfile()==ScanKernelIdentity::Profile::Build25G332 && !addControlWindow(all)) {
+    if (AWDLKernel::NativeControlBridge::ready() && !addControlWindow(all)) {
         all->release();return false;
     }
 #endif

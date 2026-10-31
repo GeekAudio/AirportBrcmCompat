@@ -311,6 +311,61 @@ int wrappedPerform(IOService *i,IOService *c,uint64_t command,void *arg0,void *a
 bool within(uintptr_t function,uintptr_t base,size_t size,size_t needed) {
     return function>=base && function-base<=size && needed<=size-(function-base);
 }
+bool addSignedAddress(uintptr_t base,intptr_t addend,uintptr_t &target) {
+    if (addend>=0) {
+        const uintptr_t amount=static_cast<uintptr_t>(addend);
+        if (base>UINTPTR_MAX-amount) return false;
+        target=base+amount;
+    } else {
+        const uintptr_t amount=static_cast<uintptr_t>(-(addend+1))+1U;
+        if (base<amount) return false;
+        target=base-amount;
+    }
+    return true;
+}
+uintptr_t resolveKernelSymbol(KernelPatcher &patcher,const char *name) {
+    if (!name) return 0;
+    patcher.clearError();
+    const auto target=patcher.solveSymbol(KernelPatcher::KernelID,name);
+    const bool valid=target && patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    return valid?static_cast<uintptr_t>(target):0;
+}
+int resolveKernelRelocations(KernelPatcher &patcher,const uint8_t *bytes,uintptr_t base,
+                             const KernelContracts::RelocationSpec *specs,size_t count,
+                             KernelContracts::Relocation *out) {
+    if (!bytes || !base || !specs || !out || !count || count>KernelContracts::MaxContractBytes/5)
+        return EINVAL;
+    for (size_t i=0;i<count;++i) {
+        const auto &spec=specs[i];uintptr_t target=0;
+        if (!spec.symbol) return EINVAL; // Only exact resolved targets may be normalized.
+        uintptr_t symbol=resolveKernelSymbol(patcher,spec.symbol);
+        if (!symbol && spec.alias) symbol=resolveKernelSymbol(patcher,spec.alias);
+        if (!symbol || !addSignedAddress(symbol,spec.addend,target)) return EOPNOTSUPP;
+        const int32_t range=spec.kind==KernelContracts::RelocationKind::RelativeCall ?
+            ScanKernelIdentity::verifyRunningKernelCodeRange(target,1) :
+            ScanKernelIdentity::verifyRunningKernelReadableRange(target,1);
+        if (range) return range;
+        out[i]={spec.instructionOffset,spec.displacementOffset,spec.instructionEndOffset,target,spec.kind};
+    }
+    return 0;
+}
+struct MappedTargetContext {int32_t rangeStatus=0;};
+bool verifyMappedKernelTarget(KernelContracts::RelocationKind kind,uintptr_t target,void *opaque) {
+    auto *context=static_cast<MappedTargetContext *>(opaque);
+    if (!context) return false;
+    context->rangeStatus=kind==KernelContracts::RelocationKind::RelativeCall ?
+        ScanKernelIdentity::verifyRunningKernelCodeRange(target,1) :
+        ScanKernelIdentity::verifyRunningKernelReadableRange(target,1);
+    return context->rangeStatus==0;
+}
+int verifyMappedIfnetTargets(const uint8_t *bytes,uintptr_t base,size_t imageSize) {
+    MappedTargetContext context;
+    const auto status=KernelContracts::validateIfnetMappedTargets(
+        bytes,imageSize,base,verifyMappedKernelTarget,&context);
+    if (status==KernelContracts::Status::Passed) return 0;
+    return context.rangeStatus?context.rangeStatus:EOPNOTSUPP;
+}
 }
 
 int entryAllowed(void *c,void *i) {
@@ -338,9 +393,25 @@ void install(KernelPatcher &patcher,const Install &input) {
     if (memcmp(reinterpret_cast<const void *>(perform),performGuard,sizeof(performGuard))) {
         ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,2);return;
     }
-    const int range=ScanKernelIdentity::verifyRunningKernelCodeRange(callback,0x218);
+    const int range=ScanKernelIdentity::verifyRunningKernelCodeRange(callback,KernelContracts::IfnetIoctlContractBytes);
     if (range) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,range);return;}
-    const int pin=callbackPin.prepare(reinterpret_cast<const uint8_t *>(callback),0x218,true,input.runtimeBuild);
+    KernelContracts::Relocation relocations[KernelContracts::IfnetRelocationCount] {};
+    const auto *callbackBytes=reinterpret_cast<const uint8_t *>(callback);
+    const int relocationStatus=resolveKernelRelocations(patcher,callbackBytes,callback,
+        KernelContracts::IfnetRelocationSpecs,KernelContracts::IfnetRelocationCount,
+        relocations);
+    if (relocationStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,relocationStatus);return;}
+    const int anonymousTargetStatus=verifyMappedIfnetTargets(callbackBytes,callback,
+        KernelContracts::IfnetIoctlContractBytes);
+    if (anonymousTargetStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,anonymousTargetStatus);return;}
+    KernelContracts::IfnetIoctlPlan contract;
+    const auto contractStatus=KernelContracts::validateIfnetCurrent(callbackBytes,
+        KernelContracts::IfnetIoctlContractBytes,callback,relocations,
+        KernelContracts::IfnetRelocationCount,contract);
+    if (contractStatus!=KernelContracts::Status::Passed) {
+        ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,static_cast<int32_t>(contractStatus));return;
+    }
+    const int pin=callbackPin.prepare(contract,input.runtimeBuild);
     ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,pin);if (pin) return;
     bridgeLock=IOLockAlloc();if (!bridgeLock) return;
     config=input;

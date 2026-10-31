@@ -6,6 +6,7 @@
 #include "event_pipe_router.hpp"
 #include "event_dispatch_shape.hpp"
 #include "../scan_kernel/kernel_identity.hpp"
+#include "../scan_kernel/kernel_contracts.hpp"
 #endif
 #include <IOKit/IOLib.h>
 #include <IOKit/IOMemoryDescriptor.h>
@@ -67,7 +68,6 @@ ClientMemory originalMemory=nullptr;
 volatile bool eventRoutesInstalled=false;
 EventSnapshot eventCounters {};
 constexpr const char *MemoryName="__ZN12IOUserClient19clientMemoryForTypeEjPjPP18IOMemoryDescriptor";
-constexpr uint8_t MemoryGuard[]={0x55,0x48,0x89,0xe5,0xb8,0xc7,0x02,0,0xe0,0x5d,0xc3,0x0f,0x1f,0x44,0,0};
 #endif
 void increment(uint32_t &value) {__atomic_add_fetch(&value,1U,__ATOMIC_RELAXED);}
 IOReturn openResult(IOReturn result) {
@@ -572,12 +572,15 @@ void install(KernelPatcher &patcher,const Install &input) {
     }
     if (events) {
         record(eventCounters.installStage,5);
-        const auto range=ScanKernelIdentity::verifyRunningKernelCodeRange(memory,sizeof(MemoryGuard));
+        const auto range=ScanKernelIdentity::verifyRunningKernelCodeRange(memory,KernelContracts::ClientMemoryBodyBytes);
         record(eventCounters.memoryRangeResult,static_cast<uint32_t>(range));events=range==0;
     }
     if (events) {
         record(eventCounters.installStage,6);
-        events=!memcmp(reinterpret_cast<const void *>(memory),MemoryGuard,sizeof(MemoryGuard));
+        KernelContracts::ClientMemoryPlan memoryContract;
+        events=KernelContracts::validateUnsupportedClientMemory(
+            reinterpret_cast<const uint8_t *>(memory),KernelContracts::ClientMemoryBodyBytes,
+            memory,memoryContract)==KernelContracts::Status::Passed;
         record(eventCounters.memoryGuardMatched,events?1U:0U);
     }
     if (events) {

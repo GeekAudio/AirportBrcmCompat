@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 automatic compatibility candidate
+
+- Replace host build/UUID allowlists with structural kernel-image validation and per-feature interface checks.
+- Keep the bundled wireless-driver pins and strict scan, association and event data contracts.
+- Admit matching interfaces independently of the system build number; reject incompatible kernel implementations before the affected routes are installed.
+- Use Darwin 25 as the minimum with no fixed upper version in the matching Wi-Fi configuration snippets.
+- Make optional receive diagnostics depend on bridge readiness rather than a named system build.
+
 ## Source publication
 
 - Publish the compatibility core, offline regression tests and build tools under BSD-3-Clause.

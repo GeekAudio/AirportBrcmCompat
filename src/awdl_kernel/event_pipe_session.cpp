@@ -5,7 +5,6 @@
 #include <string.h>
 #if defined(AIRPORT_BRCM_BASELINE_TRACE)
 #include "baseline_trace.hpp"
-#include "../scan_kernel/kernel_identity.hpp"
 #endif
 namespace AWDLKernel { namespace {
 bool sleepable() {return !ml_at_interrupt_context() && ml_get_interrupts_enabled();}
@@ -195,8 +194,7 @@ EventPipeSession::PublishResult EventPipeSession::drainOne() {
     // The observer has already copied this message48 into its owned resident
     // snapshot. This bounded read-only baseline runs before the unchanged codec;
     // it cannot gate, rewrite, accept, or reject the original event path.
-    if (ScanKernelIdentity::currentProfile()==ScanKernelIdentity::Profile::Build25G332 &&
-        source_.message==AWCM48_ACTION_FRAME_RX)
+    if (source_.message==AWCM48_ACTION_FRAME_RX)
         BaselineTrace::observeOwnedMessage48(source_.body,source_.length);
 #endif
     result.message=source_.message;

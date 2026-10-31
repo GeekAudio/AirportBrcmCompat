@@ -18,8 +18,6 @@
 #include "../awdl_kernel/native_control_bridge.hpp"
 #include "../awdl_kernel/scoped_reset.hpp"
 #endif
-extern "C" { extern const char osrelease[]; }
-
 namespace {
 constexpr uint8_t ProviderUUID[16]={0x03,0x5a,0x9a,0xd9,0x6c,0xde,0x36,0x2f,0x8d,0xec,0xb6,0x64,0xbc,0x64,0x31,0xec};
 constexpr uint8_t LegacyUUID[16]={0x4c,0x07,0x53,0x8b,0x62,0xeb,0x3d,0x6d,0xae,0xf9,0x93,0xbc,0xdc,0xf4,0x5f,0xab};
@@ -58,7 +56,6 @@ mach_vm_address_t legacyAddress=0;
 size_t legacySize=0;
 ScanCompat::API api {};
 ScanCompat::Original originalCapabilities=nullptr;
-const char *runtimeBuildString=nullptr;
 volatile unsigned requestCount=0, successCount=0, pendingCount=0, capabilityCount=0;
 volatile unsigned associationCopies=0;
 AssociationCompat::Registry associationRegistry {};
@@ -78,7 +75,7 @@ void associationUnlock(void *lock) {
 mach_vm_address_t brcmAddress=0;size_t brcmSize=0;
 uintptr_t associationLockOwner() {return __atomic_load_n(&associationOwner,__ATOMIC_ACQUIRE);}
 int runtimeBuild() {
-    return ScanCompat::runtimeBuildState(runtimeBuildString, ScanKernelIdentity::currentProfile());
+    return ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
 }
 void observeAssociationFlags(uint32_t flags,uint8_t byte469) {
     ScanDiagnostics::record(ScanDiagnostics::AssociationFlags24,static_cast<int32_t>(flags));
@@ -117,9 +114,9 @@ bool nativeAttempted=false;
 void tryInstallNative(KernelPatcher &patcher) {
     if (nativeAttempted || !systemVerified || !providerVerified || !legacyVerified ||
         !associationInstalled || !brcmAddress) return;
-    // Pin/install in the patcher context even while launchd has not populated
-    // osversion. The bridge's common runtime admission gate remains closed
-    // until the exact build agrees with the already selected kernel UUID.
+    // Install the bridge in patcher context once its target dependencies pass
+    // their pins. Runtime requests still require structural kernel readiness
+    // and the bridge's own ABI checks.
     nativeAttempted=true;
     if (nativeClients.prepare()!=AWDLKernel::ClientStatus::Passed ||
         !AWDLKernel::ScopedResetBridge::install(patcher,nativeClients,watched[1].loadIndex,
@@ -146,7 +143,7 @@ int wrappedAssociate(void *controller,void *interface,void *vif,void *infra,
                      ScanCompat::Request *request,bool user64) {
     const bool target=AssociationCompat::eligible(request,controller,interface,vif,infra,user64);
     if (target) {
-        const int state=ScanCompat::runtimeBuildState(runtimeBuildString,ScanKernelIdentity::currentProfile());
+        const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
         if (state) return associationAPI.original(controller,interface,vif,infra,request,user64);
     }
@@ -169,7 +166,7 @@ int wrappedAssociate(void *controller,void *interface,void *vif,void *infra,
 #if defined(AIRPORT_BRCM_SCAN_MULTIPLE)
 int wrappedScanMultiple(void *c,void *i,void *v,void *infra,ScanCompat::Request *r,bool user64) {
     const bool target=ScanMultipleCompat::eligible(r,c,i,v,infra,user64);
-    if (target && ScanCompat::runtimeBuildState(runtimeBuildString,ScanKernelIdentity::currentProfile()))
+    if (target && ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile()))
         return multipleAPI.original(c,i,v,infra,r,user64);
     ScanMultipleCompat::Result validation {-1,0};bool consumed=false;
     const int error=ScanMultipleCompat::handle(multipleAPI,c,i,v,infra,r,user64,&validation,&consumed);
@@ -209,7 +206,7 @@ void deallocate(void *data,size_t size) { IOFree(data,size); }
 int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::Request *req,bool user64) {
     const bool native=req && req->type==11 && req->length==ScanCompat::NativeSize;
     if (native) {
-        const int state=ScanCompat::runtimeBuildState(runtimeBuildString,ScanKernelIdentity::currentProfile());
+        const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
         if (state) return api.original(controller,interface,vif,infra,req,user64);
     }
@@ -232,7 +229,7 @@ int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::R
 int wrappedCapabilities(void *controller,void *interface,void *vif,void *infra,
                         ScanCompat::Request *req,bool user64) {
     if (ScanCompat::nativeCapabilities(req,controller,interface,vif,infra)) {
-        const int state=ScanCompat::runtimeBuildState(runtimeBuildString,ScanKernelIdentity::currentProfile());
+        const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
         if (state) return originalCapabilities(controller,interface,vif,infra,req,user64);
     }
@@ -433,40 +430,22 @@ void loaded(KernelPatcher &patcher,size_t index,mach_vm_address_t address,size_t
 }
 void init() {
     ScanDiagnostics::record(ScanDiagnostics::PluginInit,0);
-    // OS build guard complements the exact code UUID and bytes checks.
-    if (getKernelVersion()!=KernelVersion::Tahoe || getKernelMinorVersion()!=6 || strcmp(osrelease,"25.6.0")) {
-        ScanDiagnostics::record(ScanDiagnostics::BuildGuard,1);
-        SYSLOG("init","unsupported OS build; no hooks registered"); return;
-    }
     lilu.onPatcherLoadForce([](void *,KernelPatcher &patcher) {
-        // Pin immutable inner-kernel identity before reading mutable build data.
+        // Establish a bounded structural identity for the actual inner kernel.
+        // This is not ABI approval: every feature installer keeps its own
+        // target-image symbol, range, byte, and request-shape checks.
         ScanKernelIdentity::Profile profile=ScanKernelIdentity::Profile::Unsupported;
         const int identity=ScanKernelIdentity::identifyRunningKernelProfile(&profile);
         ScanDiagnostics::record(ScanDiagnostics::BuildGuard,identity);
-        if (identity || profile==ScanKernelIdentity::Profile::Unsupported) {
+        if (identity || profile!=ScanKernelIdentity::Profile::Structural) {
             watched[0].switchOff();watched[1].switchOff();
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
             watched[2].switchOff();
 #endif
-            SYSLOG("init","running kernel UUID guard rejected; no hooks installed");return;
+            SYSLOG("init","running kernel image structure rejected; no hooks installed");return;
         }
-        // launchd populates osversion after this early callback. Resolve its
-        // trusted fixed-size array now, then require the exact build string
-        // paired with this inner-kernel UUID in each native request wrapper.
-        // Empty/different values always forward unchanged.
-        patcher.clearError();
-        auto address=patcher.solveSymbol(KernelPatcher::KernelID,"_osversion");
-        if (!address || patcher.getError()!=KernelPatcher::Error::NoError) {
-            patcher.clearError();watched[0].switchOff();watched[1].switchOff();
-#if defined(AIRPORT_BRCM_PRIVATE_MAC)
-            watched[2].switchOff();
-#endif
-            ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,3);
-            SYSLOG("init","runtime OS build symbol unavailable; no hooks installed");return;
-        }
-        runtimeBuildString=reinterpret_cast<const char *>(address);
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,
-            ScanCompat::runtimeBuildState(runtimeBuildString,profile));
+            ScanCompat::runtimeBuildState(profile));
         systemVerified=true;
         tryInstall(patcher);
         tryInstallAssociation(patcher);
@@ -489,5 +468,5 @@ const char *debug[]={"-brcmcompatdbg"};
 PluginConfiguration ADDPR(config) {
     xStringify(PRODUCT_NAME),parseModuleVersion(xStringify(MODULE_VERSION)),LiluAPI::AllowNormal,
     off,arrsize(off),debug,arrsize(debug),nullptr,0,
-    KernelVersion::Tahoe,KernelVersion::Tahoe,init
+    KernelVersion::Tahoe,static_cast<KernelVersion>(KernelPatcher::KernelAny),init
 };

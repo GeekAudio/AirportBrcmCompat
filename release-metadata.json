@@ -1,26 +1,39 @@
 {
-  "schema": 1,
-  "tag": "v1.0.1-rc1",
-  "prerelease": true,
-  "version": "1.0.1",
-  "supported_builds": [
-    "25G241",
-    "25G332"
-  ],
+  "schema": 2,
+  "channel": "automatic-compatibility-candidate",
+  "version": "1.1.0",
+  "minimum_darwin": "25.0.0",
+  "kernel_admission": "structural identity and per-feature ABI contracts",
+  "validation_scope": "offline",
   "variants": {
     "RELEASE": {
-      "binary_sha256": "e35e7b1fd1196a1957555dce0b0958ad4915be10cf8a92402bae427d61b9039f",
-      "uuid": "AD9570CD-9B65-3926-A85F-A9A0E66D24CF",
+      "binary_sha256": "e68ab16e1e7805fe8c62e42843a103c4eb7700c7344ad42e467bb6ffa68371f4",
+      "uuid": "B55538F7-157E-3B61-AEBB-7C86DD17CFAD",
       "compiler_debug_macro": false,
       "baseline_trace": false,
-      "control_rx_windows": false
+      "control_rx_windows": false,
+      "zip_filename": "AirportBrcmCompat-1.1.0-auto-RELEASE.zip",
+      "zip_sha256": "5d76b791e39d6693c5ec6f0781095e7d12ce98bcd516dbd2ba0807b4bf5efd8b"
     },
     "DEBUG": {
-      "binary_sha256": "6cf7a9aa7f1c4fcc08b99b71d12742cdbdabf31374a1a0f88a36842710aa7e37",
-      "uuid": "1EE4C5D6-22E2-3E92-9B51-22BC01CD6391",
+      "binary_sha256": "3d722c69b3882e92de4f773a0d948da6efb3118e5e75d5d149d329242e5ceb9b",
+      "uuid": "A09D51B9-6E84-31FA-8833-2F236E01411E",
       "compiler_debug_macro": true,
       "baseline_trace": true,
-      "control_rx_windows": true
+      "control_rx_windows": true,
+      "zip_filename": "AirportBrcmCompat-1.1.0-auto-DEBUG.zip",
+      "zip_sha256": "8b37df5833e7ee262a5dee941256e11f22892475b3127bfc00aa83f4fa2f9f70"
     }
+  },
+  "checks": {
+    "offline_tests_passed": 248,
+    "real_kernel_contract_input_build": "25G332",
+    "real_kernel_contract_input_images": [
+      "standalone kernel",
+      "BootKC:com.apple.kernel"
+    ],
+    "real_kernel_contract_functions_per_image": 3,
+    "rejected_single_bit_mutations": 23344,
+    "rejected_relocation_target_shifts": 16
   }
 }

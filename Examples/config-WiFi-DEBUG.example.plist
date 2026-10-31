@@ -18,9 +18,9 @@
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/AirportBrcmCompat</string>
 				<key>MaxKernel</key>
-				<string>25.6.0</string>
+				<string></string>
 				<key>MinKernel</key>
-				<string>25.6.0</string>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -36,9 +36,9 @@
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/IOLegacyWFamily</string>
 				<key>MaxKernel</key>
-				<string>25.6.0</string>
+				<string></string>
 				<key>MinKernel</key>
-				<string>25.6.0</string>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -54,9 +54,9 @@
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/IO80211FamilyLegacy</string>
 				<key>MaxKernel</key>
-				<string>25.6.0</string>
+				<string></string>
 				<key>MinKernel</key>
-				<string>25.6.0</string>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -72,9 +72,9 @@
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/AirPortBrcmNIC</string>
 				<key>MaxKernel</key>
-				<string>25.6.0</string>
+				<string></string>
 				<key>MinKernel</key>
-				<string>25.6.0</string>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -91,9 +91,9 @@
 				<key>Identifier</key>
 				<string>com.apple.iokit.IO80211Family</string>
 				<key>MaxKernel</key>
-				<string>25.6.0</string>
+				<string></string>
 				<key>MinKernel</key>
-				<string>25.6.0</string>
+				<string>25.0.0</string>
 				<key>Strategy</key>
 				<string>Exclude</string>
 			</dict>

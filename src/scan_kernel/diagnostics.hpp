@@ -14,8 +14,8 @@ enum Stage {
     Access,
     ShouldLoad,
     PluginInit,
-    BuildGuard,
-    RuntimeBuild, // 0 exact build for selected UUID profile; 1 empty/not ready; 2 different; 3 unavailable.
+    BuildGuard, // Structural kernel-image result; does not approve a private ABI.
+    RuntimeBuild, // Historical key: 0 structural identity ready; 1 pending; 3 unsupported.
     Provider,
     Legacy,
     Symbols,

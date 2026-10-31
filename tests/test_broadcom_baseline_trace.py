@@ -61,14 +61,12 @@ class BroadcomBaselineTraceTests(unittest.TestCase):
         self.assertLess(observed, translated)
         self.assertIn("source_.message==AWCM48_ACTION_FRAME_RX)", source[observed - 220:observed])
         self.assertIn("#if defined(AIRPORT_BRCM_BASELINE_TRACE)", source[:observed])
-        self.assertIn("ScanKernelIdentity::currentProfile()==ScanKernelIdentity::Profile::Build25G332",
-                      source[observed - 200:observed])
 
     def test_lifecycle_exposes_only_numeric_baseline_fields(self):
         source = (PROJECT / "src/scan_kernel/lifecycle.cpp").read_text()
         self.assertIn("#if defined(AIRPORT_BRCM_BASELINE_TRACE)", source)
-        self.assertIn("ScanKernelIdentity::currentProfile()==ScanKernelIdentity::Profile::Build25G332", source)
-        self.assertIn('all->setObject("BroadcomAwdlBaseline25G332",baseline)', source)
+        self.assertIn("if (AWDLKernel::NativeControlBridge::ready())", source)
+        self.assertIn('all->setObject("BroadcomAwdlBaseline",baseline)', source)
         self.assertIn('Baseline" key,values.member', source)
         self.assertIn('BASELINE_NUMBER(controlRxOnly,"ControlRxOnly")', source)
         self.assertIn('BASELINE_NUMBER(psfSamples,"PsfSamples")', source)

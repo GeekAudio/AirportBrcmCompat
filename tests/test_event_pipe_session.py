@@ -768,19 +768,8 @@ class EventPipeSessionTests(unittest.TestCase):
         cls.folder = Path(cls.temporary.name)
         kernel = cls.folder / "src/awdl_kernel"
         compat = cls.folder / "src/awdl_compat"
-        scan = cls.folder / "src/scan_kernel"
         kernel.mkdir(parents=True)
         compat.mkdir()
-        scan.mkdir()
-        (scan / "kernel_identity.hpp").write_text(r'''#ifndef TEST_SCAN_KERNEL_IDENTITY_HPP
-#define TEST_SCAN_KERNEL_IDENTITY_HPP
-#include <stdint.h>
-namespace ScanKernelIdentity {
-enum class Profile : uint32_t { Unsupported=0, Build25G241=1, Build25G332=2 };
-inline Profile currentProfile() { return Profile::Build25G332; }
-}
-#endif
-''')
         for name in ["event_pipe_session.hpp", "event_pipe_session.cpp", "event_pipe_core.hpp",
                      "event_memory.hpp", "event_memory.cpp", "async_notification_owner.hpp",
                      "async_notification_owner.cpp", "legacy_post_observer_core.hpp",

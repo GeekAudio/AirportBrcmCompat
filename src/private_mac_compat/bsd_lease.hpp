@@ -7,6 +7,7 @@
 #include <IOKit/IOService.h>
 #include <IOKit/IOLocks.h>
 #include <net/kpi_interface.h>
+#include "../scan_kernel/kernel_contracts.hpp"
 
 namespace PrivateMAC { namespace BSDLease {
 class CallbackPin {
@@ -16,10 +17,10 @@ class CallbackPin {
     int (*runtimeBuild)()=nullptr;
     IOLock *registry=nullptr;
 public:
-    // Lifetime: one pinned kernel / plugin instance, no reconfiguration. Kernel
-    // function must first be solved inside its independently UUID-verified image.
-    // The bool carries that caller's real UUID result, never a user input flag.
-    int prepare(const uint8_t *ifnetIoctl,size_t functionBound,bool verifiedKernelIdentity,
+    // Lifetime: one plugin instance, no reconfiguration. Only a plan returned
+    // by the complete acquire/callback/release ABI contract can authorize a
+    // synchronous borrowed-ifnet scope; kernel UUID/build labels are not input.
+    int prepare(const KernelContracts::IfnetIoctlPlan &contract,
                 int (*checkRuntimeBuild)());
 };
 class Scope {
