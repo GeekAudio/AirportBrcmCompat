@@ -6,6 +6,7 @@
   },
   "Lilu": {
     "repository": "https://github.com/acidanthera/Lilu.git",
-    "commit": "0249c3a918c68a43891350f35fded615b1575776"
+    "version": "1.7.2",
+    "commit": "e4748cc081bf060302c7d3c44a643ce1d11b7e1d"
   }
 }

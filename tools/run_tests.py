@@ -45,6 +45,8 @@ SUITES = {
     ),
     "build": (
         "test_build_unified_kernel_cli",
+        "test_lilu_api_compatibility",
+        "test_scoped_reset_contract",
     ),
 }
 

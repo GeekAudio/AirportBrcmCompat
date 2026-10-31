@@ -1,4 +1,6 @@
-#include <Headers/kern_mach.hpp>
+#include <Headers/kern_patcher.hpp>
+#include <IOKit/IOLib.h>
+#include <mach/vm_types.h>
 #include <mach-o/loader.h>
 #include <mach/vm_prot.h>
 #include <string.h>
@@ -10,25 +12,63 @@ enum : uint32_t { UUIDEmpty=0, UUIDWriting=1, UUIDVerified=2, UUIDRejected=3 };
 volatile uint32_t identityState=UUIDEmpty;
 uint8_t cachedUUID[16] {};
 
-// Checked against the actual release Lilu 1.7.3 object allocation and member
-// offsets, not just a header declaration. Reaudit if that Lilu build changes.
-static_assert(sizeof(MachInfo) == 192, "Pinned Lilu MachInfo ABI changed");
-static_assert(MachInfo::HeaderSize == 8192, "Pinned Lilu header bound changed");
+// This private XNU reader has the same signature in Darwin 23/24/25. Resolve
+// it at runtime; absence or inconsistent symbol addresses disables admission.
+// No framework-private C++ object is allocated or read. Both ranges are wired:
+// the kernel image and IOMalloc storage (or this thread's kernel stack).
+using ReadWiredMemory = vm_size_t (*)(vm_offset_t, vm_offset_t, vm_size_t);
+constexpr size_t MaxHeaderBytes=64U*1024U;
+constexpr uint64_t MaxProbeBytes=1024U*1024U;
+volatile uint32_t sourceState=0; // 0: unconfigured; 1: configuring; 2: ready; 3: failed
+uintptr_t kernelHeader=0;
+ReadWiredMemory readWiredMemory=nullptr;
 
-struct OwnedInfo {
-    MachInfo *info;
-    explicit OwnedInfo(MachInfo *value) : info(value) {}
-    ~OwnedInfo() {
-        if (info) {
-            // getRunningAddresses can partially initialise on failure. KC
-            // LINKEDIT is borrowed (sym_buf_ro=true), never freed by deinit.
-            info->deinit();
-            MachInfo::deleter(info);
-        }
-    }
-    OwnedInfo(const OwnedInfo &) = delete;
-    OwnedInfo &operator=(const OwnedInfo &) = delete;
+struct OwnedHeader {
+    uint8_t *bytes=nullptr;
+    size_t size=0;
+    ~OwnedHeader() { if (bytes) IOFree(bytes,size); }
+    OwnedHeader() = default;
+    OwnedHeader(const OwnedHeader &) = delete;
+    OwnedHeader &operator=(const OwnedHeader &) = delete;
 };
+
+bool readExact(uintptr_t source,void *destination,size_t size) {
+    if (__atomic_load_n(&sourceState,__ATOMIC_ACQUIRE)!=2 || !source ||
+        !destination || !size || source>UINTPTR_MAX-size) return false;
+    return readWiredMemory(static_cast<vm_offset_t>(source),
+        reinterpret_cast<vm_offset_t>(destination),static_cast<vm_size_t>(size))==size;
+}
+
+int32_t copyHeader(OwnedHeader &owned) {
+    if (__atomic_load_n(&sourceState,__ATOMIC_ACQUIRE)!=2) return 4;
+    mach_header_64 first {};
+    if (!readExact(kernelHeader,&first,sizeof(first))) return 4;
+    if (first.magic!=MH_MAGIC_64 || first.cputype!=CPU_TYPE_X86_64 ||
+        first.filetype!=MH_EXECUTE || !first.ncmds ||
+        first.sizeofcmds>MaxHeaderBytes-sizeof(first) ||
+        first.ncmds>first.sizeofcmds/sizeof(load_command)) return 5;
+    owned.size=sizeof(first)+first.sizeofcmds;
+    owned.bytes=static_cast<uint8_t *>(IOMalloc(owned.size));
+    if (!owned.bytes) return 3;
+    if (!readExact(kernelHeader,owned.bytes,owned.size)) return 4;
+    // Do not parse a length from one observation with bytes from another.
+    if (memcmp(owned.bytes,&first,sizeof(first))) return 5;
+    return 0;
+}
+
+// Header/segment declarations alone do not prove that a range is mapped.
+// Probe using the same no-fault reader, in bounded stack chunks. Kernel text
+// and data remain wired for the lifetime of this non-unloadable plugin.
+bool mappedRange(uintptr_t address,uint64_t size) {
+    if (size>MaxProbeBytes) return false;
+    uint8_t probe[128];
+    while (size) {
+        const size_t count=size<sizeof(probe)?static_cast<size_t>(size):sizeof(probe);
+        if (!readExact(address,probe,count)) return false;
+        address+=count;size-=count;
+    }
+    return true;
+}
 
 bool nonzeroUUID(const uint8_t uuid[16]) {
     uint8_t bits=0;
@@ -42,11 +82,23 @@ bool segmentShape(const segment_command_64 *segment,size_t commandSize) {
     if (segment->nsects>available/sizeof(section_64) ||
         available!=segment->nsects*sizeof(section_64) ||
         segment->vmaddr>UINT64_MAX-segment->vmsize ||
-        segment->filesize>segment->vmsize ||
+        (segment->vmsize && segment->filesize>segment->vmsize) ||
         segment->fileoff>UINT64_MAX-segment->filesize) return false;
     const auto *sections=reinterpret_cast<const section_64 *>(segment+1);
     for (uint32_t i=0;i<segment->nsects;++i) {
         const auto &section=sections[i];
+        // Standalone kernels can retain file-only debug/type data (e.g. CTF)
+        // with vmsize == 0. Check its file extent, without treating the bytes
+        // as a mapped segment. Kernel collections may strip this section to
+        // size/offset zero. Range admission below excludes all zero-VM spans.
+        if (!segment->vmsize) {
+            if (!section.size) continue;
+            if (section.addr>UINT64_MAX-section.size ||
+                section.offset<segment->fileoff ||
+                section.offset-segment->fileoff>segment->filesize ||
+                section.size>segment->filesize-(section.offset-segment->fileoff)) return false;
+            continue;
+        }
         if (section.addr<segment->vmaddr || section.addr-segment->vmaddr>segment->vmsize ||
             section.size>segment->vmsize-(section.addr-segment->vmaddr)) return false;
     }
@@ -114,18 +166,50 @@ void rejectCachedIdentity() {
 }
 
 int32_t runningKernelUUID(uint8_t uuid[16]) {
-    OwnedInfo owned(MachInfo::create(true,"kernel"));
-    if (!owned.info) return 3;
-    if (owned.info->getRunningAddresses()!=KERN_SUCCESS) return 4;
-    uint8_t *header=nullptr;
-    size_t size=0;
-    owned.info->getRunningPosition(header,size);
-    if (!header || size<sizeof(mach_header_64) ||
-        reinterpret_cast<uintptr_t>(header)%alignof(mach_header_64)!=0) return 4;
-    const size_t headerRange=size<MachInfo::HeaderSize?size:MachInfo::HeaderSize;
-    if (reinterpret_cast<uintptr_t>(header)>UINTPTR_MAX-headerRange) return 4;
-    return parseKernelHeader(header,headerRange,uuid)?0:5;
+    OwnedHeader owned;
+    const int32_t status=copyHeader(owned);
+    if (status) return status;
+    return parseKernelHeader(owned.bytes,owned.size,uuid)?0:5;
 }
+}
+
+int32_t initialize(KernelPatcher &patcher) {
+    uint32_t expected=0;
+    if (!__atomic_compare_exchange_n(&sourceState,&expected,1,false,
+                                    __ATOMIC_ACQ_REL,__ATOMIC_ACQUIRE))
+        return expected==2?0:4;
+    // The kernel collection can relocate the inner kernel relative to the
+    // standalone file, even with the same UUID. Before invoking ANY resolved
+    // helper, compare two symbol addresses to actual loader-resolved public
+    // imports. Reject a stale disk/slide view; do not guess a correction.
+    patcher.clearError();
+    const auto log=patcher.solveSymbol(KernelPatcher::KernelID,"_IOLog");
+    const bool logOK=log==reinterpret_cast<uintptr_t>(&IOLog) &&
+        patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    const auto sleep=patcher.solveSymbol(KernelPatcher::KernelID,"_IOSleep");
+    const bool sleepOK=sleep==reinterpret_cast<uintptr_t>(&IOSleep) &&
+        patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    if (!logOK || !sleepOK) {
+        __atomic_store_n(&sourceState,3,__ATOMIC_RELEASE);
+        return 4;
+    }
+    const uintptr_t header=patcher.solveSymbol(KernelPatcher::KernelID,"__mh_execute_header");
+    const bool headerOK=header && patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    const uintptr_t reader=patcher.solveSymbol(KernelPatcher::KernelID,"_ml_nofault_copy");
+    const bool readerOK=reader && patcher.getError()==KernelPatcher::Error::NoError;
+    patcher.clearError();
+    if (!headerOK || !readerOK || header%alignof(mach_header_64) ||
+        header>UINTPTR_MAX-MaxHeaderBytes) {
+        __atomic_store_n(&sourceState,3,__ATOMIC_RELEASE);
+        return 4;
+    }
+    kernelHeader=header;
+    readWiredMemory=reinterpret_cast<ReadWiredMemory>(reader);
+    __atomic_store_n(&sourceState,2,__ATOMIC_RELEASE);
+    return 0;
 }
 
 Profile currentProfile() {
@@ -172,17 +256,15 @@ int32_t verifyRunningKernelIdentity() {
 namespace {
 int32_t verifyRunningKernelRange(uintptr_t address,uint64_t needed,uint32_t requiredProtection) {
     if (!address || !needed || address>UINTPTR_MAX-needed) return 6;
-    OwnedInfo owned(MachInfo::create(true,"kernel"));
-    if (!owned.info) return 3;
-    if (owned.info->getRunningAddresses()!=KERN_SUCCESS) return 4;
-    uint8_t *bytes=nullptr;
-    size_t span=0;
-    owned.info->getRunningPosition(bytes,span);
-    if (!bytes || span<sizeof(mach_header_64) ||
-        reinterpret_cast<uintptr_t>(bytes)%alignof(mach_header_64)!=0) return 4;
-    const uintptr_t imageBase=reinterpret_cast<uintptr_t>(bytes);
-    if (imageBase>UINTPTR_MAX-span) return 5;
-    const size_t headerRange=span<MachInfo::HeaderSize?span:MachInfo::HeaderSize;
+    OwnedHeader owned;
+    const int32_t status=copyHeader(owned);
+    if (status) {
+        if (status==5) rejectCachedIdentity();
+        return status;
+    }
+    const uint8_t *bytes=owned.bytes;
+    const size_t headerRange=owned.size;
+    const uintptr_t imageBase=kernelHeader;
     uint8_t uuid[16] {};
     if (!parseKernelHeader(bytes,headerRange,uuid)) {
         rejectCachedIdentity();return 5;
@@ -202,16 +284,15 @@ int32_t verifyRunningKernelRange(uintptr_t address,uint64_t needed,uint32_t requ
                 if (++textCount!=1 || !segment->vmsize ||
                     !(segment->initprot&VM_PROT_EXECUTE) ||
                     !(segment->maxprot&VM_PROT_EXECUTE) ||
-                    reinterpret_cast<uintptr_t>(bytes)<segment->vmaddr) return 6;
-                slide=reinterpret_cast<uintptr_t>(bytes)-segment->vmaddr;
+                    imageBase<segment->vmaddr) return 6;
+                slide=imageBase-segment->vmaddr;
             }
         }
         offset+=command->cmdsize;
     }
     if (textCount!=1) return 6;
 
-    if (address<imageBase || address-imageBase>span ||
-        needed>span-(address-imageBase)) return 6;
+    if (address<imageBase) return 6;
 
     for (size_t offset=sizeof(*header);offset<end;) {
         const auto *command=reinterpret_cast<const load_command *>(bytes+offset);
@@ -224,7 +305,7 @@ int32_t verifyRunningKernelRange(uintptr_t address,uint64_t needed,uint32_t requ
                 if (segment->vmsize<=UINTPTR_MAX-begin && address>=begin &&
                     address-begin<=segment->vmsize &&
                     needed<=segment->vmsize-(address-begin)) {
-                    return 0;
+                    return mappedRange(address,needed)?0:6;
                 }
             }
         }

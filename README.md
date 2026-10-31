@@ -32,7 +32,18 @@
 
 ## 支持范围
 
-- Intel x86_64，BCM943602CDP / BCM43602。
+当前实测网卡为 Intel x86_64 上的 BCM943602CDP / BCM43602。随包 AirPortBrcmNIC 的 PCI 匹配项还有：
+
+| PCI ID | 芯片 | 项目状态 |
+| --- | --- | --- |
+| `14e4:43ba` | BCM43602 | 已实测 |
+| `14e4:43a3` | BCM4350 | 随包驱动 plist 匹配，未实测 |
+| `14e4:43a0` | BCM4360 | 随包驱动 plist 匹配，未实测 |
+
+本项目不代表支持所有 Broadcom 网卡；BCM4352、BCM4331、其他 Broadcom Wi-Fi 家族和 USB Wi-Fi 不会自动获得支持。此驱动匹配 PCI 设备；[OCLP 的 Broadcom PCI ID 分类](https://github.com/dortania/OpenCore-Legacy-Patcher/blob/main/opencore_legacy_patcher/datasets/pci_data.py#L1162-L1194)列出其他驱动类别。
+
+扩展范围按「网卡＋系统是否需要恢复无线支持」划分，原生可用的组合保持原样。详见[兼容范围与上游依据](COMPATIBILITY.md)。
+
 - 自动兼容核心从 Darwin 25 开始检查实际接口；配置片段不再设置固定版本上限。
 - 内核映像结构、关键函数实现、随包驱动及请求格式分别检查。检查失败时，不启用对应适配功能。
 - 接口没有改变的系统更新无需添加版本号和 UUID；新的内核实现或协议变化仍可能需要开发适配，不能保证所有未来系统自动可用。

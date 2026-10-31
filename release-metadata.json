@@ -7,26 +7,26 @@
   "validation_scope": "offline",
   "variants": {
     "RELEASE": {
-      "binary_sha256": "e68ab16e1e7805fe8c62e42843a103c4eb7700c7344ad42e467bb6ffa68371f4",
-      "uuid": "B55538F7-157E-3B61-AEBB-7C86DD17CFAD",
+      "binary_sha256": "c2acf66d13a5fdac337fabcee0f556dbb9e810c730418701d789600537380385",
+      "uuid": "C1418983-04A8-3A5C-88AE-176D79648ADA",
       "compiler_debug_macro": false,
       "baseline_trace": false,
       "control_rx_windows": false,
-      "zip_filename": "AirportBrcmCompat-1.1.0-auto-RELEASE.zip",
-      "zip_sha256": "5d76b791e39d6693c5ec6f0781095e7d12ce98bcd516dbd2ba0807b4bf5efd8b"
+      "zip_filename": "AirportBrcmCompat-1.1.0-api-compatible-RELEASE.zip",
+      "zip_sha256": "2eca638b7c9a814037ae5e41bce3de23b4b9c2564a38b336afdccddce6d99a63"
     },
     "DEBUG": {
-      "binary_sha256": "3d722c69b3882e92de4f773a0d948da6efb3118e5e75d5d149d329242e5ceb9b",
-      "uuid": "A09D51B9-6E84-31FA-8833-2F236E01411E",
+      "binary_sha256": "672739529c2eba67d143e2856af7e3a7e2e76f49f67cc64044eea404ac5b4199",
+      "uuid": "5713FE79-9851-3833-A7AD-C792EE65626D",
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "AirportBrcmCompat-1.1.0-auto-DEBUG.zip",
-      "zip_sha256": "8b37df5833e7ee262a5dee941256e11f22892475b3127bfc00aa83f4fa2f9f70"
+      "zip_filename": "AirportBrcmCompat-1.1.0-api-compatible-DEBUG.zip",
+      "zip_sha256": "d1c3b784d861dd7cef871e6305522a671840f84dcf79afaa635a8096255cd94a"
     }
   },
   "checks": {
-    "offline_tests_passed": 248,
+    "offline_tests_passed": 259,
     "real_kernel_contract_input_build": "25G332",
     "real_kernel_contract_input_images": [
       "standalone kernel",
@@ -34,6 +34,15 @@
     ],
     "real_kernel_contract_functions_per_image": 3,
     "rejected_single_bit_mutations": 23344,
-    "rejected_relocation_target_shifts": 16
+    "rejected_relocation_target_shifts": 16,
+    "kernel_image_parser_input_images": [
+      "standalone kernel",
+      "BootKC:com.apple.kernel"
+    ],
+    "framework_api_build_versions": [
+      "1.7.1",
+      "1.7.2"
+    ],
+    "framework_private_object_imports": 0
   }
 }

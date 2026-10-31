@@ -4,7 +4,9 @@
 #include <Headers/kern_patcher.hpp>
 namespace AWDLKernel { namespace ScopedResetBridge {
 // Startup only, before any independent client is created. Registry and module
-// storage must have static lifetime. This supplies no event-pipe capability.
+// storage must have static lifetime. Runtime callback admission uses the
+// retained synchronous gate scope; it does not depend on host runAction code
+// offsets. This supplies no event-pipe capability.
 bool install(KernelPatcher &,ClientRegistry &,size_t legacyIndex,
              mach_vm_address_t legacyAddress,size_t legacySize);
 bool ready();

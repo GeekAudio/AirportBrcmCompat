@@ -435,7 +435,8 @@ void init() {
         // This is not ABI approval: every feature installer keeps its own
         // target-image symbol, range, byte, and request-shape checks.
         ScanKernelIdentity::Profile profile=ScanKernelIdentity::Profile::Unsupported;
-        const int identity=ScanKernelIdentity::identifyRunningKernelProfile(&profile);
+        int identity=ScanKernelIdentity::initialize(patcher);
+        if (!identity) identity=ScanKernelIdentity::identifyRunningKernelProfile(&profile);
         ScanDiagnostics::record(ScanDiagnostics::BuildGuard,identity);
         if (identity || profile!=ScanKernelIdentity::Profile::Structural) {
             watched[0].switchOff();watched[1].switchOff();

@@ -17,7 +17,8 @@ LILU_ENV='AIRPORT_BRCM_LILU_RESOURCES'
 NAME='AirportBrcmCompat'
 IDENTIFIER='org.geekaudio.'+NAME
 VERSION='1.1.0'
-LIBRARIES={'as.vit9696.Lilu':'1.7.3','com.apple.kpi.bsd':'19.0.0','com.apple.kpi.iokit':'19.0.0',
+LILU_RUNTIME_MINIMUM='1.7.1'
+LIBRARIES={'as.vit9696.Lilu':LILU_RUNTIME_MINIMUM,'com.apple.kpi.bsd':'19.0.0','com.apple.kpi.iokit':'19.0.0',
            'com.apple.kpi.libkern':'19.0.0','com.apple.kpi.mach':'19.0.0',
            'com.apple.kpi.unsupported':'19.0.0','com.apple.iokit.IONetworkingFamily':'3.4'}
 

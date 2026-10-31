@@ -58,7 +58,7 @@
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>as.vit9696.Lilu</key>
-		<string>1.7.3</string>
+		<string>1.7.1</string>
 		<key>com.apple.iokit.IONetworkingFamily</key>
 		<string>3.4</string>
 		<key>com.apple.kpi.bsd</key>

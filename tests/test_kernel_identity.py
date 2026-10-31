@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute structural identity and executable-range checks with fake MachInfo."""
+"""Execute structural identity and executable-range checks through a bounded mock no-fault reader."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -20,27 +20,51 @@ MOCK = r'''
 #include <string>
 #include <sys/mman.h>
 #include <unistd.h>
-bool allocationFails=false;
-int addressResult=0, createCount=0, positionCount=0, deinitCount=0, deleteCount=0;
+bool allocationFails=false,missingHeader=false,missingReader=false,changeDuringCopy=false,shiftedLog=false,shiftedSleep=false;
+int allocationCount=0,freeCount=0,readCount=0;
 uint8_t *fakeHeader=nullptr;
 size_t fakeSize=0;
+void *IOMalloc(size_t n){if(allocationFails)return nullptr;++allocationCount;return malloc(n);}
+void IOFree(void *p,size_t){++freeCount;free(p);}
+vm_size_t fakeRead(vm_offset_t source,vm_offset_t destination,vm_size_t count){
+ ++readCount;
+ uintptr_t begin=reinterpret_cast<uintptr_t>(fakeHeader);
+ if(!begin || source<begin || source-begin>=fakeSize)return 0;
+ size_t available=fakeSize-(source-begin);size_t copied=count<available?count:available;
+ memcpy(reinterpret_cast<void*>(destination),reinterpret_cast<void*>(source),copied);
+ if(changeDuringCopy && count>sizeof(mach_header_64))
+  reinterpret_cast<mach_header_64*>(destination)->ncmds++;
+ return copied;
+}
+void IOLog(const char *,...) {}
+void IOSleep(unsigned) {}
+class KernelPatcher {
+public:
+ enum class Error {NoError,Missing};
+ static constexpr size_t KernelID=0;
+ Error error=Error::NoError;
+ uintptr_t solveSymbol(size_t id,const char *name){
+  assert(id==KernelID);
+  if(!strcmp(name,"_IOLog"))return reinterpret_cast<uintptr_t>(&IOLog)+(shiftedLog?0xe8000:0);
+  if(!strcmp(name,"_IOSleep"))return reinterpret_cast<uintptr_t>(&IOSleep)+(shiftedSleep?0xe8000:0);
+  if(!strcmp(name,"__mh_execute_header")&&!missingHeader)return reinterpret_cast<uintptr_t>(fakeHeader);
+  if(!strcmp(name,"_ml_nofault_copy")&&!missingReader)return reinterpret_cast<uintptr_t>(&fakeRead);
+  error=Error::Missing;return 0;
+ }
+ Error getError(){return error;}
+ void clearError(){error=Error::NoError;}
+};
 namespace ScanKernelIdentity {
 enum class Profile : uint32_t { Pending=0, Unsupported=1, Structural=2 };
 bool copyRunningKernelUUID(uint8_t uuid[16]);
 }
-struct MachInfo {
- uint8_t mockStorage[192]{};
- static constexpr size_t HeaderSize=8192;
- static MachInfo *create(bool asKernel,const char *id){++createCount;assert(asKernel&&std::string(id)=="kernel");return allocationFails?nullptr:new MachInfo;}
- int getRunningAddresses(){return addressResult;}
- void getRunningPosition(uint8_t *&header,size_t &size){++positionCount;header=fakeHeader;size=fakeSize;}
- void deinit(){++deinitCount;}
- static void deleter(MachInfo *p){++deleteCount;delete p;}
-};
 '''
 
 HARNESS = r'''
 alignas(8) uint8_t storage[16384]{};
+void configure(){
+ ScanKernelIdentity::sourceState=0;KernelPatcher patcher;ScanKernelIdentity::initialize(patcher);
+}
 const uint8_t knownButNotAllowlisted[16]={0xa7,0x13,0x42,0x81,0x9c,0x55,0xe2,0x06,
                                            0x70,0xd4,0x33,0x19,0x8b,0xfa,0x61,0x2e};
 void setUUID(const uint8_t uuid[16]) {
@@ -49,7 +73,7 @@ void setUUID(const uint8_t uuid[16]) {
  memcpy(u->uuid,uuid,16);
 }
 void reset(){
- memset(storage,0,sizeof(storage));fakeHeader=storage;fakeSize=sizeof(mach_header_64)+sizeof(uuid_command)+sizeof(segment_command_64);
+ memset(storage,0,sizeof(storage));fakeHeader=storage;fakeSize=sizeof(storage);
  auto *h=reinterpret_cast<mach_header_64*>(storage);
  h->magic=MH_MAGIC_64;h->cputype=CPU_TYPE_X86_64;h->filetype=MH_EXECUTE;h->ncmds=2;
  h->sizeofcmds=sizeof(uuid_command)+sizeof(segment_command_64);
@@ -59,17 +83,16 @@ void reset(){
  s->cmd=LC_SEGMENT_64;s->cmdsize=sizeof(segment_command_64);
  memcpy(s->segname,"__TEXT",6);s->vmaddr=0;s->vmsize=0x1000;s->fileoff=0;s->filesize=0x1000;
  s->maxprot=VM_PROT_READ|VM_PROT_EXECUTE;s->initprot=VM_PROT_READ|VM_PROT_EXECUTE;
+ configure();
 }
 int checkIdentity(int expected,ScanKernelIdentity::Profile expectedOutput,
                   ScanKernelIdentity::Profile expectedCurrent){
- int beforeD=deinitCount,beforeF=deleteCount,beforeP=positionCount;
+ configure();int beforeA=allocationCount,beforeF=freeCount;
  ScanKernelIdentity::Profile profile=ScanKernelIdentity::Profile::Pending;
  int result=ScanKernelIdentity::identifyRunningKernelProfile(&profile);
  assert(result==expected);assert(profile==expectedOutput);
  assert(ScanKernelIdentity::currentProfile()==expectedCurrent);
- assert(deinitCount-beforeD==int(!allocationFails));
- assert(deleteCount-beforeF==int(!allocationFails));
- if(allocationFails||addressResult)assert(positionCount==beforeP);
+ assert(allocationCount-beforeA==freeCount-beforeF);
  return result;
 }
 int main(int argc,char **argv){
@@ -123,7 +146,8 @@ int main(int argc,char **argv){
   s->vmaddr=UINT64_MAX-0x100;s->vmsize=0x200;checkIdentity(5,Profile::Unsupported,Profile::Pending);
  }else if(mode=="acquire"){
   allocationFails=true;checkIdentity(3,Profile::Unsupported,Profile::Pending);allocationFails=false;
-  addressResult=5;checkIdentity(4,Profile::Unsupported,Profile::Pending);addressResult=0;
+  missingReader=true;checkIdentity(4,Profile::Unsupported,Profile::Pending);missingReader=false;
+  missingHeader=true;checkIdentity(4,Profile::Unsupported,Profile::Pending);missingHeader=false;
   fakeHeader=nullptr;checkIdentity(4,Profile::Unsupported,Profile::Pending);
   reset();fakeSize=sizeof(mach_header_64)-1;checkIdentity(4,Profile::Unsupported,Profile::Pending);
  }else if(mode=="alignment"){
@@ -132,16 +156,17 @@ int main(int argc,char **argv){
   fakeHeader=reinterpret_cast<uint8_t*>(UINTPTR_MAX-7U);fakeSize=64;
   checkIdentity(4,Profile::Unsupported,Profile::Pending);
  }else if(mode=="window"){
-  fakeSize=sizeof(storage);h->sizeofcmds=8192;h->ncmds=1;
+  fakeSize=sizeof(storage);h->sizeofcmds=65536;h->ncmds=1;
   checkIdentity(5,Profile::Unsupported,Profile::Pending);
  }else if(mode=="guarded"){
   long page=sysconf(_SC_PAGESIZE);assert(page>=4096);
   void *area=mmap(nullptr,static_cast<size_t>(page)*2,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANON,-1,0);
   assert(area!=MAP_FAILED);assert(!mprotect(static_cast<uint8_t*>(area)+page,static_cast<size_t>(page),PROT_NONE));
+  fakeSize=sizeof(mach_header_64)+h->sizeofcmds;
   fakeHeader=static_cast<uint8_t*>(area)+page-fakeSize;memcpy(fakeHeader,storage,fakeSize);
   checkIdentity(0,Profile::Structural,Profile::Structural);
   reinterpret_cast<mach_header_64*>(fakeHeader)->sizeofcmds+=8;
-  checkIdentity(5,Profile::Unsupported,Profile::Unsupported);
+  checkIdentity(4,Profile::Unsupported,Profile::Structural);
   assert(!munmap(area,static_cast<size_t>(page)*2));
  }else if(mode=="code_range"){
   fakeSize=sizeof(storage);
@@ -163,7 +188,7 @@ int main(int argc,char **argv){
   assert(area!=MAP_FAILED);assert(!mprotect(static_cast<uint8_t*>(area)+page,static_cast<size_t>(page),PROT_NONE));
   s->vmsize=128;s->filesize=128;fakeSize=128;
   fakeHeader=static_cast<uint8_t*>(area)+page-fakeSize;memcpy(fakeHeader,storage,fakeSize);
-  uintptr_t base=reinterpret_cast<uintptr_t>(fakeHeader);
+  configure();uintptr_t base=reinterpret_cast<uintptr_t>(fakeHeader);
   assert(ScanKernelIdentity::verifyRunningKernelCodeRange(base+0x70,8)==0);
   assert(ScanKernelIdentity::verifyRunningKernelCodeRange(base+0x7f,2)==6);
   assert(!munmap(area,static_cast<size_t>(page)*2));
@@ -190,9 +215,41 @@ int main(int argc,char **argv){
   data->vmaddr=0x1000;data->vmsize=0x1000;data->initprot=VM_PROT_READ;data->maxprot=VM_PROT_READ;
   h->ncmds=3;h->sizeofcmds+=sizeof(segment_command_64);
   auto *image=static_cast<uint8_t*>(area)+page-mapped;memcpy(image,storage,sizeof(mach_header_64)+h->sizeofcmds);
-  fakeHeader=image;uintptr_t base=reinterpret_cast<uintptr_t>(image);
+  fakeHeader=image;configure();uintptr_t base=reinterpret_cast<uintptr_t>(image);
   assert(ScanKernelIdentity::verifyRunningKernelReadableRange(base+0x10f8,16)==6);
   assert(!munmap(area,static_cast<size_t>(page)*2));
+ }else if(mode=="file_only_segment"){
+  auto *debug=reinterpret_cast<segment_command_64*>(storage+sizeof(*h)+sizeof(*u)+sizeof(*s));
+  debug->cmd=LC_SEGMENT_64;debug->cmdsize=sizeof(*debug)+sizeof(section_64);
+  memcpy(debug->segname,"__CTF",5);debug->vmaddr=0x3000;debug->vmsize=0;
+  debug->fileoff=0x10000;debug->filesize=0x200;debug->nsects=1;
+  debug->initprot=VM_PROT_READ;debug->maxprot=VM_PROT_READ;
+  auto *section=reinterpret_cast<section_64*>(debug+1);
+  section->addr=debug->vmaddr;section->size=0x180;section->offset=debug->fileoff;
+  h->ncmds=3;h->sizeofcmds+=debug->cmdsize;
+  checkIdentity(0,Profile::Structural,Profile::Structural);
+  uintptr_t base=reinterpret_cast<uintptr_t>(storage);
+  assert(ScanKernelIdentity::verifyRunningKernelReadableRange(base+0x3000,1)==6);
+  section->size=0x201;checkIdentity(5,Profile::Unsupported,Profile::Unsupported);
+ }else if(mode=="torn_header"){
+  changeDuringCopy=true;checkIdentity(5,Profile::Unsupported,Profile::Pending);
+ }else if(mode=="uninitialized"){
+  ScanKernelIdentity::sourceState=0;
+  assert(ScanKernelIdentity::verifyRunningKernelIdentity()==4);
+ }else if(mode=="initialization_once"){
+  auto before=ScanKernelIdentity::kernelHeader;KernelPatcher p;fakeHeader=nullptr;
+  assert(ScanKernelIdentity::initialize(p)==0);assert(ScanKernelIdentity::kernelHeader==before);
+ }else if(mode=="shifted_symbols"){
+  int before=readCount;shiftedLog=true;
+  checkIdentity(4,Profile::Unsupported,Profile::Pending);assert(readCount==before);
+  shiftedLog=false;shiftedSleep=true;
+  checkIdentity(4,Profile::Unsupported,Profile::Pending);assert(readCount==before);
+ }else if(mode=="partial_copy"){
+  fakeSize=sizeof(mach_header_64)+h->sizeofcmds-1;
+  checkIdentity(4,Profile::Unsupported,Profile::Pending);
+ }else if(mode=="unmapped_probe"){
+  fakeSize=0x200;
+  assert(ScanKernelIdentity::verifyRunningKernelCodeRange(reinterpret_cast<uintptr_t>(storage)+0x800,16)==6);
  }else assert(false);
  puts("mock-only structural identity scenario passed");
 }
@@ -231,10 +288,18 @@ class KernelIdentityTests(unittest.TestCase):
         self.scenario('header')
         self.scenario('commands')
     def test_malformed_segment_layout_is_rejected(self): self.scenario('segments')
+    def test_file_only_debug_segment_is_valid_but_never_a_runtime_range(self): self.scenario('file_only_segment')
     def test_acquisition_alignment_and_pointer_overflow(self):
         self.scenario('acquire')
         self.scenario('alignment')
         self.scenario('overflow')
+    def test_torn_header_partial_reads_and_missing_initialization(self):
+        self.scenario('torn_header')
+        self.scenario('partial_copy')
+        self.scenario('uninitialized')
+        self.scenario('initialization_once')
+        self.scenario('unmapped_probe')
+        self.scenario('shifted_symbols')
     def test_mach_header_window_is_capped(self): self.scenario('window')
     def test_exact_header_boundary_has_inaccessible_guard_page(self): self.scenario('guarded')
     def test_executable_segment_range_and_boundaries(self): self.scenario('code_range')

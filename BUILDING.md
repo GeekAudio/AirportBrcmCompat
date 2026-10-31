@@ -86,13 +86,32 @@ unique nonzero UUID. The UUID is remembered only to detect a contradictory image
 during the same run; new UUIDs do not require a source change. Structural image
 validation does not approve a private interface.
 
+Image validation owns its bounded header snapshot. It does not allocate or read
+framework-private Mach-O objects. Before calling the runtime-resolved XNU
+no-fault reader, the symbol source must agree with the loader-resolved `IOLog`
+and `IOSleep` imports. A stale standalone-kernel/collection symbol view is
+rejected. Header reads must complete in full, and candidate ranges must satisfy
+both segment permissions and a bounded no-fault mapping probe. The XNU reader
+is still a private interface; a missing symbol disables admission.
+
+The reproducible build uses the released resource revision in the dependency
+lock. Its version is separate from the minimum plugin API required at runtime.
+To repeat the two-release header, exported-symbol and full-build check:
+
+```sh
+python3 tools/verify_lilu_release_compatibility.py
+```
+
+This opt-in command downloads the pinned official inputs and writes evidence
+under `build/`. It does not run as part of the normal offline suite.
+
 Each dependent installer checks its resolved kernel symbols, executable ranges
 and implementation contracts before routing. The supplied wireless binaries
 retain their own UUID, layout, instruction and call-target checks. These fixed
 dependency pins are independent of the host OS build.
 
-The private-address callback and command-gate reset contracts hash complete
-bounded function bodies. Only listed relative-address operands are normalized;
+The private-address callback contract hashes its complete bounded function
+body. Only listed relative-address operands are normalized;
 branches, argument registers, stack slots, field offsets and reference-count
 instructions remain part of the fingerprint. Named helper targets are resolved
 separately. Two adjacent-data references also require their exact relationship
@@ -103,6 +122,11 @@ not tied to a nearby unrelated symbol. Changes to these anonymous layouts can
 disable the private-address adapter even when named interfaces still match.
 These checks recognize the implemented contracts; they cannot infer the meaning
 of a new private kernel ABI.
+
+The owned-client reset instead uses its retained synchronous work-loop/gate
+scope, checking thread, owner, provider, gate binding and one-shot consumption.
+It retains the supplied legacy driver's UUID and instruction guards without
+pinning the host command-gate function body or its internal return offset.
 
 Request adapters retain their exact lengths, version fields, allowed values and
 bounded copies. Unknown layouts are rejected or passed to the original handler
