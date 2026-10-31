@@ -71,6 +71,7 @@ struct Fixture {
         api.original=original;api.copyIn=copyNative;api.allocate=allocate;
         api.deallocate=deallocate;api.currentThread=thread;api.registry=&registry;
         api.caller=copyCaller;api.entryAllowed=entryAllowed;api.privateAvailable=available;
+        api.primaryInterface=primary;
         api.observeFlags=observe;api.observeSurvey=survey;
     }
     ~Fixture(){assert(!locked&&!allocation&&!registry.head&&!admission.isBusy());}
@@ -78,6 +79,8 @@ struct Fixture {
     static void enterLock(void*v){auto&p=*(Fixture*)v;assert(!p.locked);p.locked=true;}
     static void leaveLock(void*v){auto&p=*(Fixture*)v;assert(p.locked);p.locked=false;}
     static uintptr_t thread(){return f().owner;}
+    static bool primary(void*c,void*i,const char name[16]){auto&p=f();
+        return c==p.controller&&i==p.interface&&PrimaryInterface::sameRequestAndProperty(name,"en1",3);}
     static void *allocate(size_t n){auto&p=f();assert(n==AC::StorageSize&&!p.locked);
         p.events.push_back(Allocated);if(p.failAlloc)return nullptr;
         assert(!p.allocation);p.allocation=(uint8_t*)malloc(n+32);assert(p.allocation);
@@ -89,7 +92,7 @@ struct Fixture {
         p.frees++;p.events.push_back(Freed);free(p.allocation);p.allocation=nullptr;
     }
     static int copyNative(void*c,uint64_t src,void*out,size_t n){auto&p=f();
-        assert(!p.locked&&c==p.controller&&src==(uintptr_t)p.payload&&n==N);
+        assert(!p.locked&&c==p.controller&&src==(uintptr_t)p.payload&&n==p.envelope.request.length);
         p.nativeCopies++;p.events.push_back(CopiedNative);if(p.copyError)return p.copyError;
         memcpy(out,p.payload,n);return 0;
     }
@@ -110,7 +113,12 @@ struct Fixture {
     static void survey(const AssociationSurvey::Snapshot&s){auto&p=f();
         assert(!p.locked&&p.nativeCopies&&p.allocation);
         AssociationSurvey::Snapshot expected;
-        assert(AssociationSurvey::inspect(p.payload,N,expected)==AssociationSurvey::Status::Ok);
+        uint8_t normalized[N];const uint8_t *input=p.payload;
+        if(p.envelope.request.length==AssociationProfiles::Sequoia15Size){
+            assert(!AssociationProfiles::normalizeSequoia15(p.payload,AssociationProfiles::Sequoia15Size,normalized,N).error);
+            input=normalized;
+        }
+        assert(AssociationSurvey::inspect(input,N,expected)==AssociationSurvey::Status::Ok);
         assert(!memcmp(&s,&expected,sizeof(s)));p.surveyCalls++;p.observedSurvey=s;
     }
     static int check(void*v){auto&p=*(Fixture*)v;assert(!p.locked);
@@ -323,13 +331,24 @@ static void dhcpPolicy(){Fixture p;p.payload[469]=0x40;assert(!p.run());
 }
 static void noContext(){Fixture p;assert(p.handle()==EOPNOTSUPP);
     assert(!p.nativeCopies&&!p.originals&&!p.allocs&&!p.availableCalls);}
+static void sequoiaProfile(){
+    {Fixture p;p.envelope.request.length=900;p.payload[899]=0;
+     assert(!p.run()&&p.copied&&p.planApplied&&p.planCompleted);p.allPrivate();
+     assert(p.nativeCopies==1&&p.oldCopies==1&&p.surveyCalls==1&&p.payload[899]==0);}
+    {Fixture p(false);p.consumer=false;p.envelope.request.length=900;p.payload[899]=0;
+     assert(!p.run()&&p.copied&&!p.drivers&&!p.setters);}
+    for(size_t bad:{size_t(700),size_t(899)}){
+     Fixture p;p.envelope.request.length=900;p.payload[899]=0;p.payload[bad]=1;
+     assert(p.run()==EOPNOTSUPP&&!p.originals&&!p.setters&&p.allocs==p.frees);}
+}
 int main(int argc,char**argv){assert(argc==2);switch(atoi(argv[1])){
  case 0:good();break;case 1:entryBlocks();break;case 2:consumerRequired();break;
  case 3:exactScope();break;case 4:missingWork();break;case 5:wrongConsumer();break;
  case 6:copyMismatches();break;case 7:allOldBytes();break;case 8:duplicateCopy();break;
  case 9:duplicateAuth();break;case 10:wrongAuth();break;case 11:errorsPreserved();break;
  case 12:partialQuarantine();break;case 13:postQuarantine();break;case 14:beforeMutation();break;
- case 15:earlyCleanup();break;case 16:noContext();break;case 17:dhcpPolicy();break;default:abort();}puts("ok");}
+ case 15:earlyCleanup();break;case 16:noContext();break;case 17:dhcpPolicy();break;
+ case 18:sequoiaProfile();break;default:abort();}puts("ok");}
 '''
 
 
@@ -375,6 +394,7 @@ class PrivateMACAssociationFlowTests(unittest.TestCase):
     def test_allocation_copy_extension_failures_remove_scope_and_scrub_heap(self): self.scenario(15)
     def test_absent_admission_context_refuses_before_copy_or_original(self): self.scenario(16)
     def test_known_dhcp_permission_is_scoped_and_flags_are_observed_after_copy(self): self.scenario(17)
+    def test_sequoia_exact_copy_and_normalization_share_scoped_private_transaction(self): self.scenario(18)
 
 
 if __name__ == "__main__":

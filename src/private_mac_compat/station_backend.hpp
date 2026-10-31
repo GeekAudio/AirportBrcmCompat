@@ -24,8 +24,8 @@ struct StationBindings {
     int (*runtimeBuild)()=nullptr;
     // Mandatory real lifetime/stop exclusion lease. A retained IOService,
     // isInactive()==false and nonnull wlc fields do NOT supply this proof.
-    // The optional third argument is the retained BSD handle. A nonnull value
-    // must be exactly the original callback's borrowed ifp, not just same name.
+    // The optional third argument is the original callback's borrowed ifp; it
+    // must still be under that exact synchronous lease, not just have its name.
     // On success also reports the exact nonzero callback generation.
     int (*lifecycleLease)(void *,void *,ifnet_t,uint64_t *generation)=nullptr;
 };
@@ -56,12 +56,13 @@ public:
     uint32_t lastBackendStatus=0;
     StationSession()=default;
     // Must stay on the synchronous gated ioctl stack, within the caller's real
-    // lifecycle lease. Retains are references, not permission to defer to a
-    // worker or survive provider stop/rebuild. No operation is done at unload.
+    // lifecycle lease. BSD is borrowed and is never retained to extend its
+    // lifetime. No operation is done at unload.
     ~StationSession();
     StationSession(const StationSession &)=delete;
     StationSession &operator=(const StationSession &)=delete;
-    int open(const StationBindings &,IOService *,IOService *,const NativeRequest &,
+    int open(const StationBindings &,IOService *,IOService *,ifnet_t originalIfp,
+             const NativeRequest &,
              const AuthData *,uint32_t expectedUpper,uintptr_t caller,uintptr_t expectedCaller);
     API api();
 };

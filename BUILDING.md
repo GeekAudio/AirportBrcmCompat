@@ -37,8 +37,9 @@ python3 tools/run_tests.py
 
 The public suite exercises the included core logic with synthetic inputs and
 host-side adapters. It does not boot a kext, connect Wi-Fi, or perform AirDrop.
-Private machine logs, linked Apple analysis binaries, deployment scripts, and
-tests requiring those private inputs are not part of this suite.
+Private machine logs, Apple analysis binaries and deployment scripts are not
+distributed. Optional fixture checks run when their documented inputs exist
+under the ignored `build/` directory; otherwise those checks are skipped.
 
 ## Build the two variants
 
@@ -77,7 +78,7 @@ their release tag.
 
 ## Compatibility policy
 
-The minimum is Darwin 25; the plugin and matching OpenCore snippets have no
+The minimum is Darwin 23; the plugin has no
 fixed maximum. The boot environment and underlying dependencies must themselves
 support the target system. An absent version ceiling is not proof of support.
 
@@ -123,6 +124,23 @@ disable the private-address adapter even when named interfaces still match.
 These checks recognize the implemented contracts; they cannot infer the meaning
 of a new private kernel ABI.
 
+The callback checker also recognizes two independently inspected implementations
+from Sonoma and Sequoia. Selection uses their full code contracts and resolved
+symbols, without checking an OS label or UUID. These additional contracts alone
+do not alone prove whole-system support. To check explicitly supplied Apple
+kernel collections against the production validators:
+
+```sh
+python3 tools/verify_ifnet_kernel_contracts.py \
+  --kernel-collection /path/to/BootKernelExtensions.kc \
+  --output build/ifnet-contracts.json
+```
+
+Repeat `--kernel-collection` for multiple samples. The verifier checks real
+file-backed bytes, symbol targets, callback offsets and mapped ranges, then
+tests byte mutations, incorrect targets and address relocation. Apple samples
+are supplied locally and are not included in the source repository.
+
 The owned-client reset instead uses its retained synchronous work-loop/gate
 scope, checking thread, owner, provider, gate binding and one-shot consumption.
 It retains the supplied legacy driver's UUID and instruction guards without
@@ -132,6 +150,16 @@ Request adapters retain their exact lengths, version fields, allowed values and
 bounded copies. Unknown layouts are rejected or passed to the original handler
 without conversion. Code or protocol changes can still require a new adapter;
 matching interfaces can continue across system updates without a version entry.
+
+The source now dispatches the observed scan-result sizes 1228/2264/2272,
+capability buffers 16/19/21 and association inputs 856/900/908. The 856-byte
+association path preserves the legacy authentication fields and admits a
+bounded open/WPA2 subset with no nonzero extension or grouping scope. The
+900-byte path normalizes only the verified reserved tail in an owned copy;
+the shared validator retains all other restrictions. These codecs do not by
+themselves approve every minor release. The native control bridge also accepts
+the verified 256-byte inline GET43 response alongside the original 384-byte
+response; its existing out-of-line route remains limited to 384 bytes.
 
 Optional DEBUG receive diagnostics follow the admitted bridge and owned message
 format. Their IORegistry key is `BroadcomAwdlBaseline`, without a build suffix.
@@ -145,10 +173,72 @@ format. Their IORegistry key is `BroadcomAwdlBaseline`, without a build suffix.
 | `src/awdl_kernel` | Native control bridge, event ownership, routing and diagnostics |
 | `src/awdl_compat` | Message codecs and bounded event-ring logic |
 | `src/unified_kernel` | One-kext module identity and shared core |
+| `src/legacy_wifi_compat` | Separate legacy request/scan/association codecs; not connected to the core loader |
 | `tests` | Offline regression tests and synthetic fixtures |
+
+`tools/verify_legacy_wifi_imports.py` audits explicitly supplied ElCap driver
+bundles and kernel collections. It distinguishes raw undefined symbols from
+verified inherited vtable slots, and reports potential co-load class conflicts
+using metaclass constructor names. Its output does not establish actual loading
+or approve blocking native system providers.
 
 `src/build_namespace.py` documents the separate namespace transformation used
 for the legacy dependencies. It requires exact original binary inputs; those
 Apple binaries are not source code and are not covered by this project's BSD
 license. Rebuilding the core does not regenerate or replace the dependency ZIP.
 The offline facade mock is never linked into the kext.
+
+## Wi-Fi dependency profiles
+
+The namespace builder accepts the pinned original wireless inputs and an
+explicit native Skywalk sample. It can read a native fileset member directly
+from a kernel collection, including systems whose on-disk kext lacks its binary:
+
+```sh
+python3 src/build_namespace.py \
+  --legacy-dir /path/to/original-wireless-kexts \
+  --dependency-profile sonoma-sequoia \
+  --native-kernel-collection /path/to/BootKernelExtensions.kc \
+  --output build/WiFi-Dependencies-Sonoma-Sequoia.zip
+```
+
+`sonoma-sequoia` selects the original nested AirPortBrcmNIC for Darwin 23–24.
+`tahoe` selects the separate AirPortBrcmNIC-Tahoe input for Darwin 25 onward.
+Each output contains three Wi-Fi dependencies and a matching configuration
+fragment. The manifest records the actual collision-check sample and input
+hashes. Dependency selection is separate from core protocol compatibility;
+these profiles are development candidates, not an expanded support claim.
+
+To prepare both NIC variants in one EFI dependency package:
+
+```sh
+python3 tools/combine_wifi_dependency_profiles.py \
+  --sonoma-sequoia build/WiFi-Dependencies-Sonoma-Sequoia.zip \
+  --tahoe build/WiFi-Dependencies-Tahoe.zip \
+  --output build/WiFi-Dependencies-Automatic.zip
+```
+
+The combiner verifies the fixed driver contents, identical shared dependencies
+and strict signatures. Its fragment loads one NIC variant for Darwin 23–24
+and the other from Darwin 25. Both variants are stored in EFI; only one is
+loaded for a given system. The compatibility core is a separate download/build.
+This package contains no Bluetooth or system-volume patching components.
+
+For the additional modern PCI IDs `4331`, `4353`, `4357`, `43b1` and `43b2`,
+prepare the optional upstream core and NIC injector from the
+[official 2.2.1 RELEASE ZIP](https://github.com/acidanthera/AirportBrcmFixup/releases/download/2.2.1/AirportBrcmFixup-2.2.1-RELEASE.zip):
+
+```sh
+python3 tools/prepare_broadcom_injector.py \
+  --archive /path/to/AirportBrcmFixup-2.2.1-RELEASE.zip \
+  --dependency-profile sonoma-sequoia \
+  --output build/Additional-Broadcom-Cards.zip
+```
+
+The tool verifies the upstream archive hash, keeps the NIC injector, and
+excludes the injector for the different AirPortBrcm4360 driver. Its fragment
+adds only the optional Wi-Fi components. PCI matching does not establish
+hardware functionality; use the same profile as the main dependency package.
+For a combined cross-version dependency package, select `automatic`; its two
+optional entries start at Darwin 23. The upstream component's own runtime
+compatibility checks still apply.

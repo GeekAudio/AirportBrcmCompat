@@ -40,12 +40,18 @@ static int get(void *mgr,const uint8_t **ptr) {
     if(mode==11)return EBUSY;if(mode==12)return EIO;if(mode==28)return EINVAL;
     *ptr=mode==13?nullptr:old;return 0;
 }
+static bool primary(void *c,void *i,const char name[16]) {
+    PrimaryInterface::Name parsed;
+    return c==reinterpret_cast<void*>(1) && i==reinterpret_cast<void*>(3) &&
+        PrimaryInterface::parseRequestName(name,parsed) && parsed.unit==1;
+}
 int main(int argc,char **argv) {
     CHECK(argc==2);mode=atoi(argv[1]);
     for(size_t i=0;i<NativeSize;i++)user[i]=(uint8_t)(i*7+3);
     memset(old,0x5a,OldSize);put32(user,1);put32(old,1);
     old[0x22]=15;old[0x60]=32;write16(user+0x8a,2048);write16(old+0x8a,1024);
     Request request{};request.type=11;request.value=-3;request.padding=0x12345678;
+    memcpy(request.interfaceName,"en1",4);
     request.length=NativeSize;request.userData=reinterpret_cast<uint64_t>(user);
     Request *argument=&request;
     void *controller=reinterpret_cast<void*>(1),*interface=reinterpret_cast<void*>(3),*infra=nullptr;
@@ -77,13 +83,13 @@ int main(int argc,char **argv) {
     case 23:request.length=OldSize;expected=77;break;
     case 24:request.userData=0;expected=EINVAL;break;
     case 25:controller=nullptr;expected=EINVAL;break;
-    case 26:interface=nullptr;infra=reinterpret_cast<void*>(4);break;
+    case 26:interface=nullptr;infra=reinterpret_cast<void*>(4);expected=77;break;
     case 27:break;
     case 28:expected=EINVAL;break;
     default:return 64;
     }
     memcpy(before,user,NativeSize);memcpy(oldBefore,old,OldSize);Request requestBefore=request;
-    API api{original,alloc,release,copyIn,copyOut,manager,get};
+    API api{original,alloc,release,copyIn,copyOut,manager,get,primary};
     CHECK(handle(api,controller,interface,nullptr,infra,argument,mode==23)==expected);
     CHECK(!memcmp(&request,&requestBefore,sizeof(request)));
     CHECK(allocations==frees+(mode==6));

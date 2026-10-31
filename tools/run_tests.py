@@ -16,6 +16,8 @@ TESTS = ROOT / "tests"
 SUITES = {
     "scan": (
         "test_scan_kernel",
+        "test_scan_result_profiles",
+        "test_primary_interface",
         "test_scan_capabilities",
         "test_scan_lifecycle",
         "test_runtime_build_guard",
@@ -29,10 +31,13 @@ SUITES = {
         "test_private_mac_transaction",
         "test_private_mac_native_request",
         "test_private_mac_association_flow",
+        "test_association_profiles",
+        "test_association_profile_dispatch",
         "test_association_survey",
         "test_association_sae",
     ),
     "awdl": (
+        "test_version_method_schema",
         "test_message48_subset_codec",
         "test_message55_recovery_codec",
         "test_awdl_async_notification_owner",
@@ -43,8 +48,17 @@ SUITES = {
         "test_broadcom_baseline_trace",
         "test_control_rx_windows",
     ),
+    "legacy-wifi": (
+        "test_legacy_bsd_bridge",
+        "test_legacy_scan_multiple_bridge",
+        "test_legacy_wifi_imports",
+    ),
     "build": (
         "test_build_unified_kernel_cli",
+        "test_namespace_profiles",
+        "test_combine_wifi_dependency_profiles",
+        "test_prepare_broadcom_injector",
+        "test_namespace_vtable_closure",
         "test_lilu_api_compatibility",
         "test_scoped_reset_contract",
     ),

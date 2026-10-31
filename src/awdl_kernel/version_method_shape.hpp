@@ -18,16 +18,17 @@ struct VersionMethodShape {
     const void *variableOutput=nullptr;
 };
 
-// Only the audited synchronous, inline selector0 GET43 envelope. A valid shape
-// does not authorize a task, establish a provider lease, or validate the frame.
-// Those checks remain in the real typed backend and its integration owner.
+// Only the audited synchronous inline selector0 GET43 envelopes (14/15: 256;
+// existing candidate route: 384). A valid shape does not authorize a task,
+// establish a provider lease, or validate the frame. Those checks remain in
+// the real typed backend and its integration owner.
 inline bool decodeVersionMethodShape(const VersionMethodShape &shape,VersionCall &call) {
     call=VersionCall {};
     if (shape.version!=2 || shape.selector || shape.scalarInputCount ||
         shape.scalarOutputCount || shape.asyncReferenceCount || shape.wakePortPresent ||
         shape.asyncReference || shape.inputDescriptor || shape.outputDescriptor ||
         shape.outputDescriptorSize || shape.variableOutput || !shape.input || !shape.output ||
-        shape.inputSize!=NativeFrameSize || shape.outputCapacity!=NativeVersionCapacity ||
+        shape.inputSize!=NativeFrameSize || !validVersionCapacity(shape.outputCapacity) ||
         reinterpret_cast<uintptr_t>(shape.input)>UINTPTR_MAX-shape.inputSize ||
         reinterpret_cast<uintptr_t>(shape.output)>UINTPTR_MAX-shape.outputCapacity ||
         versionRangesOverlap(shape.input,shape.inputSize,shape.output,shape.outputCapacity))

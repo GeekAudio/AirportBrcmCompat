@@ -1,4 +1,5 @@
 #include "station_backend.hpp"
+#include "../scan_kernel/primary_interface_iokit.hpp"
 #include <kern/thread.h>
 #include <sys/kauth.h>
 #include "root_credential.hpp"
@@ -21,7 +22,6 @@ bool propertyAddress(IOService *service,const uint8_t *expected) {
 StationSession::~StationSession() {
     opened=false;
     if (desiredData) desiredData->release();
-    if (bsd) ifnet_release(bsd);
     if (loop) loop->release();
     if (primary) primary->release();
     if (controller) controller->release();
@@ -36,38 +36,39 @@ int StationSession::identity() const {
     if (controller->isInactive() || primary->isInactive() || primary->getProvider()!=controller)
         return ENXIO;
     if (controller->getWorkLoop()!=loop || !loop->inGate()) return EDEADLK;
-    const char *name=ifnet_name(bsd);
-    if (ifnet_softc(bsd)!=primary || ifnet_unit(bsd)!=1 || !name || strcmp(name,"en")) return ENXIO;
+    if (ifnet_softc(bsd)!=primary ||
+        !PrimaryInterface::propertyMatchesIfnet(primary,ifnet_name(bsd),ifnet_unit(bsd))) return ENXIO;
     if (bindings.runtimeBuild()) return EOPNOTSUPP;
     return 0;
 }
-int StationSession::open(const StationBindings &b,IOService *c,IOService *i,const NativeRequest &plan,
+int StationSession::open(const StationBindings &b,IOService *c,IOService *i,ifnet_t originalIfp,
+                         const NativeRequest &plan,
                          const AuthData *auth,uint32_t upper,uintptr_t caller,uintptr_t expectedCaller) {
     if (controller || primary || loop || bsd || opened) return EBUSY;
     if (!b.setHardwareAddress || !b.getHardwareAddress || !b.iovar || !b.getState ||
         !b.strictIdle || !b.registryOwner || !b.runtimeBuild || !b.lifecycleLease) return EINVAL;
     if (!expectedCaller || caller!=expectedCaller || !auth || auth->version!=1 ||
         auth->lower!=1 || !supportedStationAuthUpper(upper) || auth->upper!=upper) return EOPNOTSUPP;
-    if (!c || !i || !plan.requested || !privateShape(plan.address)) return EINVAL;
+    if (!c || !i || !originalIfp || !plan.requested || !privateShape(plan.address)) return EINVAL;
     if (!currentCredentialIsRoot()) return EACCES;
     if (b.runtimeBuild()) return EOPNOTSUPP;
     uint64_t generation=0;
-    const int lease=b.lifecycleLease(c,i,nullptr,&generation);if (lease) return lease;
+    const int lease=b.lifecycleLease(c,i,originalIfp,&generation);if (lease) return lease;
     if (!generation) return ESTALE;
     if (!exactClass(c,"AirPort_BrcmNIC") || !exactClass(i,"AirPort_BrcmNIC_Interface") ||
         c->isInactive() || i->isInactive() || i->getProvider()!=c) return ENXIO;
     if (b.registryOwner()==thisThread()) return EDEADLK;
     IOWorkLoop *candidate=c->getWorkLoop();
     if (!candidate || !candidate->inGate()) return EDEADLK;
-    // All objects are borrowed from the synchronous original SET20 call.
-    // Retain before lookup/allocation; open never performs a network mutation.
+    // BSD is the exact handle borrowed from this synchronous callback. The
+    // lifecycle lease above is the lifetime proof; no name lookup or normal
+    // ifnet reference is used to substitute for it.
     controller=c;controller->retain();primary=i;primary->retain();loop=candidate;loop->retain();
-    bindings=b;request=plan;thread=thisThread();leaseGeneration=generation;
-    int error=ifnet_find_by_name("en1",&bsd);
-    if (error) return error;
-    if (!bsd || ifnet_softc(bsd)!=primary) return ENXIO;
+    bindings=b;request=plan;thread=thisThread();leaseGeneration=generation;bsd=originalIfp;
+    if (ifnet_softc(bsd)!=primary ||
+        !PrimaryInterface::propertyMatchesIfnet(primary,ifnet_name(bsd),ifnet_unit(bsd))) return ENXIO;
     uint8_t currentBSD[6] {};
-    error=ifnet_lladdr_copy_bytes(bsd,currentBSD,6);
+    int error=ifnet_lladdr_copy_bytes(bsd,currentBSD,6);
     lastBackendStatus=static_cast<uint32_t>(error);
     if (error) return error;
     if (!propertyAddress(primary,nullptr)) return EIO;

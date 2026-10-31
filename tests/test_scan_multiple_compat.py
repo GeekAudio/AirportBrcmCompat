@@ -58,6 +58,9 @@ static constexpr uintptr_t caller=0x86fde;
 static void *allocate(size_t n){assert(n==StorageSize);allocations++;return allocationFail?nullptr:calloc(1,n);}
 static void deallocate(void *p,size_t n){assert(n==StorageSize);for(size_t j=0;j<n;j++)assert(!((uint8_t*)p)[j]);frees++;free(p);}
 static int copy(void *c,uint64_t p,void *out,size_t n){assert(c==controller&&n==NativeSize);copies++;if(copyError)return copyError;memcpy(out,(void*)(uintptr_t)p,n);return 0;}
+static bool primary(void *c,void *i,const char name[16]) {
+ return c==controller&&i==interface&&PrimaryInterface::sameRequestAndProperty(name,"en1",3);
+}
 static API api;
 static int original(void *c,void *i,void *v,void *infra,ScanCompat::Request *r,bool u) {
  originals++;assert(mutex.try_lock());mutex.unlock();
@@ -81,6 +84,7 @@ static void lifecycle() {
  assert(!registry.prepare({&mutex,enter,leave}));
  api.original=original;api.copyIn=copy;api.allocate=allocate;api.deallocate=deallocate;
  api.currentThread=threadToken;api.registry=&registry;api.caller=caller;
+ api.primaryInterface=primary;
  uint8_t data[NativeSize];init(data);ScanCompat::Request r {};memcpy(r.interfaceName,"en1",4);
  r.type=86;r.length=NativeSize;r.userData=(uintptr_t)data;
  auto before=r;Result validation;bool consumed=false;

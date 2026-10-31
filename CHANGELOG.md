@@ -5,7 +5,11 @@
 - Replace host build/UUID allowlists with structural kernel-image validation and per-feature interface checks.
 - Keep the bundled wireless-driver pins and strict scan, association and event data contracts.
 - Admit matching interfaces independently of the system build number; reject incompatible kernel implementations before the affected routes are installed.
-- Use Darwin 25 as the minimum with no fixed upper version in the matching Wi-Fi configuration snippets.
+- Start the candidate at Darwin 23, selecting verified request and kernel contracts without a fixed host version ceiling.
+- Add Sonoma/Sequoia scan, capability, association and native driver-version reply formats, preserving strict bounds and authentication fields.
+- Bind compatibility work to the actual Broadcom primary interface instead of requiring `en1`.
+- Generate separate NIC dependency variants and combine them into one EFI package with automatic selection at Darwin 25.
+- Add optional upstream matching for five additional PCI IDs and separate, unconnected ElCap protocol codecs; full older-card support remains unfinished.
 - Make optional receive diagnostics depend on bridge readiness rather than a named system build.
 
 ## Source publication

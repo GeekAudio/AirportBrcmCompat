@@ -1,12 +1,20 @@
-// Pinned 25G241 -> Legacy SET20 adapter. Never writes a user SET buffer.
+// Verified producer schemas -> Legacy SET20. Never writes a user SET buffer.
 #ifndef SKYWALK_ASSOCIATION_COMPAT_HPP
 #define SKYWALK_ASSOCIATION_COMPAT_HPP
 #include "scan_compat.hpp"
 #include "association_survey.hpp"
+#include "association_profiles.hpp"
+#include "primary_interface.hpp"
 #include "../private_mac_compat/native_request.hpp"
 
 namespace AssociationCompat {
-constexpr size_t NativeSize=908, LegacySize=548, StorageSize=NativeSize+LegacySize;
+constexpr size_t NativeSize=908, LegacySize=548, StorageSize=2*NativeSize+LegacySize;
+inline bool extendedRequestSize(size_t n) {
+    return n==NativeSize || n==AssociationProfiles::Sequoia15Size;
+}
+inline bool supportedRequestSize(size_t n) {
+    return extendedRequestSize(n) || n==AssociationProfiles::Sonoma14Size;
+}
 struct Result { int error; uint32_t field; };
 inline Result refused(uint32_t field,int error=EOPNOTSUPP) { return {error,field}; }
 inline bool overlap(const void *a,size_t an,const void *b,size_t bn) {
@@ -214,17 +222,18 @@ struct API {
     uintptr_t caller=0;
     int (*entryAllowed)(void *,void *)=nullptr;
     bool (*privateAvailable)(void *,void *)=nullptr;
+    bool (*primaryInterface)(void *,void *,const char requestName[16])=nullptr;
     void (*observeFlags)(uint32_t,uint8_t)=nullptr;
     void (*observeSurvey)(const AssociationSurvey::Snapshot &)=nullptr;
 };
 inline bool mainRequest(const ScanCompat::Request *r,void *c,void *i,void *v,void *infra) {
-    static const char primary[16]="en1";
+    PrimaryInterface::Name parsed;
     return r && c && i && !v && !infra && r->type==20 &&
-        memcmp(r->interfaceName,primary,16)==0;
+        PrimaryInterface::parseRequestName(r->interfaceName,parsed);
 }
 inline bool eligible(const ScanCompat::Request *r,void *c,void *i,void *v,void *infra,bool user64) {
     return mainRequest(r,c,i,v,infra) && user64 && r->value==0 &&
-        r->length==NativeSize && r->padding==0 && r->userData;
+        supportedRequestSize(r->length) && r->padding==0 && r->userData;
 }
 struct Buffer {
     API &api; uint8_t *bytes;
@@ -237,32 +246,62 @@ inline int handle(API &api,void *c,void *i,void *v,void *infra,ScanCompat::Reque
                   Result *validation=nullptr,bool *consumed=nullptr) {
     if (validation) *validation={-1,0};
     if (consumed) *consumed=false;
-    if (api.entryAllowed && mainRequest(r,c,i,v,infra)) {
+    const bool primary=mainRequest(r,c,i,v,infra) && api.primaryInterface &&
+        api.primaryInterface(c,i,r->interfaceName);
+    if (api.entryAllowed && primary) {
         const int admission=api.entryAllowed(c,i);if (admission) return admission;
     }
-    if (!eligible(r,c,i,v,infra,user64)) return api.original(c,i,v,infra,r,user64);
+    if (!primary || !eligible(r,c,i,v,infra,user64)) return api.original(c,i,v,infra,r,user64);
     Buffer buffer(api);
     if (!buffer.bytes) return ENOMEM;
-    int error=api.copyIn(c,r->userData,buffer.bytes,NativeSize);
+    int error=api.copyIn(c,r->userData,buffer.bytes,r->length);
     if (error) return error;
+    const bool compact=r->length==AssociationProfiles::Sonoma14Size;
+    const uint8_t *native=buffer.bytes;
+    if (r->length==AssociationProfiles::Sequoia15Size) {
+        auto *normalized=buffer.bytes+NativeSize+LegacySize;
+        const auto profile=AssociationProfiles::normalizeSequoia15(
+            buffer.bytes,r->length,normalized,NativeSize);
+        if (profile.error) {
+            if (validation) *validation={profile.error,profile.field};
+            return profile.error;
+        }
+        native=normalized;
+    }
     // Only nonidentifying flags from a successfully copied, bounded request.
     // No pointer, MAC, SSID, key or arbitrary buffer contents are exported.
-    if (api.observeFlags) api.observeFlags(ScanCompat::read32(buffer.bytes+467)&0xffffffU,buffer.bytes[469]);
-    if (api.observeSurvey) {
+    if (!compact && api.observeFlags) api.observeFlags(ScanCompat::read32(native+467)&0xffffffU,native[469]);
+    if (!compact && api.observeSurvey) {
         AssociationSurvey::Snapshot survey;
-        if (AssociationSurvey::inspect(buffer.bytes,NativeSize,survey)==AssociationSurvey::Status::Ok)
+        if (AssociationSurvey::inspect(native,NativeSize,survey)==AssociationSurvey::Status::Ok)
             api.observeSurvey(survey);
     }
     PrivateMAC::NativeRequest privatePlan;
-    const bool hasConsumer=api.privateAvailable && api.privateAvailable(c,i);
-    const Result result=convert(buffer.bytes,NativeSize,buffer.bytes+NativeSize,LegacySize,
-                                hasConsumer?&privatePlan:nullptr);
+    Result result {};
+    if (compact) {
+        const auto profile=AssociationProfiles::convertSonoma14(
+            native,r->length,buffer.bytes+NativeSize,LegacySize);
+        result={profile.error,profile.field};
+    } else {
+        const bool hasConsumer=api.privateAvailable && api.privateAvailable(c,i);
+        result=convert(native,NativeSize,buffer.bytes+NativeSize,LegacySize,
+                       hasConsumer?&privatePlan:nullptr);
+    }
     if (validation) *validation=result;
     if (result.error) return result.error;
+    const bool stillPrimary=primary && api.primaryInterface &&
+        api.primaryInterface(c,i,r->interfaceName);
+    if (!stillPrimary) {
+        memset(privatePlan.address,0,sizeof(privatePlan.address));
+        // Once accepted as a native request, an identity change cannot send
+        // its unconverted user buffer to the old handler without a scope.
+        return ESTALE;
+    }
     Scope scope;
     scope.thread=api.currentThread();scope.caller=api.caller;scope.controller=c;scope.interface=i;
     scope.source=r->userData;scope.legacy=buffer.bytes+NativeSize;
-    scope.privatePlan=privatePlan;scope.authUpper=ScanCompat::read32(buffer.bytes+12);
+    scope.privatePlan=privatePlan;
+    scope.authUpper=compact?ScanCompat::read16(native+8):ScanCompat::read32(native+12);
     if (!api.registry->add(scope)) return EBUSY;
     error=api.original(c,i,v,infra,r,user64);
     api.registry->remove(scope);

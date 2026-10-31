@@ -3,6 +3,7 @@
 #ifndef SKYWALK_SCAN_MULTIPLE_COMPAT_HPP
 #define SKYWALK_SCAN_MULTIPLE_COMPAT_HPP
 #include "scan_compat.hpp"
+#include "primary_interface.hpp"
 
 namespace ScanMultipleCompat {
 constexpr size_t LegacySize=0x14e0, NativeSize=0x14e8, StorageSize=NativeSize+LegacySize;
@@ -99,12 +100,13 @@ struct API {
     uintptr_t (*currentThread)()=nullptr;
     Registry *registry=nullptr;
     uintptr_t caller=0;
+    bool (*primaryInterface)(void *,void *,const char requestName[16])=nullptr;
 };
 inline bool eligible(const ScanCompat::Request *r,void *c,void *i,void *v,void *infra,bool user64) {
-    static const char primary[16]="en1";
+    PrimaryInterface::Name parsed;
     return r && c && i && !v && !infra && user64 && r->type==86 && r->value==0 &&
         r->length==NativeSize && r->padding==0 && r->userData &&
-        memcmp(r->interfaceName,primary,sizeof(primary))==0;
+        PrimaryInterface::parseRequestName(r->interfaceName,parsed);
 }
 struct Buffer {
     API &api;uint8_t *bytes;
@@ -122,7 +124,8 @@ inline int handle(API &api,void *c,void *i,void *v,void *infra,ScanCompat::Reque
                   Result *validation=nullptr,bool *consumed=nullptr) {
     if (validation) *validation={-1,0};
     if (consumed) *consumed=false;
-    if (!eligible(r,c,i,v,infra,user64)) return api.original(c,i,v,infra,r,user64);
+    if (!eligible(r,c,i,v,infra,user64) || !api.primaryInterface ||
+        !api.primaryInterface(c,i,r->interfaceName)) return api.original(c,i,v,infra,r,user64);
     Buffer buffer(api);
     if (!buffer.bytes) return ENOMEM;
     int error=api.copyIn(c,r->userData,buffer.bytes,NativeSize);
@@ -130,6 +133,7 @@ inline int handle(API &api,void *c,void *i,void *v,void *infra,ScanCompat::Reque
     const Result result=convert(buffer.bytes,NativeSize,buffer.bytes+NativeSize,LegacySize);
     if (validation) *validation=result;
     if (result.error) return result.error;
+    if (!api.primaryInterface(c,i,r->interfaceName)) return api.original(c,i,v,infra,r,user64);
     Scope scope;
     scope.thread=api.currentThread();scope.caller=api.caller;scope.controller=c;
     scope.source=r->userData;scope.legacy=buffer.bytes+NativeSize;

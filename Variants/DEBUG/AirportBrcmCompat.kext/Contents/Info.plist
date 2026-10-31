@@ -15,7 +15,7 @@
 	<key>AirportBrcmKernelIdentityPolicy</key>
 	<string>ABIContractProbesFailClosed</string>
 	<key>AirportBrcmMinimumDarwinKernelVersion</key>
-	<string>25.0.0</string>
+	<string>23.0.0</string>
 	<key>AirportBrcmRequestSchemaPolicy</key>
 	<string>StrictFailClosed</string>
 	<key>AirportBrcmStrictRequestSchemas</key>

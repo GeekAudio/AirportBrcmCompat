@@ -43,8 +43,8 @@ public:
     int enter(CallbackPin &,uintptr_t capturedReturnPC,IOService *controller,
               IOService *primary,ifnet_t originalIfp);
 };
-// Optional ifp==nullptr is for pre-lookup checks only. Once a Session has found
-// en1, it MUST pass its handle and prove exact equality to the original ifp.
+// Optional ifp==nullptr is for pre-lookup checks only. A StationSession must
+// receive the original callback's exact ifp and prove it remains leased.
 bool held(IOService *controller,IOService *primary,ifnet_t expectedIfp,
           uint64_t *generation=nullptr);
 uintptr_t registryOwner();

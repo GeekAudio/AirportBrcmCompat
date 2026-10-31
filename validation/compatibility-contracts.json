@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "scope": "Offline binary contracts and producer schemas; not whole-system or hardware compatibility.",
+  "selection_policy": "Production selection uses code and request contracts, never the sample labels or kernel UUIDs below.",
+  "verification_tool": "tools/verify_ifnet_kernel_contracts.py",
+  "samples": [
+    {
+      "system": "Sonoma",
+      "version": "14.8.9",
+      "build": "23J631",
+      "kernel_collection_sha256": "3f5dcde57f2d0ce27b9c9abf3d1e3d2c36b33cea9ae0a7eb36bf9c4282ed8cd2",
+      "kernel_uuid": "3cf18f50fbd836b98eb870f566d2934a",
+      "ifnet_ioctl": {
+        "profile": "mutex-inline",
+        "status": "Passed",
+        "body_size": 832,
+        "callback_offset": "0x272",
+        "byte_mutations": 832,
+        "mutations_rejected": 832,
+        "wrong_targets_tested": 13,
+        "aslr_slide": "0x40000000"
+      },
+      "native_request_bytes": {
+        "scan_get11": 1228,
+        "capabilities_get12": 16,
+        "association_set20": 856,
+        "inline_get43_output_capacity": 256
+      },
+      "extracted_io80211_image_sha256": "f100578fca835e9c3e434b56e86e178a3df3f0fb0faca8c45da0b940110985d1",
+      "userspace_image_origin": "Derived x86_64 image extracted from the official installer dyld cache."
+    },
+    {
+      "system": "Sequoia",
+      "version": "15.8.2",
+      "build": "24H232",
+      "kernel_collection_sha256": "ddd9016e225a61ebfd4f04b02a00937262f26690c57a928613e08506978c81be",
+      "kernel_uuid": "747934e9fd0136ab8e9706a578ab22f9",
+      "ifnet_ioctl": {
+        "profile": "mutex-monitor",
+        "status": "Passed",
+        "body_size": 720,
+        "callback_offset": "0x1f1",
+        "byte_mutations": 720,
+        "mutations_rejected": 720,
+        "wrong_targets_tested": 14,
+        "aslr_slide": "0x40000000"
+      },
+      "native_request_bytes": {
+        "scan_get11": 2264,
+        "capabilities_get12": 19,
+        "association_set20": 900,
+        "inline_get43_output_capacity": 256
+      },
+      "extracted_io80211_image_sha256": "d8b1f058fe7ddec4e6df1c2af4c83972d3dc7bd5fa85e109f7050a4692dd2333",
+      "userspace_image_origin": "Derived x86_64 image extracted from the official installer dyld cache."
+    },
+    {
+      "system": "Tahoe",
+      "version": "26.7.2",
+      "build": "25G332",
+      "kernel_collection_sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+      "kernel_uuid": "28267fd53e1e36868a1ce73e2466fcfb",
+      "ifnet_ioctl": {
+        "profile": "25G-current",
+        "status": "Passed",
+        "body_size": 912,
+        "callback_offset": "0x211",
+        "byte_mutations": 912,
+        "mutations_rejected": 912,
+        "wrong_targets_tested": 15,
+        "aslr_slide": "0x40000000"
+      },
+      "native_request_bytes": {
+        "scan_get11": 2272,
+        "capabilities_get12": 21,
+        "association_set20": 908,
+        "inline_get43_output_capacity": 384
+      },
+      "userspace_image_origin": "Existing Tahoe producer baseline."
+    }
+  ],
+  "uncompleted_targets": [
+    "All minor releases of the target operating systems",
+    "IO80211ElCap driver loading, native event integration and 43224 scan fallback",
+    "Monterey and Ventura native producer schemas for the older driver families"
+  ],
+  "legacy_import_audit": {
+    "tool": "tools/verify_legacy_wifi_imports.py",
+    "target_samples": [
+      "23J631",
+      "24H232",
+      "25G332"
+    ],
+    "unresolved_strong_after_verified_inherited_vtable_slots": 0,
+    "inherited_reserved_slots_per_legacy_controller": 10,
+    "potential_co_load_class_name_conflicts": {
+      "legacy_io80211_vs_native_io80211": 23,
+      "legacy_corecapture_vs_native_corecapture": 14,
+      "legacy_io80211_vs_modern_provider": 30
+    },
+    "scope": "Offline symbol, vtable and metaclass-constructor analysis; not proof of actual loading or permission to remove native providers."
+  }
+}

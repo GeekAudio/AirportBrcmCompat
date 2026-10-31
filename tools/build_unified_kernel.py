@@ -27,7 +27,7 @@ def automatic_compatibility_info_metadata(baseline_trace, control_windows):
         'AirportBrcmDevelopmentStatus':'AutomaticABICandidate-1.1.0',
         'AirportBrcmAutomaticCompatibility':1,
         'AirportBrcmKernelIdentityPolicy':'ABIContractProbesFailClosed',
-        'AirportBrcmMinimumDarwinKernelVersion':'25.0.0',
+        'AirportBrcmMinimumDarwinKernelVersion':'23.0.0',
         'AirportBrcmRequestSchemaPolicy':'StrictFailClosed',
         'AirportBrcmStrictRequestSchemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
         'AirportBrcmBaselineTraceConfigured':1 if baseline_trace else 0,
@@ -42,14 +42,14 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
             'kernel_admission':'All required ABI contract probes must pass; an unknown UUID alone never admits compatibility.',
             'probe_policy':'Probe the active kernel contract, then retain independent exact checks for each wireless dependency image.',
             'failure_behavior':'Kernel probe failures prevent compatibility admission; requests outside the strict schemas are not adapted.',
-            'minimum_darwin_kernel_version':'25.0.0',
+            'minimum_darwin_kernel_version':'23.0.0',
             'request_schema_policy':'strict-fail-closed',
             'strict_request_schemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
             'wireless_dependency_images':'Existing per-image UUID, layout, instruction and call-target pins remain required.',
         },
         'release_ready':False,
         'runtime_validated':False,
-        'minimum_darwin_kernel_version':'25.0.0',
+        'minimum_darwin_kernel_version':'23.0.0',
         'baseline_trace_schema':2 if baseline_trace else None,
         'scan_multiple_native_size':0x14e8,
         'scan_multiple_legacy_size':0x14e0,
@@ -94,7 +94,7 @@ def validate_automatic_compatibility_metadata(info, manifest):
         bool(info.get('AirportBrcmControlRxWindowsConfigured')))
     if any(info.get(key)!=value for key,value in expected_info.items()):
         raise ValueError('Automatic compatibility Info.plist policy mismatch')
-    if manifest.get('minimum_darwin_kernel_version')!='25.0.0' or \
+    if manifest.get('minimum_darwin_kernel_version')!='23.0.0' or \
        manifest.get('runtime_validated') is not False or \
        manifest.get('release_ready') is not False or \
        manifest.get('ready_for_install') is not False:
@@ -376,7 +376,7 @@ def main():
                  for p in (source/directory).glob('*') if p.suffix in ('.h','.hpp') and p.name!='facade_mock.h']
         manifest={'schema':1,'identifier':IDENTIFIER,'version':VERSION,
                   'build_flavor':args.build_flavor,'compiler_debug_macro':args.build_flavor=='DEBUG',
-                  'minimum_darwin_kernel_version':'25.0.0',
+                  'minimum_darwin_kernel_version':'23.0.0',
                   'one_self_developed_kext':True,'executable_count':1,
                   'kmod_info_count':1,'ready_for_install':build_mode['ready_for_install'],'installed':False,
                   'purpose':'static review only',

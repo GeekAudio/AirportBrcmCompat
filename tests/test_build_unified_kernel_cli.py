@@ -155,7 +155,7 @@ class BuildToolchainCLI(unittest.TestCase):
         info = builder.bundle_info()
         info.update(builder.automatic_compatibility_info_metadata(True, True))
         manifest = builder.apply_automatic_compatibility_manifest({
-            'minimum_darwin_kernel_version': '25.0.0',
+            'minimum_darwin_kernel_version': '23.0.0',
             'ready_for_install': True,
             'runtime_validated': False,
             'awdl_backend_active': False,
@@ -174,7 +174,7 @@ class BuildToolchainCLI(unittest.TestCase):
 
         self.assertEqual(info['AirportBrcmAutomaticCompatibility'], 1)
         self.assertIn('ABIContractProbes', info['AirportBrcmKernelIdentityPolicy'])
-        self.assertEqual(info['AirportBrcmMinimumDarwinKernelVersion'], '25.0.0')
+        self.assertEqual(info['AirportBrcmMinimumDarwinKernelVersion'], '23.0.0')
         self.assertEqual(info['AirportBrcmRequestSchemaPolicy'], 'StrictFailClosed')
         self.assertEqual(info['AirportBrcmStrictRequestSchemas'],
                          ['scan-multiple-set86-v1', 'sae-password-carrier-subset-v1'])
@@ -183,9 +183,9 @@ class BuildToolchainCLI(unittest.TestCase):
         self.assertTrue(info['AirportBrcmControlRxWindowsConfigured'])
         self.assertIn('unknown UUID alone never admits', policy['kernel_admission'])
         self.assertIn('strict-fail-closed', policy['request_schema_policy'])
-        self.assertEqual(policy['minimum_darwin_kernel_version'], '25.0.0')
+        self.assertEqual(policy['minimum_darwin_kernel_version'], '23.0.0')
         self.assertEqual(manifest['validation_scope'], 'offline')
-        self.assertEqual(manifest['minimum_darwin_kernel_version'], '25.0.0')
+        self.assertEqual(manifest['minimum_darwin_kernel_version'], '23.0.0')
         self.assertEqual(manifest['scan_multiple_nonzero_min_timestamp'], 'refuse')
         self.assertEqual(manifest['compiled_features'], {
             'automatic_kernel_abi_probe_gate': True,

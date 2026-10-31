@@ -8,6 +8,7 @@
 #include "admission.hpp"
 #include "../scan_kernel/diagnostics.hpp"
 #include "../scan_kernel/kernel_identity.hpp"
+#include "../scan_kernel/ifnet_profiles.hpp"
 #include <IOKit/IOLib.h>
 #include <kern/thread.h>
 #include <sys/kauth.h>
@@ -231,7 +232,7 @@ int wrappedAuth(void *c,void *i,const PrivateMAC::AuthData *auth) {
     // keeps effective permission false. Do not manufacture native support.
     ScanDiagnostics::record(ScanDiagnostics::PrivateDhcpAllowedRequest,
                             scope->privatePlan.deviceTypeInDhcpAllowed?1:0);
-    int error=frame->session.open(bindings(),context->controller,context->primary,scope->privatePlan,
+    int error=frame->session.open(bindings(),context->controller,context->primary,context->ifp,scope->privatePlan,
                                    auth,scope->authUpper,caller,pins.authCallerReturn);
     if (!error) {
         auto api=frame->session.api();
@@ -296,7 +297,7 @@ int wrappedPerform(IOService *i,IOService *c,uint64_t command,void *arg0,void *a
     ControllerRecord *r=getRecord(c,i,true);
     if (!r) return ENXIO;
     Context context {c,i,static_cast<ifnet_t>(arg0),r,{},thread(),0,
-        ScanCompat::read32(static_cast<const uint8_t *>(arg1)+24)==AssociationCompat::NativeSize};
+        AssociationCompat::extendedRequestSize(ScanCompat::read32(static_cast<const uint8_t *>(arg1)+24))};
     if (!PrivateMAC::BSDLease::held(c,i,context.ifp,&context.generation)) return ESTALE;
     error=r->admission.enter(r->binding,thread(),context.admission);
     if (error) {ScanDiagnostics::record(ScanDiagnostics::PrivateEntry,error);return error;}
@@ -366,6 +367,39 @@ int verifyMappedIfnetTargets(const uint8_t *bytes,uintptr_t base,size_t imageSiz
     if (status==KernelContracts::Status::Passed) return 0;
     return context.rangeStatus?context.rangeStatus:EOPNOTSUPP;
 }
+int prepareIfnetContract(KernelPatcher &patcher,uintptr_t callback,
+                         KernelContracts::IfnetIoctlPlan &contract) {
+    using namespace KernelContracts;
+    contract={};
+    const auto *bytes=reinterpret_cast<const uint8_t *>(callback);
+    for (size_t i=0;i<IfnetProfiles::AdditionalCount;++i) {
+        const auto &profile=IfnetProfiles::Additional[i];
+        if (profile.relocationCount>IfnetProfiles::MaxRelocations ||
+            ScanKernelIdentity::verifyRunningKernelCodeRange(callback,profile.bodyBytes)) continue;
+        Relocation relocations[IfnetProfiles::MaxRelocations] {};
+        if (resolveKernelRelocations(patcher,bytes,callback,profile.relocations,
+                                     profile.relocationCount,relocations)) continue;
+        IfnetIoctlPlan candidate;
+        if (IfnetProfiles::validate(profile,bytes,profile.bodyBytes,callback,
+                                   relocations,profile.relocationCount,candidate)!=Status::Passed) continue;
+        MappedTargetContext context;
+        if (IfnetProfiles::validateMapped(profile,bytes,profile.bodyBytes,callback,
+                                         verifyMappedKernelTarget,&context)!=Status::Passed) continue;
+        contract=candidate;
+        return 0;
+    }
+    const int range=ScanKernelIdentity::verifyRunningKernelCodeRange(callback,IfnetIoctlContractBytes);
+    if (range) return range;
+    Relocation relocations[IfnetRelocationCount] {};
+    const int resolved=resolveKernelRelocations(patcher,bytes,callback,
+        IfnetRelocationSpecs,IfnetRelocationCount,relocations);
+    if (resolved) return resolved;
+    const int mapped=verifyMappedIfnetTargets(bytes,callback,IfnetIoctlContractBytes);
+    if (mapped) return mapped;
+    const auto status=validateIfnetCurrent(bytes,IfnetIoctlContractBytes,callback,
+                                         relocations,IfnetRelocationCount,contract);
+    return status==Status::Passed?0:EOPNOTSUPP;
+}
 }
 
 int entryAllowed(void *c,void *i) {
@@ -393,24 +427,9 @@ void install(KernelPatcher &patcher,const Install &input) {
     if (memcmp(reinterpret_cast<const void *>(perform),performGuard,sizeof(performGuard))) {
         ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,2);return;
     }
-    const int range=ScanKernelIdentity::verifyRunningKernelCodeRange(callback,KernelContracts::IfnetIoctlContractBytes);
-    if (range) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,range);return;}
-    KernelContracts::Relocation relocations[KernelContracts::IfnetRelocationCount] {};
-    const auto *callbackBytes=reinterpret_cast<const uint8_t *>(callback);
-    const int relocationStatus=resolveKernelRelocations(patcher,callbackBytes,callback,
-        KernelContracts::IfnetRelocationSpecs,KernelContracts::IfnetRelocationCount,
-        relocations);
-    if (relocationStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,relocationStatus);return;}
-    const int anonymousTargetStatus=verifyMappedIfnetTargets(callbackBytes,callback,
-        KernelContracts::IfnetIoctlContractBytes);
-    if (anonymousTargetStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,anonymousTargetStatus);return;}
     KernelContracts::IfnetIoctlPlan contract;
-    const auto contractStatus=KernelContracts::validateIfnetCurrent(callbackBytes,
-        KernelContracts::IfnetIoctlContractBytes,callback,relocations,
-        KernelContracts::IfnetRelocationCount,contract);
-    if (contractStatus!=KernelContracts::Status::Passed) {
-        ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,static_cast<int32_t>(contractStatus));return;
-    }
+    const int contractStatus=prepareIfnetContract(patcher,callback,contract);
+    if (contractStatus) {ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,contractStatus);return;}
     const int pin=callbackPin.prepare(contract,input.runtimeBuild);
     ScanDiagnostics::record(ScanDiagnostics::PrivateKernelCaller,pin);if (pin) return;
     bridgeLock=IOLockAlloc();if (!bridgeLock) return;

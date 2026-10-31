@@ -3,6 +3,7 @@
 #include <Headers/plugin_start.hpp>
 #include <mach-o/loader.h>
 #include "scan_compat.hpp"
+#include "primary_interface_iokit.hpp"
 #include "diagnostics.hpp"
 #include "kernel_identity.hpp"
 #include "runtime_build_guard.hpp"
@@ -41,7 +42,12 @@ void multipleUnlock(void *p) {IOLockUnlock(static_cast<IOLock *>(p));}
 const char *providerPaths[]={"/System/Library/Extensions/IOLegacyWFamily.kext/Contents/MacOS/IOSkywalkFamily"};
 const char *legacyPaths[]={"/System/Library/Extensions/IO80211FamilyLegacy.kext/Contents/MacOS/IO80211FamilyLegacy"};
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
-const char *brcmPaths[]={"/System/Library/Extensions/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC"};
+const char *brcmPaths[]={
+    "/System/Library/Extensions/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC",
+    "/System/Library/Extensions/IO80211FamilyLegacy.kext/Contents/PlugIns/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC",
+    "/System/Library/Extensions/AirPortBrcmNIC-Sonoma-Sequoia.kext/Contents/MacOS/AirPortBrcmNIC",
+    "/System/Library/Extensions/AirPortBrcmNIC-Tahoe.kext/Contents/MacOS/AirPortBrcmNIC"
+};
 #endif
 KernelPatcher::KextInfo watched[] {
     {"org.geekaudio.IOLegacyWFamilyKC",providerPaths,arrsize(providerPaths),{true}},
@@ -63,6 +69,13 @@ AssociationCompat::API associationAPI {};
 AssociationCompat::CopyIn originalCopyIn=nullptr;
 uintptr_t associationOwner=0;
 uintptr_t currentThreadToken() { return reinterpret_cast<uintptr_t>(current_thread()); }
+bool primaryInterfaceIdentity(void *controller,void *interface,const char requestName[16]) {
+    if (!requestName) return false;
+    char requested[PrimaryInterface::RequestNameBytes] {};
+    memcpy(requested,requestName,sizeof(requested));
+    return PrimaryInterface::primaryServiceMatches(static_cast<IOService *>(controller),
+        static_cast<IOService *>(interface),requested);
+}
 void associationLock(void *lock) {
     IOLockLock(static_cast<IOLock *>(lock));
     __atomic_store_n(&associationOwner,currentThreadToken(),__ATOMIC_RELEASE);
@@ -141,7 +154,8 @@ int wrappedCopyIn(void *controller,uint64_t source,void *destination,size_t size
 }
 int wrappedAssociate(void *controller,void *interface,void *vif,void *infra,
                      ScanCompat::Request *request,bool user64) {
-    const bool target=AssociationCompat::eligible(request,controller,interface,vif,infra,user64);
+    const bool target=AssociationCompat::eligible(request,controller,interface,vif,infra,user64) &&
+        primaryInterfaceIdentity(controller,interface,request->interfaceName);
     if (target) {
         const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
@@ -165,7 +179,8 @@ int wrappedAssociate(void *controller,void *interface,void *vif,void *infra,
 
 #if defined(AIRPORT_BRCM_SCAN_MULTIPLE)
 int wrappedScanMultiple(void *c,void *i,void *v,void *infra,ScanCompat::Request *r,bool user64) {
-    const bool target=ScanMultipleCompat::eligible(r,c,i,v,infra,user64);
+    const bool target=ScanMultipleCompat::eligible(r,c,i,v,infra,user64) &&
+        primaryInterfaceIdentity(c,i,r->interfaceName);
     if (target && ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile()))
         return multipleAPI.original(c,i,v,infra,r,user64);
     ScanMultipleCompat::Result validation {-1,0};bool consumed=false;
@@ -204,7 +219,8 @@ bool imageUUID(mach_vm_address_t address,size_t size,const uint8_t expected[16])
 void *allocate(size_t size) { return IOMallocZero(size); }
 void deallocate(void *data,size_t size) { IOFree(data,size); }
 int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::Request *req,bool user64) {
-    const bool native=req && req->type==11 && req->length==ScanCompat::NativeSize;
+    const bool native=req && req->type==11 && ScanCompat::resultIECapacity(req->length) &&
+        !vif && primaryInterfaceIdentity(controller,interface,req->interfaceName);
     if (native) {
         const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
@@ -228,7 +244,8 @@ int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::R
 }
 int wrappedCapabilities(void *controller,void *interface,void *vif,void *infra,
                         ScanCompat::Request *req,bool user64) {
-    if (ScanCompat::nativeCapabilities(req,controller,interface,vif,infra)) {
+    if (ScanCompat::nativeCapabilities(req,controller,interface,vif,infra) &&
+        primaryInterfaceIdentity(controller,interface,req->interfaceName)) {
         const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);
         if (state) return originalCapabilities(controller,interface,vif,infra,req,user64);
@@ -238,7 +255,7 @@ int wrappedCapabilities(void *controller,void *interface,void *vif,void *infra,
                                             req,user64,&changed);
     if (changed && __sync_fetch_and_add(&capabilityCount,1)==0)
     {
-        SYSLOG("scan","native en1 GET12 scan-event wait compatibility advertised; reply remains 12 bytes");
+        SYSLOG("scan","native primary-interface GET12 scan-event wait compatibility advertised; reply remains 12 bytes");
         ScanDiagnostics::record(ScanDiagnostics::FirstCapability,0);
     }
     return error;
@@ -288,6 +305,7 @@ void tryInstall(KernelPatcher &patcher) {
     api.getResult=reinterpret_cast<decltype(api.getResult)>(result);
     api.copyIn=reinterpret_cast<decltype(api.copyIn)>(copyIn);
     api.copyOut=reinterpret_cast<decltype(api.copyOut)>(copyOut);
+    api.primaryInterface=primaryInterfaceIdentity;
     // Never retry a partly installed route. Each original trampoline is kept
     // independently; a failed capabilities route leaves a valid GET11-only
     // adapter and explicitly reports that the full pair was not installed.
@@ -336,6 +354,7 @@ void tryInstallAssociation(KernelPatcher &patcher) {
     associationRegistry.lock={lock,associationLock,associationUnlock};
     associationAPI.allocate=allocate;associationAPI.deallocate=deallocate;
     associationAPI.currentThread=currentThreadToken;associationAPI.registry=&associationRegistry;
+    associationAPI.primaryInterface=primaryInterfaceIdentity;
     associationAPI.caller=handler+0x14b;
 #if defined(AIRPORT_BRCM_PRIVATE_MAC)
     associationAPI.entryAllowed=PrivateBridge::entryAllowed;
@@ -390,6 +409,7 @@ void tryInstallScanMultiple(KernelPatcher &patcher) {
     }
     multipleAPI.copyIn=originalCopyIn;multipleAPI.allocate=allocate;multipleAPI.deallocate=deallocate;
     multipleAPI.currentThread=currentThreadToken;multipleAPI.registry=&multipleRegistry;
+    multipleAPI.primaryInterface=primaryInterfaceIdentity;
     multipleAPI.caller=handler+0x92;
     KernelPatcher::RouteRequest route(ScanMultiple,wrappedScanMultiple,multipleAPI.original);
     if (!patcher.routeMultiple(index,&route,1,legacyAddress,legacySize)) {
@@ -469,5 +489,5 @@ const char *debug[]={"-brcmcompatdbg"};
 PluginConfiguration ADDPR(config) {
     xStringify(PRODUCT_NAME),parseModuleVersion(xStringify(MODULE_VERSION)),LiluAPI::AllowNormal,
     off,arrsize(off),debug,arrsize(debug),nullptr,0,
-    KernelVersion::Tahoe,static_cast<KernelVersion>(KernelPatcher::KernelAny),init
+    KernelVersion::Sonoma,static_cast<KernelVersion>(KernelPatcher::KernelAny),init
 };

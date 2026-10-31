@@ -1,4 +1,6 @@
 #include "bsd_lease.hpp"
+#include "../scan_kernel/ifnet_profiles.hpp"
+#include "../scan_kernel/primary_interface_iokit.hpp"
 #include <kern/thread.h>
 #include <string.h>
 #include <sys/errno.h>
@@ -26,10 +28,7 @@ uintptr_t registryOwner() { return __atomic_load_n(&lockOwner,__ATOMIC_ACQUIRE);
 int CallbackPin::prepare(const KernelContracts::IfnetIoctlPlan &contract,
                          int (*build)()) {
     if (configured || registry || returnPC) return EBUSY;
-    if (!build || contract.proofTag!=KernelContracts::IfnetPlanProof ||
-        !contract.imageBase || contract.imageSpan!=KernelContracts::IfnetIoctlContractBytes ||
-        contract.imageBase>UINTPTR_MAX-0x211 ||
-        contract.callbackReturnPC!=contract.imageBase+0x211) return EINVAL;
+    if (!build || !KernelContracts::IfnetProfiles::knownPlan(contract)) return EINVAL;
     registry=IOLockAlloc();if (!registry) return ENOMEM;
     runtimeBuild=build;returnPC=contract.callbackReturnPC;
     // Startup-only publication, before a wrapper can create scopes.
@@ -45,8 +44,8 @@ int Scope::enter(CallbackPin &p,uintptr_t caller,IOService *c,IOService *i,ifnet
         i->getProvider()!=c) return ENXIO;
     // This ifp came from the original kernel callback at the verified callsite;
     // the kernel's I/O count, not this raw pointer or a normal ref, protects it.
-    if (ifnet_softc(ifp)!=i || ifnet_unit(ifp)!=1) return ENXIO;
-    const char *name=ifnet_name(ifp);if (!name || strcmp(name,"en")) return ENXIO;
+    if (ifnet_softc(ifp)!=i ||
+        !PrimaryInterface::propertyMatchesIfnet(i,ifnet_name(ifp),ifnet_unit(ifp))) return ENXIO;
     const uintptr_t current=thread();if (!current) return EINVAL;
     lock(p.registry);
     for (auto *s=head;s;s=s->next) if (s->owner==current) {unlock(p.registry);return EBUSY;}

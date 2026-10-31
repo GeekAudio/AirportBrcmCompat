@@ -18,6 +18,7 @@ static uint8_t bytes[32],snapshot[32];
 static Request *expectedRequest;
 static void *expectedController,*expectedInterface,*expectedVirtual,*expectedInfra;
 static bool expectedKernel;
+static char expectedBSDName[16]="en1";
 static int original(void *c,void *i,void *v,void *a,Request *r,bool k) {
     CHECK(c==expectedController && i==expectedInterface && v==expectedVirtual && a==expectedInfra);
     CHECK(r==expectedRequest && k==expectedKernel); originals++;
@@ -37,6 +38,10 @@ static int out(void *,const void *in,uint64_t address,size_t n) {
     CHECK(n==12 && address==reinterpret_cast<uint64_t>(bytes+4) && ins==1);outs++;
     for(unsigned x=0;x<n;x++)CHECK(static_cast<const uint8_t*>(in)[x]==(x==5?0xc8:bytes[x+4]));
     if(mode==6)return EFAULT;memcpy(bytes+4,in,n);return 0;
+}
+static bool primary(void *c,void *i,const char name[16]) {
+    return c==expectedController && i==expectedInterface &&
+        PrimaryInterface::sameRequestAndProperty(name,expectedBSDName,strlen(expectedBSDName));
 }
 int main(int argc,char **argv) {
     CHECK(argc==2);mode=atoi(argv[1]);memset(bytes,0x35,sizeof(bytes));
@@ -62,13 +67,19 @@ int main(int argc,char **argv) {
     case 19:interface=nullptr;break;
     case 20:r.interfaceName[8]=1;break;
     case 21:interface=nullptr;infra=reinterpret_cast<void*>(4);break;
+    case 22:memcpy(r.interfaceName,"en0",4);memcpy(expectedBSDName,"en0",4);break;
+    case 23:memcpy(r.interfaceName,"en7",4);memcpy(expectedBSDName,"en7",4);break;
+    case 24:r.length=16;break;
+    case 25:r.length=16;memcpy(expectedBSDName,"en0",4);eligible=false;originalReturn=77;expected=77;break;
+    case 26:r.length=19;break;
+    case 27:r.length=20;eligible=false;originalReturn=77;expected=77;break;
     default:return 64;
     }
-    if(mode>=9 && mode<=20) { eligible=false; originalReturn=77; expected=77; }
+    if(mode>=9 && mode<=21) { eligible=false; originalReturn=77; expected=77; }
     expectedRequest=arg;expectedController=controller;expectedInterface=interface;
     expectedVirtual=vif;expectedInfra=infra;expectedKernel=kernel;
     memcpy(snapshot,bytes,sizeof(bytes));
-    API api{};api.copyIn=in;api.copyOut=out;
+    API api{};api.copyIn=in;api.copyOut=out;api.primaryInterface=primary;
     CHECK(handleCapabilities(api,original,controller,interface,vif,infra,arg,kernel,&changed)==expected);
     CHECK(originals==1);
     if(!eligible || mode==2)CHECK(ins==0 && outs==0 && !changed);
@@ -98,9 +109,11 @@ class CapabilityContractTests(unittest.TestCase):
             with self.subTest(case=value):
                 r=subprocess.run([str(self.binary),str(value)],capture_output=True,text=True,timeout=5)
                 self.assertEqual(r.returncode,0,r.stderr)
-    def test_native_advertisement_and_already_set_bit(self):self.cases((1,3,4,21))
+    def test_native_advertisement_and_already_set_bit(self):self.cases((1,3,4,22,23,24,26))
+    def test_sonoma_length_requires_primary_interface_identity(self):self.cases((25,))
     def test_original_and_copy_errors_preserve_failure(self):self.cases((2,5,6))
     def test_unexpected_reply_does_not_advertise(self):self.cases((7,8))
-    def test_old_awdl_and_unrelated_requests_pass_through(self):self.cases(range(9,21))
+    def test_old_awdl_and_unrelated_requests_pass_through(self):self.cases(range(9,22))
+    def test_unknown_native_capacity_is_not_inferred(self):self.cases((27,))
 
 if __name__=='__main__':unittest.main()

@@ -16,7 +16,7 @@
 
 核心只安装一种。将核心与依赖包中的三个 kext 放入 EFI/OC/Kexts，再将对应版本包内的配置片段合并到自己的 config.plist，保留本机其他配置。
 
-以前打过 OCLP 无线根补丁的先撤销补丁；Wi-Fi 接口需为 en1。三个定制无线依赖必须配套使用，不能替换成原版同名文件。
+以前打过 OCLP 无线根补丁的先撤销补丁。三个定制无线依赖必须配套使用，不能替换成原版同名文件。
 
 ## 无线依赖
 
@@ -26,7 +26,9 @@
 | IO80211FamilyLegacy | 1200.12.2b1 | 旧无线框架 |
 | AirPortBrcmNIC | 1400.1.1 | 博通网卡硬件驱动 |
 
-本项目保留系统 IOSkywalkFamily，只屏蔽系统 IO80211Family。源码中的 [Examples](Examples/README.md) 配套 1.1.0 自动兼容核心；1.0.1-rc1 使用其下载包内的片段。组件来源见 [NOTICE](NOTICE.md)。
+本项目保留系统 IOSkywalkFamily，只屏蔽系统 IO80211Family。源码中的 [Examples](Examples/README.md)
+配套 1.1.0 候选核心及跨版本依赖包：共用前两个依赖，由 OpenCore 在两个 NIC 变体中自动选择一个。
+1.0.1-rc1 使用其下载包内的片段。组件来源见 [NOTICE](NOTICE.md)。
 
 蓝牙支持请参考 [Acidanthera 作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext)。
 
@@ -44,8 +46,9 @@
 
 扩展范围按「网卡＋系统是否需要恢复无线支持」划分，原生可用的组合保持原样。详见[兼容范围与上游依据](COMPATIBILITY.md)。
 
-- 自动兼容核心从 Darwin 25 开始检查实际接口；配置片段不再设置固定版本上限。
+- 候选核心从 Darwin 23 开始检查实际接口；Sonoma／Sequoia 与 Tahoe 使用各自的 NIC 依赖变体。
 - 内核映像结构、关键函数实现、随包驱动及请求格式分别检查。检查失败时，不启用对应适配功能。
+- 当前源码按实际博通主接口身份匹配 `en0`、`en1` 等名称；已发布的旧下载版本仍使用其原有接口限制。
 - 接口没有改变的系统更新无需添加版本号和 UUID；新的内核实现或协议变化仍可能需要开发适配，不能保证所有未来系统自动可用。
 - 启动环境和底层依赖仍须支持目标系统。
 - 1.0.1-rc1 的 Test023r2 在 25G332 下完成双向 AirDrop 实际收件，32 KiB 回传文件 SHA-256 一致；这是该版本的功能基线。
