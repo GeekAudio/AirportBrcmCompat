@@ -39,8 +39,8 @@ inline uint32_t read32(const uint8_t *p) {
 // receives a zeroed 40-byte tail because Sonoma's later scope/selection fields
 // have no lossless representation there.
 //
-// This admits only open and WPA2 carriers whose semantics are understood by
-// the old Brcm path. Scope is rejected at the producer's old flag byte 464 bit
+// Open/WPA2 and the explicitly enabled SAE password subset retain their
+// original selected auth and key carrier. Scope is rejected at flag byte 464 bit
 // 0x40, and all extensions 508..855 are rejected unless zero. Sonoma's
 // producer contains no PRIVATE_MAC_ADDRESS property contract, so bit 0x08 at
 // 464 is neither interpreted nor stripped; the same prefix byte is retained.
@@ -54,7 +54,13 @@ inline ProfileResult convertSonoma14(const uint8_t *source,size_t sourceSize,
     if (read16(source+4)!=2) return {EOPNOTSUPP,4};
     const uint16_t lower=read16(source+6),upper=read16(source+8);
     if (lower>1) return {EOPNOTSUPP,6};
-    if (upper!=0 && upper!=8) return {EOPNOTSUPP,8};
+    const bool sae=upper==0x1000;
+    if (upper!=0 && upper!=8
+#if defined(AIRPORT_BRCM_SAE_COMPAT)
+        && !sae
+#endif
+    ) return {EOPNOTSUPP,8};
+    if (sae && lower!=1) return {EOPNOTSUPP,6};
     const uint32_t ssid=read32(source+12);
     if (!ssid || ssid>32) return {EINVAL,12};
 
@@ -76,6 +82,13 @@ inline ProfileResult convertSonoma14(const uint8_t *source,size_t sourceSize,
         // PMK bytes may turn an open request into a silent security downgrade.
         for (size_t j=60;j<463;j++) if (source[j]) return {EOPNOTSUPP,static_cast<uint32_t>(j)};
         for (size_t j=468;j<504;j++) if (source[j]) return {EOPNOTSUPP,static_cast<uint32_t>(j)};
+    } else if (sae) {
+        // The inspected 856-byte producer writes selected upper 0x1000 at
+        // +8, password length/cipher at +60/+64 and derived PMK32 at +468.
+        // Those fields have the same offsets in the fixed 548-byte consumer.
+        // Preserve them; never alias SAE to WPA2 or accept a raw 64-byte PSK.
+        if (cipher!=10 || key<8 || key>63 || pmk!=32) return {EOPNOTSUPP,64};
+        if (allowed!=0 && allowed!=4 && allowed!=0x40000004U) return {EOPNOTSUPP,504};
     } else {
         const bool psk=(cipher==6 && key==32 && (pmk==0 || pmk==32)) ||
                        (cipher==10 && key>=1 && key<=64 && pmk==32);

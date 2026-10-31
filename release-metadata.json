@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "channel": "automatic-compatibility-candidate",
+  "channel": "release",
   "version": "1.1.0",
   "minimum_darwin": "23.0.0",
   "kernel_admission": "structural identity and per-feature ABI contracts",
@@ -8,35 +8,35 @@
   "all_target_minor_versions_completed": false,
   "variants": {
     "RELEASE": {
-      "binary_sha256": "15c6e43df691f48915d292485681acc3411446b81cf338a83f4197a004b3d87e",
-      "uuid": "9BBAF49F-4DE0-3886-9186-73AF15BF41D2",
+      "binary_sha256": "d0db652211355a3c30cca4c6b5a448ed69f5607899021e342c45a36803c824a6",
+      "uuid": "8125E9F4-4094-3CA1-926A-F34A5757766C",
       "compiler_debug_macro": false,
       "baseline_trace": false,
       "control_rx_windows": false,
-      "zip_filename": "AirportBrcmCompat-1.1.0-modern-kpi-r2-RELEASE.zip",
-      "zip_sha256": "c07291a73cdeff55427cf819dcf3eb02bf8e6b1f409bda6b0f47a151cd8a6f5f",
+      "zip_filename": "AirportBrcmCompat-1.1.0-RELEASE.zip",
+      "zip_sha256": "5b61ef7b5af6fd5f77a273bcc51a05b25f491802864a944b21bbe83e871c2ff8",
       "source_hashes_verified": 75,
       "artifact_hashes_verified": 3
     },
     "DEBUG": {
-      "binary_sha256": "017707714db6a9c056f8e776e41a495d61fce3623659cc65be294437ec3b035a",
-      "uuid": "1445067F-7351-3469-950B-14FC6E1FCD51",
+      "binary_sha256": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36",
+      "uuid": "C8758DC4-3742-3575-851A-A8B230EAE503",
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "AirportBrcmCompat-1.1.0-modern-kpi-r2-DEBUG.zip",
-      "zip_sha256": "5ebe2ebd73ad1c67830119dd548d4a96ccbe535c841fad3da1b5a5df9576ded2",
+      "zip_filename": "AirportBrcmCompat-1.1.0-DEBUG.zip",
+      "zip_sha256": "0e6e9ef9179e37343852beeb428c492f60e708adb155ca3598a6c864c4dc4b59",
       "source_hashes_verified": 76,
       "artifact_hashes_verified": 3
     }
   },
   "checks": {
-    "offline_tests_passed": 323,
-    "offline_test_seconds": 49.514,
+    "offline_tests_passed": 338,
+    "offline_test_seconds": 54.221,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "e4e994857720cde3d33e48179847a2d903b34351fce533fd8bb9affa197a7a5e",
+    "offline_test_log_sha256": "dccb711053aba90087020f30d68f2ee98bb193709553b01a3b8b99374c5fa897",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -57,21 +57,27 @@
     "removed_unconnected_recovery_symbols_verified": true,
     "private_bridge_route_result_checks": true,
     "removed_old_card_production_paths": true,
-    "ifnet_saved_contract_evidence_origin": "Retained validated excerpts from 6235fba; production saved-contract source hashes unchanged."
+    "ifnet_saved_contract_evidence_origin": "Retained excerpts replayed after cleanup; omitted unused symbol metadata, preserved function bytes and segment evidence.",
+    "removed_run_action_fingerprint_contract": true,
+    "fixture_lock": "tests/fixtures.lock.json",
+    "modern_card_coverage": "validation/modern-card-coverage.json",
+    "ci_workflow": ".github/workflows/ci.yml",
+    "ci_requires_zero_skips": true
   },
-  "development_dependency_packages": {
+  "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
+  "release_tag": "v1.1.0",
+  "dependency_packages": {
     "automatic": {
-      "zip_filename": "WiFi-Dependencies-Automatic-three-samples.zip",
-      "zip_sha256": "b93ae5ae7e92204db7b558d37aa55132023faf7e5f151836ee912a9d7c8aa5af",
-      "published_release": false,
+      "zip_filename": "AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip",
+      "zip_sha256": "ef70aff36e6a28e496fbf67f8fbcad64d932d7d3fac2a2d40a156cec2b680aab",
       "independent_native_samples": 3,
       "nic_variants_pin_checked": 2
     },
     "additional_cards": {
-      "zip_filename": "AirportBrcmCompat-1.1.0-additional-cards.zip",
-      "zip_sha256": "ad9136aad16aaec32918465c49e2a51aa8e34104cf10d40cd8713f487ca36f41",
-      "published_release": false
+      "zip_filename": "AirportBrcmCompat-1.1.0-Additional-Modern-Cards.zip",
+      "zip_sha256": "754252ae3d374a88166177d2511e0c20c08282263ea82d50a258a3ce6edd624b",
+      "modern_pci_ids": 6,
+      "additional_modern_pci_ids": 3
     }
-  },
-  "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only"
+  }
 }

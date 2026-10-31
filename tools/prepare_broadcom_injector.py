@@ -26,17 +26,34 @@ CORE = 'AirportBrcmFixup.kext'
 INJECTOR = CORE + '/Contents/PlugIns/AirPortBrcmNIC_Injector.kext'
 EXECUTABLE = CORE + '/Contents/MacOS/AirportBrcmFixup'
 BASE_IDS = ('43ba', '43a3', '43a0')
-ADDITIONAL_IDS = ('4331', '4353', '4357', '43b1', '43b2')
-MATCH_IDS = ('4331', '4353', '4357', '43ba', '43a3', '43a0', '43b1', '43b2')
+ADDITIONAL_IDS = ('4357', '43b1', '43b2')
+MATCH_IDS = ('4357', '43ba', '43a3', '43a0', '43b1', '43b2')
 PROFILES = {'sonoma-sequoia': ('23.0.0', '24.99.99'), 'tahoe': ('25.0.0', ''),
             'automatic': ('23.0.0', '')}
 
 
 def _check_id_policy():
-    if (len(set(MATCH_IDS)) != 8 or len(set(ADDITIONAL_IDS)) != 5 or
+    if (len(set(MATCH_IDS)) != 6 or len(set(ADDITIONAL_IDS)) != 3 or
             set(BASE_IDS) & set(ADDITIONAL_IDS) or
             set(BASE_IDS) | set(ADDITIONAL_IDS) != set(MATCH_IDS)):
         raise ValueError('Inconsistent base/additional Broadcom PCI ID policy')
+
+
+def _restrict_modern_matching(core_info, injector_info):
+    """Keep only NIC families; both upstream personalities can bind PCI cards."""
+    personality = injector_info.get('IOKitPersonalities', {}).get('Airport_BrcmNIC', {})
+    fake = core_info.get('IOKitPersonalities', {}).get('as.lvs1974.FakeAirportBrcmFixup', {})
+    expected = {'pci14e4,' + value for value in MATCH_IDS}
+    for entry, required_class in ((personality, 'AirPort_BrcmNIC'), (fake, 'FakeBrcm')):
+        names = entry.get('IONameMatch')
+        if (entry.get('IOClass') != required_class or entry.get('IOProviderClass') != 'IOPCIDevice' or
+                not isinstance(names, list) or not all(isinstance(name, str) for name in names) or
+                len(set(names)) != len(names) or not expected.issubset(names)):
+            raise ValueError('Unexpected upstream PCI personality')
+    # Validate both before mutating either. Restrict FakeBrcm too: narrowing
+    # only the child injector would leave the core's broad PCI probe active.
+    for entry in (personality, fake):
+        entry['IONameMatch'] = ['pci14e4,' + value for value in MATCH_IDS]
 
 
 def _macho_section_hashes(binary):
@@ -117,6 +134,12 @@ def _verify_tree(root):
         raise ValueError('Prepared package is missing a required kext bundle')
     if any('4360' in path.name for path in (core / 'Contents' / 'PlugIns').iterdir()):
         raise ValueError('Unexpected non-NIC plugin in prepared package')
+    expected = ['pci14e4,' + value for value in MATCH_IDS]
+    for path, key in ((core / 'Contents/Info.plist', 'as.lvs1974.FakeAirportBrcmFixup'),
+                      (injector / 'Contents/Info.plist', 'Airport_BrcmNIC')):
+        info = plistlib.loads(path.read_bytes())
+        if info.get('IOKitPersonalities', {}).get(key, {}).get('IONameMatch') != expected:
+            raise ValueError('Prepared PCI matching exceeds the modern NIC scope')
     _verify_codesign(injector)
     _verify_codesign(core)
 
@@ -220,8 +243,16 @@ def prepare(archive, output, profile):
                 personality.get('CFBundleIdentifier') != 'com.apple.driver.AirPort.BrcmNIC' or
                 personality.get('IOClass') != 'AirPort_BrcmNIC' or
                 not isinstance(injector_ids, list) or len(injector_ids) != 8 or
-                set(injector_ids) != expected_ids):
+                not expected_ids.issubset(injector_ids)):
             raise ValueError('Unexpected NIC injector matching')
+
+        upstream_info_sha256 = {
+            'core': hashlib.sha256(core_info_path.read_bytes()).hexdigest(),
+            'injector': hashlib.sha256(injector_info_path.read_bytes()).hexdigest(),
+        }
+        _restrict_modern_matching(core_info, injector_info)
+        core_info_path.write_bytes(plistlib.dumps(core_info, sort_keys=False))
+        injector_info_path.write_bytes(plistlib.dumps(injector_info, sort_keys=False))
 
         minimum, maximum = PROFILES[profile]
         entries = []
@@ -244,6 +275,9 @@ def prepare(archive, output, profile):
                     'base_pci_ids': ['14e4:' + value for value in BASE_IDS],
                     'additional_pci_ids': ['14e4:' + value for value in ADDITIONAL_IDS],
                     'injector_match_pci_ids': ['14e4:' + value for value in MATCH_IDS],
+                    'core_match_pci_ids': ['14e4:' + value for value in MATCH_IDS],
+                    'upstream_info_sha256': upstream_info_sha256,
+                    'matching_policy': 'Both PCI personalities are restricted to native and third-party AirPortBrcmNIC families.',
                     'bundles': [CORE, INJECTOR], 'minimum_kernel': minimum, 'maximum_kernel': maximum,
                     'requires_matching_wifi_dependency_profile': True,
                     'binary_integrity': {

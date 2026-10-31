@@ -138,7 +138,7 @@ inline int handleCapabilities(API &api,Original original,void *controller,void *
                               void *virtualInterface,void *infra,Request *request,
                               bool user64,bool *changed=nullptr) {
     if (changed) *changed=false;
-    const bool eligible=nativeCapabilities(request,controller,interface,virtualInterface,infra) &&
+    const bool eligible=user64 && nativeCapabilities(request,controller,interface,virtualInterface,infra) &&
         interface && api.primaryInterface && api.primaryInterface(controller,interface,request->interfaceName);
     const uint64_t address=eligible ? request->userData : 0;
     int error=original(controller,interface,virtualInterface,infra,request,user64);

@@ -1,4 +1,5 @@
 import hashlib
+import copy
 import json
 import os
 from pathlib import Path
@@ -47,12 +48,33 @@ class PrepareBroadcomInjectorPreflightTests(unittest.TestCase):
             prepare_tool.prepare(self.archive, self.output, 'darwin-99')
         self.assertFalse(self.output.exists())
 
-    def test_id_policy_is_exactly_three_base_and_five_additional_ids(self):
+    def test_id_policy_is_exactly_three_base_and_three_additional_ids(self):
         prepare_tool._check_id_policy()
-        self.assertEqual(len(prepare_tool.MATCH_IDS), 8)
-        self.assertEqual(len(prepare_tool.ADDITIONAL_IDS), 5)
+        self.assertEqual(set(prepare_tool.MATCH_IDS), {'43ba', '43a3', '43a0', '4357', '43b1', '43b2'})
+        self.assertEqual(set(prepare_tool.ADDITIONAL_IDS), {'4357', '43b1', '43b2'})
         self.assertEqual(set(prepare_tool.BASE_IDS) | set(prepare_tool.ADDITIONAL_IDS),
                          set(prepare_tool.MATCH_IDS))
+
+    def test_both_pci_personalities_are_restricted_without_changing_other_properties(self):
+        names=['pci14e4,'+value for value in prepare_tool.MATCH_IDS]+['pci14e4,4331','pci14e4,4353']
+        core={'IOKitPersonalities': {'as.lvs1974.FakeAirportBrcmFixup': {
+            'IOClass':'FakeBrcm','IOProviderClass':'IOPCIDevice','IONameMatch':names[:],
+            'IOProbeScore':6000}, 'resource':{'IOProviderClass':'IOResources'}}}
+        injector={'IOKitPersonalities': {'Airport_BrcmNIC': {
+            'IOClass':'AirPort_BrcmNIC','IOProviderClass':'IOPCIDevice','IONameMatch':names[:],
+            'CFBundleIdentifier':'com.apple.driver.AirPort.BrcmNIC','IOProbeScore':2048}}}
+        saved_core,saved_injector=copy.deepcopy(core),copy.deepcopy(injector)
+        # A malformed second personality must not partially rewrite the first.
+        invalid=copy.deepcopy(core)
+        invalid['IOKitPersonalities']['as.lvs1974.FakeAirportBrcmFixup']['IONameMatch']=names[1:]
+        before=copy.deepcopy(invalid)
+        with self.assertRaises(ValueError):prepare_tool._restrict_modern_matching(invalid,injector)
+        self.assertEqual(invalid,before);self.assertEqual(injector,saved_injector)
+        prepare_tool._restrict_modern_matching(core,injector)
+        expected=['pci14e4,'+value for value in prepare_tool.MATCH_IDS]
+        saved_core['IOKitPersonalities']['as.lvs1974.FakeAirportBrcmFixup']['IONameMatch']=expected
+        saved_injector['IOKitPersonalities']['Airport_BrcmNIC']['IONameMatch']=expected
+        self.assertEqual(core,saved_core);self.assertEqual(injector,saved_injector)
 
 
 @unittest.skipUnless(OFFICIAL_ARCHIVE.is_file() and shutil.which('codesign'),
@@ -104,6 +126,12 @@ class PrepareBroadcomInjectorReleaseTests(unittest.TestCase):
                         prepare_tool.INJECTOR + '/Contents/Info.plist'))[
                             'IOKitPersonalities']['Airport_BrcmNIC']['IONameMatch']),
                                      {'pci14e4,' + item for item in prepare_tool.MATCH_IDS})
+                    self.assertEqual(plistlib.loads(package.read(prepare_tool.CORE+'/Contents/Info.plist'))[
+                        'IOKitPersonalities']['as.lvs1974.FakeAirportBrcmFixup']['IONameMatch'],
+                        ['pci14e4,'+item for item in prepare_tool.MATCH_IDS])
+                    self.assertEqual(manifest['core_match_pci_ids'], manifest['injector_match_pci_ids'])
+                    for name in ('core','injector'):
+                        self.assertEqual(len(manifest['upstream_info_sha256'][name]),64)
 
                     packaged_executable = package.read(prepare_tool.EXECUTABLE)
                     self.assertEqual(prepare_tool._check_executable_sections(

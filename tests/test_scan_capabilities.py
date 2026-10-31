@@ -47,10 +47,11 @@ int main(int argc,char **argv) {
     CHECK(argc==2);mode=atoi(argv[1]);memset(bytes,0x35,sizeof(bytes));
     Request r{};memcpy(r.interfaceName,"en1",4);r.type=12;r.length=21;r.userData=reinterpret_cast<uint64_t>(bytes+4);
     void *controller=reinterpret_cast<void*>(1),*interface=reinterpret_cast<void*>(2),*vif=nullptr,*infra=nullptr;
-    Request *arg=&r;bool kernel=mode==3,changed=true;
+    Request *arg=&r;bool kernel=mode!=3,changed=true;
     int expected=0;originalReturn=0;bool eligible=true;
     switch(mode) {
-    case 1:case 3:case 4:break;
+    case 1:case 4:break;
+    case 3:eligible=false;break;
     case 2:originalReturn=EBUSY;expected=EBUSY;break;
     case 5:case 6:expected=EFAULT;break;
     case 7:case 8:eligible=false;break;
@@ -109,11 +110,41 @@ class CapabilityContractTests(unittest.TestCase):
             with self.subTest(case=value):
                 r=subprocess.run([str(self.binary),str(value)],capture_output=True,text=True,timeout=5)
                 self.assertEqual(r.returncode,0,r.stderr)
-    def test_native_advertisement_and_already_set_bit(self):self.cases((1,3,4,22,23,24,26))
+    def test_native_advertisement_and_already_set_bit(self):self.cases((1,4,22,23,24,26))
+    def test_32bit_request_preserves_native_reply_without_advertisement(self):self.cases((3,))
     def test_sonoma_length_requires_primary_interface_identity(self):self.cases((25,))
     def test_original_and_copy_errors_preserve_failure(self):self.cases((2,5,6))
     def test_unexpected_reply_does_not_advertise(self):self.cases((7,8))
     def test_old_awdl_and_unrelated_requests_pass_through(self):self.cases(range(9,22))
     def test_unknown_native_capacity_is_not_inferred(self):self.cases((27,))
+    def test_32bit_envelope_at_guard_page_does_not_read_64bit_pointer(self):
+        source=r'''
+#include "scan_compat.hpp"
+#include <sys/mman.h>
+#include <unistd.h>
+#include <cassert>
+static unsigned calls;
+static int original(void*,void*,void*,void*,ScanCompat::Request*,bool user64){
+ assert(!user64);++calls;return 37;
+}
+int main(){
+ const size_t page=size_t(sysconf(_SC_PAGESIZE));
+ auto*bytes=(uint8_t*)mmap(nullptr,page*2,PROT_READ|PROT_WRITE,MAP_ANON|MAP_PRIVATE,-1,0);
+ assert(bytes!=MAP_FAILED);assert(!mprotect(bytes+page,page,PROT_NONE));
+ // The 32-bit envelope ends before the 64-bit data-pointer field. The
+ // adapter must forward it without reading that field or adding a reply.
+ auto*request=reinterpret_cast<ScanCompat::Request*>(bytes+page-32);
+ memset(bytes+page-32,0,32);bool changed=true;ScanCompat::API api{};
+ assert(ScanCompat::handleCapabilities(api,original,(void*)1,(void*)2,nullptr,nullptr,
+                                     request,false,&changed)==37);
+ assert(calls==1&&!changed);assert(!munmap(bytes,page*2));
+}
+'''
+        with tempfile.TemporaryDirectory(prefix='cap-32bit-guard-') as directory:
+            binary=pathlib.Path(directory)/'guard'
+            subprocess.run(['clang++','-std=c++14','-Wall','-Wextra','-Werror',
+                            '-fsanitize=address,undefined','-I',str(PROJECT/'src/scan_kernel'),
+                            '-x','c++','-','-o',str(binary)],input=source,text=True,check=True)
+            subprocess.run([str(binary)],check=True)
 
 if __name__=='__main__':unittest.main()

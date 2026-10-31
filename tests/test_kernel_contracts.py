@@ -103,29 +103,6 @@ static std::vector<uint8_t> ifnetFixture(uintptr_t base,std::vector<Relocation> 
     setAnonymousIfnetTargets(code,base);
     return code;
 }
-static std::vector<uint8_t> runActionFixture(uintptr_t base,std::vector<Relocation> &relocs) {
-    std::vector<uint8_t> code(RunActionContractBytes,0x90);
-    static const uint8_t gateAndWorkLoop[]={0x49,0x89,0xfe,0x48,0x8b,0x5f,0x30,0x48,0x85,0xdb};
-    static const uint8_t savedActionAndArguments[]={
-        0x49,0x89,0xf7,0x48,0x89,0x55,0xc8,0x48,0x89,0x4d,0xc0,
-        0x4c,0x89,0x45,0xb8,0x4c,0x89,0x4d,0xb0
-    };
-    static const uint8_t ownerAndArguments[]={
-        0x49,0x8b,0x7e,0x18,0x48,0x8b,0x75,0xc8,0x48,0x8b,0x55,0xc0,
-        0x48,0x8b,0x4d,0xb8,0x4c,0x8b,0x45,0xb0,0x41,0xff,0xd7
-    };
-    static const uint8_t activeActionAccounting[]={
-        0x48,0xc7,0xc1,0x00,0xff,0xff,0xff,0x49,0x03,0x4e,0x48,0x49,0x89,0x4e,0x48
-    };
-    memcpy(code.data()+0x1a,gateAndWorkLoop,sizeof(gateAndWorkLoop));
-    memcpy(code.data()+0x2a,savedActionAndArguments,sizeof(savedActionAndArguments));
-    memcpy(code.data()+0x91,ownerAndArguments,sizeof(ownerAndArguments));
-    memcpy(code.data()+0xa8,activeActionAccounting,sizeof(activeActionAccounting));
-    setRelocations(code,base,RunActionRelocationSpecs,
-                   sizeof(RunActionRelocationSpecs)/sizeof(RunActionRelocationSpecs[0]),relocs,0x20000);
-    return code;
-}
-
 int main(int argc,char **argv) {
     assert(argc==2);const char *mode=argv[1];
     if (!strcmp(mode,"sha")) {
@@ -212,34 +189,6 @@ int main(int argc,char **argv) {
         auto badTarget=code;badTarget[0x87]^=1;
         assert(validateIfnetIoctl(badTarget.data(),badTarget.size(),base,relocs.data(),relocs.size(),digest,plan)==Status::RelocationTargetMismatch);
         assert(validateIfnetIoctl(code.data(),code.size()-1,base,relocs.data(),relocs.size(),digest,plan)==Status::Truncated);
-    } else if (!strcmp(mode,"runaction")) {
-        const uintptr_t base=0xffffff8000200000ULL;
-        std::vector<Relocation> relocs;auto code=runActionFixture(base,relocs);uint8_t digest[32];
-        digestFor(code,base,relocs,digest);RunActionPlan plan;
-        assert(validateRunAction(code.data(),code.size(),base,relocs.data(),relocs.size(),digest,plan)==Status::Passed);
-        assert(plan.proofTag==RunActionPlanProof&&plan.imageSpan==RunActionContractBytes&&plan.actionReturnPC==base+0xa8);
-        auto moved=runActionFixture(base+0x2000000,relocs);
-        assert(validateRunAction(moved.data(),moved.size(),base+0x2000000,relocs.data(),relocs.size(),digest,plan)==Status::Passed);
-        assert(plan.actionReturnPC==base+0x2000000+0xa8);
-        setRelocations(code,base,RunActionRelocationSpecs,RunActionRelocationCount,relocs,0x20000);
-        assert(fixedRunActionRelocationLayout(relocs.data(),relocs.size()));
-        auto badLayout=relocs;badLayout[0].kind=RelocationKind::RelativeCall;
-        assert(!fixedRunActionRelocationLayout(badLayout.data(),badLayout.size()));
-        assert(validateRunActionCurrent(code.data(),code.size(),base,badLayout.data(),badLayout.size(),plan)==Status::InvalidRelocation);
-        for (size_t offset : {size_t(0x2a),size_t(0x91),size_t(0xa5),size_t(0xa8),size_t(0x180)}) {
-            auto bad=code;bad[offset]^=1;
-            assert(validateRunAction(bad.data(),bad.size(),base,relocs.data(),relocs.size(),digest,plan)!=Status::Passed);
-        }
-        for (size_t offset=0;offset<code.size();++offset) {
-            bool isRelocationByte=false;
-            for (const auto &reloc:relocs) if (offset>=reloc.displacementOffset && offset-reloc.displacementOffset<4)
-                isRelocationByte=true;
-            if (isRelocationByte) continue;
-            auto bad=code;bad[offset]^=1;
-            const auto status=validateRunAction(bad.data(),bad.size(),base,relocs.data(),relocs.size(),digest,plan);
-            assert(status==Status::FingerprintMismatch||status==Status::InvalidRelocation);
-            assert(plan.proofTag==0&&plan.actionReturnPC==0);
-        }
     } else if (!strcmp(mode,"memory")) {
         const uint8_t body[]={0x55,0x48,0x89,0xe5,0xb8,0xc7,0x02,0,0xe0,0x5d,0xc3};
         ClientMemoryPlan plan;
@@ -284,7 +233,6 @@ class KernelContractTests(unittest.TestCase):
     def test_sha256(self): self.scenario('sha')
     def test_symbol_relocations_are_verified_then_normalized(self): self.scenario('relocations')
     def test_ifnet_acquire_callback_release_and_unknown_body_are_pinned(self): self.scenario('ifnet')
-    def test_run_action_owner_argument_and_active_count_contract(self): self.scenario('runaction')
     def test_trivial_unsupported_memory_method(self): self.scenario('memory')
 
 

@@ -249,7 +249,7 @@ int wrapped(void *controller,void *interface,void *vif,void *infra,ScanCompat::R
 }
 int wrappedCapabilities(void *controller,void *interface,void *vif,void *infra,
                         ScanCompat::Request *req,bool user64) {
-    if (ScanCompat::nativeCapabilities(req,controller,interface,vif,infra) &&
+    if (user64 && ScanCompat::nativeCapabilities(req,controller,interface,vif,infra) &&
         primaryInterfaceIdentity(controller,interface,req->interfaceName)) {
         const int state=ScanCompat::runtimeBuildState(ScanKernelIdentity::currentProfile());
         ScanDiagnostics::record(ScanDiagnostics::RuntimeBuild,state);

@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 automatic compatibility candidate
+## 1.1.0 — 2026-11-01
 
 - Replace host build/UUID allowlists with structural kernel-image validation and per-feature interface checks.
 - Keep the bundled wireless-driver pins and strict scan, association and event data contracts.
@@ -9,12 +9,16 @@
 - Add Sonoma/Sequoia scan, capability, association and native driver-version reply formats, preserving strict bounds and authentication fields.
 - Bind compatibility work to the actual Broadcom primary interface instead of requiring `en1`.
 - Generate separate NIC dependency variants and combine them into one EFI package with automatic selection at Darwin 25.
-- Add optional upstream NIC matching for five additional PCI IDs.
+- Add optional upstream NIC matching for three additional modern NIC PCI IDs, restricting both PCI personalities to the modern NIC families.
+- Extend the bounded SAE password carrier to Sonoma's 856-byte request and keep GET12 capability adaptation within its 64-bit request ABI.
 - Verify anonymous ifnet call and data targets with bounded semantic checks when an exact saved layout does not match.
 - Add a public ioctl and native callback scope fallback for kernel layout changes, with exact request identity, one-shot admission and checked route installation.
 - Independently verify all three system dependency samples and both NIC variants; require complete scan request envelopes.
 - Remove the unconnected recovery codec from source, tests and packaged binaries.
 - Make optional receive diagnostics depend on bridge readiness rather than a named system build.
+- Remove the unused RunAction fingerprint contract while preserving active synchronous lifecycle checks.
+- Add macOS Intel CI with pinned external samples, zero-skip test enforcement and RELEASE/DEBUG builds.
+- Resolve Clang through xcrun, PATH and system tools, including a C++ driver alias fallback.
 
 ## Source publication
 

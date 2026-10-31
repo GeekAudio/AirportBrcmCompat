@@ -2,12 +2,14 @@
 """Run the public, offline-only AirportBrcmCompat regression suites."""
 
 import argparse
+from contextlib import contextmanager
 import importlib.util
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 
@@ -62,27 +64,52 @@ SUITES = {
         "test_namespace_vtable_closure",
         "test_lilu_api_compatibility",
         "test_scoped_reset_contract",
+        "test_run_tests_toolchain",
+        "test_prepare_test_fixtures",
     ),
 }
 
 
+def _executable(path):
+    return path and Path(path).is_file() and os.access(path, os.X_OK)
+
+
+@contextmanager
 def ensure_macos_toolchain():
     if sys.platform != "darwin":
         raise RuntimeError("These x86_64 kext host tests require macOS and Xcode Command Line Tools.")
 
     xcrun = shutil.which("xcrun")
-    if not xcrun:
-        raise RuntimeError("xcrun was not found; install Xcode Command Line Tools first.")
-
-    tool_dirs = []
+    resolved = {}
     for tool in ("clang", "clang++", "nm"):
-        result = subprocess.run([xcrun, "--find", tool], capture_output=True, text=True)
-        if result.returncode:
-            raise RuntimeError(f"xcrun could not locate {tool}: {result.stderr.strip()}")
-        tool_dirs.append(str(Path(result.stdout.strip()).resolve().parent))
+        candidate = None
+        if xcrun:
+            result = subprocess.run([xcrun, "--find", tool], capture_output=True, text=True)
+            if result.returncode == 0 and _executable(result.stdout.strip()):
+                candidate = result.stdout.strip()
+        if not candidate:
+            candidate = next((path for path in (shutil.which(tool), "/usr/bin/"+tool)
+                              if _executable(path)), None)
+        if not candidate and tool == "clang++":
+            # Clang selects its C++ driver mode from argv[0]. A named alias
+            # supplies clang++ even when xcrun exposes only the clang driver.
+            candidate = resolved.get("clang")
+        if not candidate:
+            raise RuntimeError(f"Could not locate {tool} through xcrun, PATH or /usr/bin; install Xcode Command Line Tools.")
+        resolved[tool] = str(Path(candidate).absolute())
 
-    path_parts = list(dict.fromkeys(tool_dirs + os.environ.get("PATH", "").split(os.pathsep)))
-    os.environ["PATH"] = os.pathsep.join(part for part in path_parts if part)
+    old_path = os.environ.get("PATH")
+    with tempfile.TemporaryDirectory(prefix="brcm-test-tools-") as aliases:
+        for name, executable in resolved.items():
+            (Path(aliases)/name).symlink_to(executable)
+        os.environ["PATH"] = aliases + (os.pathsep+old_path if old_path else "")
+        try:
+            yield resolved
+        finally:
+            if old_path is None:
+                os.environ.pop("PATH", None)
+            else:
+                os.environ["PATH"] = old_path
 
 
 def load_module(name):
@@ -107,20 +134,25 @@ def main(argv=None):
         choices=tuple(SUITES),
         help="suite to run; repeat to select several (default: all)",
     )
+    parser.add_argument('--require-all',action='store_true',
+                        help='Fail if any test is skipped; CI requires prepared external fixtures')
     args = parser.parse_args(argv)
     selected = tuple(dict.fromkeys(args.suite or SUITES))
 
     try:
-        ensure_macos_toolchain()
-        suite = unittest.TestSuite()
-        loader = unittest.TestLoader()
-        for suite_name in selected:
-            for module_name in SUITES[suite_name]:
-                suite.addTests(loader.loadTestsFromModule(load_module(module_name)))
-        result = unittest.TextTestRunner(verbosity=2).run(suite)
+        with ensure_macos_toolchain():
+            suite = unittest.TestSuite()
+            loader = unittest.TestLoader()
+            for suite_name in selected:
+                for module_name in SUITES[suite_name]:
+                    suite.addTests(loader.loadTestsFromModule(load_module(module_name)))
+            result = unittest.TextTestRunner(verbosity=2).run(suite)
     except (OSError, RuntimeError) as error:
         print(f"run_tests: {error}", file=sys.stderr)
         return 2
+    if args.require_all and result.skipped:
+        print(f'run_tests: partial validation refused: {len(result.skipped)} tests skipped',file=sys.stderr)
+        return 1
     return 0 if result.wasSuccessful() else 1
 
 

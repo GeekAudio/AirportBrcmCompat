@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import warnings
+from dataclasses import replace
 import zipfile
 from pathlib import Path
 from unittest import mock
@@ -141,10 +142,38 @@ class ActualDriverPinTests(unittest.TestCase):
                           for variant in report["variants"]], [0, 0])
         self.assertEqual([variant["nonnull_pin_count"] for variant in report["variants"]],
                          [8, 8])
+        expected={'14e4:43ba','14e4:43a3','14e4:43a0','14e4:4357','14e4:43b1','14e4:43b2'}
+        for variant in report['variants']:
+            self.assertEqual(set(variant['chipmatch']['accepted_pci_ids']),expected)
+            self.assertFalse(variant['chipmatch']['driver_function_invoked'])
         self.assertEqual(report["variants"][0]["binary_sha256"],
                          "c43b8c5443c14d029c86459ea60502ede731bb94acb8de201fc210c99080f0d0")
         self.assertEqual(report["variants"][1]["binary_sha256"],
                          "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982")
+
+    def test_chipmatch_rejects_changed_lookup_path_target_and_missing_device_ids(self):
+        with zipfile.ZipFile(TAHOE) as archive:
+            name='Kexts/AirPortBrcmNIC-Tahoe.kext/Contents/MacOS/AirPortBrcmNIC'
+            source=archive.read(name)
+        mapped=pins_tool.map_thin_x86_64_macho(source)
+        start=0x12f25a
+        for offset in list(range(0x17))+list(range(0x1b,0x31))+list(range(0xb6,0xc7)):
+            mutated=bytearray(mapped.data);mutated[start+offset]^=1
+            with self.subTest(offset=hex(offset)):
+                with self.assertRaisesRegex(pins_tool.VerificationError,'success path'):
+                    pins_tool.verify_chipmatch(source,replace(mapped,data=bytes(mutated)))
+        mutated=bytearray(mapped.data);mutated[start+0x17]^=1
+        with self.assertRaisesRegex(pins_tool.VerificationError,'resolved device table'):
+            pins_tool.verify_chipmatch(source,replace(mapped,data=bytes(mutated)))
+        table=start+0x1b+struct.unpack_from('<i',mapped.data,start+0x17)[0]
+        for device in (0x43ba,0x43a3,0x43a0,0x4357,0x43b1,0x43b2):
+            mutated=bytearray(mapped.data)
+            for offset in range(table,table+0xd4,2):
+                if struct.unpack_from('<H',mutated,offset)[0]==device:
+                    struct.pack_into('<H',mutated,offset,0xffff)
+            with self.subTest(device=hex(device)):
+                with self.assertRaisesRegex(pins_tool.VerificationError,'absent'):
+                    pins_tool.verify_chipmatch(source,replace(mapped,data=bytes(mutated)))
 
 
 if __name__ == "__main__":

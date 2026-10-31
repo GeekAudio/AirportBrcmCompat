@@ -276,6 +276,77 @@ def map_thin_x86_64_macho(data: bytes) -> MappedMachO:
                        text["vmaddr"], text["fileoff"], section["size"], text["filesize"])
 
 
+def verify_chipmatch(data: bytes, mapped: MappedMachO) -> dict:
+    """Inspect the device-table success path without executing driver code."""
+    wanted = {b"_wlc_chipmatch", b"_wlc_devid"}
+    found = {}
+    symtab = None
+    cursor = 32
+    for _ in range(struct.unpack_from("<I", data, 16)[0]):
+        kind, size = struct.unpack_from("<II", data, cursor)
+        if kind == 2:  # LC_SYMTAB; the image mapper already checked commands.
+            if symtab is not None or size != 24:
+                raise VerificationError("Invalid chipmatch symbol table")
+            symtab = struct.unpack_from("<IIII", data, cursor + 8)
+        cursor += size
+    if symtab is None:
+        raise VerificationError("Missing chipmatch symbol table")
+    symoff, count, stroff, strsize = symtab
+    if (symoff > len(data) or count > (len(data)-symoff)//16 or
+            stroff > len(data) or strsize > len(data)-stroff):
+        raise VerificationError("Chipmatch symbols exceed file bounds")
+    for index in range(count):
+        nameoff, kind, section, _desc, value = struct.unpack_from("<IBBHQ", data, symoff + index*16)
+        if kind & 0xe0 or (kind & 0x0e) != 0x0e or not section:
+            continue
+        if nameoff >= strsize:
+            raise VerificationError("Invalid chipmatch symbol name")
+        end = data.find(b"\0", stroff + nameoff, stroff + strsize)
+        if end < 0:
+            raise VerificationError("Unterminated chipmatch symbol name")
+        name = data[stroff+nameoff:end]
+        if name in wanted:
+            if name in found:
+                raise VerificationError("Duplicate chipmatch symbol")
+            found[name] = value
+    if set(found) != wanted:
+        raise VerificationError("Missing chipmatch function or device table")
+
+    def read(address, size):
+        offset = address-mapped.image_vmaddr
+        if offset < 0 or offset > len(mapped.data) or size > len(mapped.data)-offset:
+            raise VerificationError("Chipmatch range exceeds mapped image")
+        return mapped.data[offset:offset+size]
+
+    function, table = found[b"_wlc_chipmatch"], found[b"_wlc_devid"]
+    body_size = 0xc7
+    if (function < mapped.text_vmaddr + 0x990 or
+            function + body_size > mapped.text_vmaddr + 0x990 + mapped.text_size):
+        raise VerificationError("Chipmatch function is outside code")
+    body = read(function, body_size)
+    prefix = bytes.fromhex(
+        "554889e541574156535081ffe4140000755f31c0488d0d00000000"
+        "663934080f84910000004883c002483dd400000075ea")
+    normalized = bytearray(body[:len(prefix)])
+    normalized[0x17:0x1b] = b"\0"*4
+    success = bytes.fromhex("41b6014489f04883c4085b415e415f5dc3")
+    if bytes(normalized) != prefix or body[0xb6:] != success:
+        raise VerificationError("Unknown chipmatch table lookup or success path")
+    displacement = struct.unpack_from("<i", body, 0x17)[0]
+    if function + 0x1b + displacement != table:
+        raise VerificationError("Chipmatch lookup does not use the resolved device table")
+    table_bytes = read(table, 0xd4)
+    devices = set(struct.unpack("<106H", table_bytes))
+    required = ("43ba", "43a3", "43a0", "4357", "43b1", "43b2")
+    if any(int(device, 16) not in devices for device in required):
+        raise VerificationError("Modern NIC ID is absent from the driver's device table")
+    return {"table_entries": 106, "table_sha256": sha256(table_bytes),
+            "function_sha256": sha256(body),
+            "accepted_pci_ids": ["14e4:"+device for device in required],
+            "driver_function_invoked": False,
+            "scope": "Vendor 14e4 and listed device IDs reach the checked chipmatch success return; firmware and RF functionality are not established."}
+
+
 def _host_harness_source() -> str:
     return r'''#include "pinned_driver.hpp"
 #include <stdint.h>
@@ -410,6 +481,7 @@ def verify_dependencies(paths: list[Path]) -> dict:
         harness = _compile_harness(temp_dir)
         for artifact in unique_variants:
             mapped = map_thin_x86_64_macho(artifact.binary)
+            chipmatch = verify_chipmatch(artifact.binary, mapped)
             mapped_path = temp_dir / f"{artifact.role}.mapped-image"
             mapped_path.write_bytes(mapped.data)
             result = subprocess.run([str(harness), str(mapped_path)],
@@ -434,6 +506,7 @@ def verify_dependencies(paths: list[Path]) -> dict:
                 "member": artifact.member,
                 "binary_sha256": artifact.binary_sha256,
                 "macho_uuid": mapped.macho_uuid,
+                "chipmatch": chipmatch,
                 "mapped_image_span_bytes": mapped.image_span,
                 "text_mapping": {
                     "image_vmaddr": hex(mapped.image_vmaddr),
@@ -470,6 +543,7 @@ def verify_dependencies(paths: list[Path]) -> dict:
             "all_required_variants_present": True,
             "all_pin_initializers_passed": True,
             "all_published_offsets_match_contract": True,
+            "all_modern_ids_in_chipmatch_tables": True,
             "driver_function_pointers_invoked": False,
             "kernel_kext_loaded": False,
         },

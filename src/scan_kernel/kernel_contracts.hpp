@@ -12,7 +12,6 @@ namespace KernelContracts {
 
 constexpr size_t MaxContractBytes = 4096;
 constexpr size_t IfnetIoctlContractBytes = 0x390;
-constexpr size_t RunActionContractBytes = 0x280;
 constexpr size_t ClientMemoryBodyBytes = 11;
 constexpr size_t ClientMemoryRouteBytes = 9;
 
@@ -209,12 +208,6 @@ struct IfnetIoctlPlan {
     size_t imageSpan = 0;
     uint32_t proofTag = 0;
 };
-struct RunActionPlan {
-    uintptr_t imageBase = 0;
-    uintptr_t actionReturnPC = 0;
-    size_t imageSpan = 0;
-    uint32_t proofTag = 0;
-};
 struct ClientMemoryPlan {
     uintptr_t imageBase = 0;
     size_t bodyBytes = 0;
@@ -223,7 +216,6 @@ struct ClientMemoryPlan {
 };
 
 constexpr uint32_t IfnetPlanProof = 0x49464E31U; // IFN1
-constexpr uint32_t RunActionPlanProof = 0x52414331U; // RAC1
 constexpr uint32_t ClientMemoryPlanProof = 0x434D5531U; // CMU1
 
 // SHA-256 of the complete current 25G332 function body after only the listed
@@ -261,11 +253,6 @@ static const uint8_t IfnetCurrentSemanticAdditionalDigests[][32] = {
     {0x90,0xa3,0xac,0xbb,0xdd,0x69,0x06,0xf5,0x39,0x54,0x19,0xef,0x38,0x31,0xd2,0x63,0x23,0xaa,0xcd,0xc5,0x8d,0x6c,0xb6,0x3e,0x63,0x20,0xef,0x53,0x72,0x62,0xf7,0xe5},
     {0xf3,0x42,0x7a,0x33,0x4a,0x8d,0x88,0x03,0xc3,0xbc,0x50,0x2a,0xd5,0xa0,0xe1,0x30,0xb3,0xbe,0xcc,0xe3,0x25,0x49,0x56,0xd9,0x05,0x5a,0xa8,0x42,0x99,0xbf,0xbd,0x0b}
 };
-static const uint8_t RunActionCurrentDigest[32] = {
-    0x21,0x08,0x61,0x39,0x88,0x8c,0xc3,0x67,0x27,0x7d,0xe4,0x87,0x40,0xbe,0x4c,0x89,
-    0xe5,0x20,0x9e,0x2f,0x5a,0xea,0xd8,0x8a,0xe7,0xff,0xd7,0xbb,0x85,0x21,0x70,0xf9
-};
-
 static const RelocationSpec IfnetRelocationSpecs[] = {
     {0x086,0x087,0x08b,RelocationKind::RelativeCall,"_lck_mtx_lock_spin_always",nullptr,0},
     {0x0ec,0x0ed,0x0f1,RelocationKind::RelativeCall,"_IOLockUnlock","_lck_mtx_unlock",0},
@@ -319,23 +306,8 @@ constexpr size_t IfnetCurrentSemanticTargetCount=
 constexpr size_t IfnetCurrentSemanticRelocationCount=
     IfnetCurrentDynamicRelocationCount+IfnetCurrentSemanticTargetCount;
 
-static const RelocationSpec RunActionRelocationSpecs[] = {
-    {0x05d,0x060,0x064,RelocationKind::RipRelative,"_gIOKitTrace",nullptr,0},
-    {0x06a,0x06c,0x074,RelocationKind::RipRelative,"_kdebug_enable",nullptr,0},
-    {0x0c0,0x0c2,0x0ca,RelocationKind::RipRelative,"_kdebug_enable",nullptr,0},
-    {0x1c7,0x1ca,0x1ce,RelocationKind::RipRelative,"_vm_kernel_slid_base",nullptr,0},
-    {0x1d2,0x1d5,0x1d9,RelocationKind::RipRelative,"_vm_kernel_slid_top",nullptr,0},
-    {0x1d9,0x1dc,0x1e0,RelocationKind::RipRelative,"_vm_kernel_slide",nullptr,0},
-    {0x215,0x216,0x21a,RelocationKind::RelativeCall,"_kernel_debug",nullptr,0},
-    {0x21f,0x222,0x226,RelocationKind::RipRelative,"_vm_kernel_slid_base",nullptr,0},
-    {0x22a,0x22d,0x231,RelocationKind::RipRelative,"_vm_kernel_slid_top",nullptr,0},
-    {0x231,0x234,0x238,RelocationKind::RipRelative,"_vm_kernel_slide",nullptr,0},
-    {0x26d,0x26e,0x272,RelocationKind::RelativeCall,"_kernel_debug",nullptr,0}
-};
-
 constexpr size_t IfnetRelocationCount = sizeof(IfnetRelocationSpecs) / sizeof(IfnetRelocationSpecs[0]);
 constexpr size_t IfnetMappedTargetCount = sizeof(IfnetMappedTargetSpecs) / sizeof(IfnetMappedTargetSpecs[0]);
-constexpr size_t RunActionRelocationCount = sizeof(RunActionRelocationSpecs) / sizeof(RunActionRelocationSpecs[0]);
 
 inline bool sameRelocationLayout(const Relocation *relocations, size_t count,
                                  const RelocationSpec *specs, size_t specCount) {
@@ -591,11 +563,6 @@ inline bool fixedIfnetCurrentDynamicRelocationLayout(const Relocation *relocatio
     return count==IfnetCurrentDynamicRelocationCount &&
            fixedIfnetRelocationLayout(relocations,count);
 }
-inline bool fixedRunActionRelocationLayout(const Relocation *relocations, size_t count) {
-    for (size_t i=0;i<RunActionRelocationCount;++i) if (!RunActionRelocationSpecs[i].symbol) return false;
-    return sameRelocationLayout(relocations,count,RunActionRelocationSpecs,RunActionRelocationCount);
-}
-
 // Explicit-digest variants are host-testable helpers. Production must use the
 // Current wrappers below, which reject any relocation layout outside the
 // compiled-in table before hashing the complete function body.
@@ -642,43 +609,6 @@ inline Status validateIfnetIoctl(const uint8_t *bytes, size_t size, uintptr_t ba
     return Status::Passed;
 }
 
-inline Status validateRunAction(const uint8_t *bytes, size_t size, uintptr_t base,
-                                const Relocation *relocations, size_t relocationCount,
-                                const uint8_t expectedDigest[32], RunActionPlan &plan) {
-    plan = {};
-    if (!bytes || !expectedDigest || !base) return Status::InvalidInput;
-    if (size != RunActionContractBytes) return Status::Truncated;
-    uint8_t digest[32];
-    const Status hashed = normalizedSha256(bytes, size, base, relocations, relocationCount, digest);
-    if (hashed != Status::Passed) return hashed;
-    if (!equalDigest(digest, expectedDigest)) return Status::FingerprintMismatch;
-    static const uint8_t ownerAndArguments[] = {
-        0x49,0x8b,0x7e,0x18,0x48,0x8b,0x75,0xc8,0x48,0x8b,0x55,0xc0,
-        0x48,0x8b,0x4d,0xb8,0x4c,0x8b,0x45,0xb0,0x41,0xff,0xd7
-    };
-    static const uint8_t savedActionAndArguments[] = {
-        0x49,0x89,0xf7,0x48,0x89,0x55,0xc8,0x48,0x89,0x4d,0xc0,
-        0x4c,0x89,0x45,0xb8,0x4c,0x89,0x4d,0xb0
-    };
-    static const uint8_t activeActionAccounting[] = {
-        0x48,0xc7,0xc1,0x00,0xff,0xff,0xff,0x49,0x03,0x4e,0x48,0x49,0x89,0x4e,0x48
-    };
-    static const uint8_t gateAndWorkLoop[] = {
-        0x49,0x89,0xfe,0x48,0x8b,0x5f,0x30,0x48,0x85,0xdb
-    };
-    if (!matches(bytes, size, 0x1a, gateAndWorkLoop, sizeof(gateAndWorkLoop)) ||
-        !matches(bytes, size, 0x2a, savedActionAndArguments, sizeof(savedActionAndArguments)) ||
-        !matches(bytes, size, 0x91, ownerAndArguments, sizeof(ownerAndArguments)) ||
-        !matches(bytes, size, 0xa8, activeActionAccounting, sizeof(activeActionAccounting)))
-        return Status::SemanticMismatch;
-    if (base > UINTPTR_MAX - 0xa8) return Status::InvalidInput;
-    plan.imageBase = base;
-    plan.actionReturnPC = base + 0xa8;
-    plan.imageSpan = size;
-    plan.proofTag = RunActionPlanProof;
-    return Status::Passed;
-}
-
 inline Status validateUnsupportedClientMemory(const uint8_t *bytes, size_t size, uintptr_t base,
                                                ClientMemoryPlan &plan) {
     plan = {};
@@ -709,15 +639,6 @@ inline Status validateIfnetCurrent(const uint8_t *bytes, size_t size, uintptr_t 
         status=validateIfnetIoctl(bytes,size,base,relocations,relocationCount,
                                  IfnetCurrentAdditionalDigests[i],plan);
     return status;
-}
-
-inline Status validateRunActionCurrent(const uint8_t *bytes, size_t size, uintptr_t base,
-                                        const Relocation *relocations, size_t relocationCount,
-                                        RunActionPlan &plan) {
-    plan = {};
-    if (!fixedRunActionRelocationLayout(relocations, relocationCount)) return Status::InvalidRelocation;
-    return validateRunAction(bytes, size, base, relocations, relocationCount,
-                              RunActionCurrentDigest, plan);
 }
 
 } // namespace KernelContracts

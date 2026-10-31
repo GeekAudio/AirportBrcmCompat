@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "validation_scope": "offline",
+  "hardware_runtime_validated": false,
+  "systems": [
+    "Sonoma 14",
+    "Sequoia 15",
+    "Tahoe 26"
+  ],
+  "classification_source": {
+    "repository": "dortania/OpenCore-Legacy-Patcher",
+    "commit": "e2107e05d9ce574e9ac3fd8b223e20a2edb7ba53",
+    "file": "opencore_legacy_patcher/datasets/pci_data.py",
+    "blob_sha": "35f5585adbea1fbe814ac0b2753d87e952944664"
+  },
+  "cards": [
+    {
+      "pci_id": "14e4:43ba",
+      "chip": "BCM43602",
+      "matching": "native",
+      "offline_status": "shared NIC driver and request contracts checked"
+    },
+    {
+      "pci_id": "14e4:43a3",
+      "chip": "BCM4350",
+      "matching": "native",
+      "offline_status": "shared NIC driver and request contracts checked"
+    },
+    {
+      "pci_id": "14e4:43a0",
+      "chip": "BCM4360",
+      "matching": "native",
+      "offline_status": "shared NIC driver and request contracts checked"
+    },
+    {
+      "pci_id": "14e4:4357",
+      "chip": "BCM43225",
+      "matching": "optional third-party",
+      "offline_status": "shared NIC driver and request contracts checked"
+    },
+    {
+      "pci_id": "14e4:43b1",
+      "chip": "BCM4352",
+      "matching": "optional third-party",
+      "offline_status": "shared NIC driver and request contracts checked"
+    },
+    {
+      "pci_id": "14e4:43b2",
+      "chip": "BCM4352 2.4 GHz",
+      "matching": "optional third-party",
+      "offline_status": "shared NIC driver and request contracts checked"
+    }
+  ],
+  "nic_variants": [
+    {
+      "binary_sha256": "c43b8c5443c14d029c86459ea60502ede731bb94acb8de201fc210c99080f0d0",
+      "caller_offsets": {
+        "associate_caller_return": "0x59a6a",
+        "auth_caller_return": "0x43231"
+      },
+      "chipmatch": {
+        "accepted_pci_ids": [
+          "14e4:43ba",
+          "14e4:43a3",
+          "14e4:43a0",
+          "14e4:4357",
+          "14e4:43b1",
+          "14e4:43b2"
+        ],
+        "driver_function_invoked": false,
+        "function_sha256": "6faae8ff0be30b87c005eab3e4056481d3dae1f80c429c44d7d7476cb2a40db1",
+        "scope": "Vendor 14e4 and listed device IDs reach the checked chipmatch success return; firmware and RF functionality are not established.",
+        "table_entries": 106,
+        "table_sha256": "7db4bb2fc9cf9969f5a5fcf9b5ea6fae45c9bc4880d57505b8951c77179ccbb0"
+      },
+      "initialize_driver_pins_status": 0,
+      "macho_uuid": "E4678FEB-1DC1-35CC-9306-48021083D04A",
+      "nonnull_pin_count": 8,
+      "pin_offsets": {
+        "assoc_in_progress": "0x110309",
+        "find_bss_cfg": "0x2e314",
+        "get_hardware_address": "0x38b7a",
+        "get_state": "0x3b9ce",
+        "iovar": "0x3824a",
+        "set_associate": "0x42b8e",
+        "set_auth_type": "0x438f8",
+        "set_hardware_address": "0x38b96"
+      },
+      "role": "sonoma-sequoia"
+    },
+    {
+      "binary_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
+      "caller_offsets": {
+        "associate_caller_return": "0x59a6a",
+        "auth_caller_return": "0x43231"
+      },
+      "chipmatch": {
+        "accepted_pci_ids": [
+          "14e4:43ba",
+          "14e4:43a3",
+          "14e4:43a0",
+          "14e4:4357",
+          "14e4:43b1",
+          "14e4:43b2"
+        ],
+        "driver_function_invoked": false,
+        "function_sha256": "6faae8ff0be30b87c005eab3e4056481d3dae1f80c429c44d7d7476cb2a40db1",
+        "scope": "Vendor 14e4 and listed device IDs reach the checked chipmatch success return; firmware and RF functionality are not established.",
+        "table_entries": 106,
+        "table_sha256": "7db4bb2fc9cf9969f5a5fcf9b5ea6fae45c9bc4880d57505b8951c77179ccbb0"
+      },
+      "initialize_driver_pins_status": 0,
+      "macho_uuid": "E4678FEB-1DC1-35CC-9306-48021083D04A",
+      "nonnull_pin_count": 8,
+      "pin_offsets": {
+        "assoc_in_progress": "0x110309",
+        "find_bss_cfg": "0x2e314",
+        "get_hardware_address": "0x38b7a",
+        "get_state": "0x3b9ce",
+        "iovar": "0x3824a",
+        "set_associate": "0x42b8e",
+        "set_auth_type": "0x438f8",
+        "set_hardware_address": "0x38b96"
+      },
+      "role": "tahoe"
+    }
+  ],
+  "sonoma_sae": {
+    "producer": "Apple80211Associate2",
+    "sample": "Sonoma 14.8.9 / 23J631",
+    "native_image_sha256": "f100578fca835e9c3e434b56e86e178a3df3f0fb0faca8c45da0b940110985d1",
+    "retained_disassembly_sha256": "48b70b6f1abc9690d22f42a10a9107897d1f716d5f2519307a783596fd145531",
+    "selected_auth_store": "0x7ffb1c15c7a1: uint16 0x1000 at payload +8",
+    "password_carrier": "0x7ffb1c15c991..0x7ffb1c15c9e8: password bytes +72, length +60, cipher 10 at +64, derived PMK32 at +468/+472",
+    "allowed_policy": "original DWORD at +504 preserved; same admitted masks 0, 4, 0x40000004",
+    "mapping": "Known 508-byte prefix copied unchanged into the fixed 548-byte consumer; no authentication downgrade or synthesized private address."
+  },
+  "get12_request_width": "The capability adapter and its wrapper require user64. Guard-page test proves a 32-byte envelope can be forwarded without reading the 64-bit pointer.",
+  "optional_matching": "Both the upstream core PCI personality and child injector are restricted to the six listed IDs; executable sections are verified unchanged after signing.",
+  "removed_contracts": {
+    "RunActionPlan": "No production references; legacy fingerprint contract and synthetic-only fixture removed. Active retained synchronous runAction calls and scoped-reset tests remain."
+  },
+  "limits": [
+    "Offline contracts establish the inspected paths only; no driver function is invoked and no hardware operation is performed.",
+    "The SAE password subset does not establish an SAE handshake or every enterprise/security configuration.",
+    "Unknown kernel or request contracts still fail closed; future private interfaces are not inferred."
+  ],
+  "production_sources": {
+    "src/scan_kernel/association_profiles.hpp": "f516c3db6d5af1efee68f486f954f6a60f703f77aa0c50031ccdab8f55e084c9",
+    "src/scan_kernel/scan_compat.hpp": "a3c216aebe33ba5befe4d8d706774474b8b36ccc6d703a29f88751d76341de62",
+    "src/scan_kernel/kernel_contracts.hpp": "e9ab5d86acff8b65f0650547e2c6c9675b9be9cbf7c90505fdc8e264cd47b9c5",
+    "tools/prepare_broadcom_injector.py": "752ec50f372f2534c7a339435b2191faf343f727664d618e319f8b1ed8cdfe67",
+    "tools/verify_modern_driver_pins.py": "9b86c125004a89e0d3bc307fd62f68fa2f28f3d9d98f8d0b8725d16a1778df9c"
+  }
+}

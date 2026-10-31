@@ -71,8 +71,100 @@ class AssociationSaeTests(unittest.TestCase):
     def test_default_build_still_rejects_sae(self):
         self.compile_run(HARNESS, False)
 
+    def test_default_build_rejects_compact_sae_without_writing_output(self):
+        self.compile_run(r'''
+#include "association_profiles.hpp"
+#include <cassert>
+#include <cstring>
+int main(){
+ uint8_t input[856]{},out[548],before[548];uint32_t version=1;uint16_t upper=4096,mode=2;
+ memcpy(input,&version,4);memcpy(input+4,&mode,2);memcpy(input+8,&upper,2);
+ memset(out,0x6d,sizeof(out));memcpy(before,out,sizeof(out));
+ auto result=AssociationProfiles::convertSonoma14(input,sizeof(input),out,sizeof(out));
+ assert(result.error==EOPNOTSUPP&&result.field==8&&!memcmp(out,before,sizeof(out)));
+}
+''', False)
+
     def test_candidate_preserves_selected_auth_carriers_policy_and_owned_intent(self):
         self.compile_run(HARNESS, True)
+
+    def test_sae_password_subset_across_all_three_request_profiles(self):
+        source = r'''
+#include "association_compat.hpp"
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+using namespace AssociationCompat;
+static uint8_t payload[NativeSize], before[NativeSize], received[LegacySize];
+static Registry registry;
+static bool locked;
+static unsigned originals,copies,allocations;
+static int originalError;
+static size_t length;
+static void put16(uint8_t*p,uint16_t v){memcpy(p,&v,2);}
+static void put32(uint8_t*p,uint32_t v){memcpy(p,&v,4);}
+static void lock(void*){assert(!locked);locked=true;}
+static void unlock(void*){assert(locked);locked=false;}
+static uintptr_t thread(){return 11;}
+static bool primary(void*c,void*i,const char name[16]){
+ return c==(void*)1 && i==(void*)2 && !memcmp(name,"en0",4);
+}
+static void*allocate(size_t n){assert(!locked&&n==StorageSize);++allocations;return malloc(n);}
+static void release(void*p,size_t n){assert(!locked);for(size_t j=0;j<n;++j)assert(!((uint8_t*)p)[j]);free(p);}
+static int copy(void*,uint64_t from,void*to,size_t n){
+ assert(!locked&&from==(uintptr_t)payload&&n==length);++copies;memcpy(to,payload,n);return 0;
+}
+static int original(void*c,void*i,void*v,void*infra,ScanCompat::Request*r,bool user64){
+ assert(!locked&&user64&&!v&&!infra&&c==(void*)1&&i==(void*)2);++originals;
+ assert(registry.find(11,c,i));
+ assert(!registry.consume(11,22,c,r->userData,received,LegacySize));
+ return originalError;
+}
+static void init(size_t n,unsigned key,uint32_t allowed){
+ memset(payload,0,sizeof(payload));length=n;put32(payload,1);put16(payload+4,2);
+ const bool compact=n==AssociationProfiles::Sonoma14Size;
+ if(compact){put16(payload+6,1);put16(payload+8,4096);}else{put32(payload+8,1);put32(payload+12,4096);}
+ const size_t shift=compact?0:4;
+ put32(payload+12+shift,3);memcpy(payload+16+shift,"abc",3);
+ put32(payload+56+shift,1);put32(payload+60+shift,key);put32(payload+64+shift,10);
+ memset(payload+72+shift,0x63,key);put32(payload+468+shift,32);
+ memset(payload+472+shift,0xa7,32);put32(payload+504+shift,allowed);
+ if(n==NativeSize)payload[899]=2;
+ originals=copies=allocations=0;memcpy(before,payload,sizeof(payload));
+}
+static int run(){
+ ScanCompat::Request request{};memcpy(request.interfaceName,"en0",4);
+ request.type=20;request.length=length;request.userData=(uintptr_t)payload;
+ API api{};api.original=original;api.copyIn=copy;api.allocate=allocate;api.deallocate=release;
+ api.primaryInterface=primary;api.registry=&registry;api.caller=22;api.currentThread=thread;
+ const int error=handle(api,(void*)1,(void*)2,nullptr,nullptr,&request,true);
+ assert(!registry.head&&!locked&&!memcmp(payload,before,sizeof(payload)));
+ return error;
+}
+int main(){
+ registry.lock={&registry,lock,unlock};
+ for(size_t n:{size_t(856),size_t(900),size_t(908)})for(uint32_t allowed:{0U,4U,0x40000004U})
+  for(unsigned key=8;key<=63;++key){
+   init(n,key,allowed);originalError=0;assert(!run()&&originals==1&&copies==1&&allocations==1);
+   assert(ScanCompat::read16(received+8)==4096&&ScanCompat::read32(received+60)==key);
+   assert(ScanCompat::read32(received+64)==10&&ScanCompat::read32(received+468)==32);
+   assert(ScanCompat::read32(received+504)==allowed);
+   const size_t shift=n==856?0:4;assert(!memcmp(received+72,payload+72+shift,key));
+   assert(!memcmp(received+472,payload+472+shift,32));
+   if(n==856)assert(!memcmp(received,payload,508));
+   init(n,key,allowed);originalError=73;assert(run()==73&&originals==1);
+  }
+ for(unsigned key:{0,7,64}){init(856,key,4);assert(run()==EOPNOTSUPP&&!originals);}
+ const unsigned offsets[]={6,8,64,468,504,508,855};
+ const uint32_t values[]={0,4097,6,0,8,1,1};
+ for(unsigned k=0;k<7;++k){init(856,16,4);
+  if(offsets[k]==6||offsets[k]==8)put16(payload+offsets[k],values[k]);
+  else if(offsets[k]==855)payload[855]=1;else put32(payload+offsets[k],values[k]);
+  memcpy(before,payload,sizeof(payload));assert(run()==EOPNOTSUPP&&!originals);
+ }
+}
+'''
+        self.compile_run(source, True)
 
     def test_candidate_private_address_scope_and_error_paths(self):
         source = flow.HARNESS.replace("int main(", "int legacy_flow_main(", 1).replace('puts("ok");}', 'puts("ok");return 0;}')

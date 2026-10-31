@@ -391,7 +391,7 @@
       "byte_mutations_rejected": 18240,
       "wrong_symbol_targets_rejected": 302,
       "production_sources": {
-        "kernel_contracts.hpp": "a4117a9891f2d4ef88fd3ea68866841cbe62502a10231f2dd80b3c1821e74c32",
+        "kernel_contracts.hpp": "e9ab5d86acff8b65f0650547e2c6c9675b9be9cbf7c90505fdc8e264cd47b9c5",
         "ifnet_profiles.hpp": "fd2cd7d1be5ede2bfa115799c1154b69239bef25208f5bdd5f4ee24d03b9ce99"
       },
       "original_images_reverified": false,
@@ -425,7 +425,7 @@
     "relocation_positive": true,
     "semantic_negative_cases_rejected": 12,
     "production_sources": {
-      "kernel_contracts.hpp": "a4117a9891f2d4ef88fd3ea68866841cbe62502a10231f2dd80b3c1821e74c32",
+      "kernel_contracts.hpp": "e9ab5d86acff8b65f0650547e2c6c9675b9be9cbf7c90505fdc8e264cd47b9c5",
       "ifnet_profiles.hpp": "fd2cd7d1be5ede2bfa115799c1154b69239bef25208f5bdd5f4ee24d03b9ce99"
     },
     "runtime_observed": false
@@ -438,5 +438,21 @@
     "same_thread_exact_tuple_single_use_scopes": true,
     "future_private_request_formats_are_not_inferred": true,
     "runtime_observed": false
+  },
+  "modern_card_coverage": {
+    "evidence": "validation/modern-card-coverage.json",
+    "card_ids_checked": 6,
+    "nic_variants_checked": 2,
+    "system_samples_checked": 3,
+    "sonoma_sae_password_subset": true,
+    "legacy_run_action_fingerprint_removed": true,
+    "hardware_runtime_validated": false
+  },
+  "retained_ifnet_replay_after_cleanup": {
+    "samples_passed": 21,
+    "byte_mutations_rejected": 18240,
+    "named_target_mutations_rejected": 302,
+    "original_images_reverified": false,
+    "unused_symbol_metadata_omitted_without_changing_function_bytes": true
   }
 }

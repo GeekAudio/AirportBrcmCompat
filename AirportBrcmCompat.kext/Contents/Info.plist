@@ -11,7 +11,7 @@
 	<key>AirportBrcmControlRxWindowsConfigured</key>
 	<integer>0</integer>
 	<key>AirportBrcmDevelopmentStatus</key>
-	<string>AutomaticABICandidate-1.1.0</string>
+	<string>Release-1.1.0</string>
 	<key>AirportBrcmIfnetLifetimePolicy</key>
 	<string>KnownContractThenPublicKPICallbackScopes</string>
 	<key>AirportBrcmKernelIdentityPolicy</key>

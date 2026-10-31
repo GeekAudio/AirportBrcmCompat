@@ -1,9 +1,10 @@
 # Building AirportBrcmCompat
 
-The source tree builds the **1.1.0 automatic compatibility candidate**. The
+The source tree builds **1.1.0** with `--release`. The
 Wi-Fi/private-address adapters and native control/event bridge check actual
 kernel interfaces instead of maintaining a host build-number/UUID allowlist.
-The published 1.0.1-rc1 downloads remain separate artifacts.
+An unqualified build remains an explicit development candidate; release builds
+retain the same strict interface checks and report their validation scope.
 
 ## Requirements
 
@@ -32,14 +33,16 @@ The full upstream checkouts retain their own licenses.
 ## Run the offline tests
 
 ```sh
-python3 tools/run_tests.py
+python3 tools/prepare_test_fixtures.py
+python3 tools/run_tests.py --require-all
 ```
 
 The public suite exercises the included core logic with synthetic inputs and
 host-side adapters. It does not boot a kext, connect Wi-Fi, or perform AirDrop.
-Private machine logs, Apple analysis binaries and deployment scripts are not
-distributed. Optional fixture checks run when their documented inputs exist
-under the ignored `build/` directory; otherwise those checks are skipped.
+`tests/fixtures.lock.json` pins the four small archives needed by the external
+dependency checks. They are downloaded into ignored `build/`; no full system
+images or private machine logs are needed. CI prepares these inputs and the
+locked build resources on macOS 15/26 Intel, then rejects any skipped test.
 
 ## Build the two variants
 
@@ -48,7 +51,7 @@ bounded SAE subset, without the optional receive-window diagnostics:
 
 ```sh
 python3 tools/build_unified_kernel.py \
-  --automatic-compatibility \
+  --release \
   --build-flavor RELEASE --output build/AirportBrcmCompat-RELEASE.zip
 ```
 
@@ -57,7 +60,7 @@ bounded receive windows:
 
 ```sh
 python3 tools/build_unified_kernel.py \
-  --automatic-compatibility \
+  --release \
   --baseline-trace --control-rx-windows \
   --build-flavor DEBUG --output build/AirportBrcmCompat-DEBUG.zip
 ```
@@ -72,7 +75,7 @@ Use the release installation instructions only after reviewing the exact
 artifact and retaining a working recovery path.
 
 [release-metadata.json](release-metadata.json) records the bundled 1.1.0
-candidate cores and their offline checks. Each fresh build carries its own
+release cores and their offline checks. Each fresh build carries its own
 manifest and hashes. The earlier 1.0.1-rc1 artifacts remain associated with
 their release tag.
 
@@ -181,8 +184,8 @@ matching interfaces can continue across system updates without a version entry.
 
 The source now dispatches the observed scan-result sizes 1228/2264/2272,
 capability buffers 16/19/21 and association inputs 856/900/908. The 856-byte
-association path preserves the original authentication fields and admits a
-bounded open/WPA2 subset with no nonzero extension or grouping scope. The
+association path preserves the original authentication fields and admits
+open/WPA2 and the enabled SAE password subset, with no nonzero extension or grouping scope. The
 900-byte path normalizes only the verified reserved tail in an owned copy;
 the shared validator retains all other restrictions. These codecs do not by
 themselves approve every minor release. The native control bridge also accepts
@@ -276,11 +279,12 @@ python3 tools/verify_modern_driver_pins.py \
 ```
 
 This is an offline host check of the actual `initializeDriverPins` code. The
-tool maps each Mach-O by its load-command segment addresses, reports the
+tool maps each Mach-O by its load-command segment addresses, checks all six
+modern IDs against the actual device table and its lookup/success path, reports the
 dependency and executable hashes, and rejects conflicting same-profile
 executables. It does not change runtime OS selection.
 
-For the additional modern PCI IDs `4331`, `4353`, `4357`, `43b1` and `43b2`,
+For the additional modern NIC PCI IDs `4357`, `43b1` and `43b2`,
 prepare the optional upstream core and NIC injector from the
 [official 2.2.1 RELEASE ZIP](https://github.com/acidanthera/AirportBrcmFixup/releases/download/2.2.1/AirportBrcmFixup-2.2.1-RELEASE.zip):
 
@@ -293,6 +297,9 @@ python3 tools/prepare_broadcom_injector.py \
 
 The tool verifies the upstream archive hash, keeps the NIC injector, and
 excludes the injector for the different AirPortBrcm4360 driver. Its fragment
+restricts both the core PCI personality and child injector to the three native
+NIC IDs and three third-party NIC IDs. The upstream executable sections remain
+unchanged; only the matching plists are narrowed and re-signed. Its fragment
 adds only the optional Wi-Fi components. PCI matching does not establish
 hardware functionality; use the same profile as the main dependency package.
 For a combined cross-version dependency package, select `automatic`; its two

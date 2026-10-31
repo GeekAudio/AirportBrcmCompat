@@ -22,9 +22,9 @@ LIBRARIES={'as.vit9696.Lilu':LILU_RUNTIME_MINIMUM,'com.apple.kpi.bsd':'19.0.0','
            'com.apple.kpi.libkern':'19.0.0','com.apple.kpi.mach':'19.0.0',
            'com.apple.kpi.unsupported':'19.0.0','com.apple.iokit.IONetworkingFamily':'3.4'}
 
-def automatic_compatibility_info_metadata(baseline_trace, control_windows):
+def automatic_compatibility_info_metadata(baseline_trace, control_windows, release=False):
     return {
-        'AirportBrcmDevelopmentStatus':'AutomaticABICandidate-1.1.0',
+        'AirportBrcmDevelopmentStatus':'Release-1.1.0' if release else 'AutomaticABICandidate-1.1.0',
         'AirportBrcmAutomaticCompatibility':1,
         'AirportBrcmKernelIdentityPolicy':'ABIContractProbesFailClosed',
         'AirportBrcmIfnetLifetimePolicy':'KnownContractThenPublicKPICallbackScopes',
@@ -35,10 +35,11 @@ def automatic_compatibility_info_metadata(baseline_trace, control_windows):
         'AirportBrcmControlRxWindowsConfigured':1 if control_windows else 0,
     }
 
-def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
-    return {
+def automatic_compatibility_manifest_metadata(baseline_trace, control_windows, release=False):
+    metadata = {
         'candidate':'AutomaticABICompatibility-1.1.0',
-        'purpose':'Automatic kernel ABI-probe compatibility candidate with strict request schemas',
+        'purpose':'Automatic kernel ABI compatibility with strict request schemas',
+        'channel':'release' if release else 'candidate',
         'compatibility_policy':{
             'kernel_admission':'All required ABI contract probes must pass; an unknown UUID alone never admits compatibility.',
             'probe_policy':'Prefer saved ifnet implementation contracts; otherwise require the loader-bound public ioctl entry, a complete native interface callback contract, and nested one-shot request scopes. Retain independent exact checks for wireless dependency images.',
@@ -48,7 +49,7 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
             'strict_request_schemas':['scan-multiple-set86-v1','sae-password-carrier-subset-v1'],
             'wireless_dependency_images':'Existing per-image UUID, layout, instruction and call-target pins remain required.',
         },
-        'release_ready':False,
+        'release_ready':bool(release),
         'runtime_validated':False,
         'minimum_darwin_kernel_version':'23.0.0',
         'baseline_trace_schema':2 if baseline_trace else None,
@@ -79,31 +80,35 @@ def automatic_compatibility_manifest_metadata(baseline_trace, control_windows):
         'linked_inactive_cores':[],
         'validation_scope':'offline'
     }
+    if release:
+        metadata.pop('candidate')
+        metadata['release']='1.1.0'
+    return metadata
 
-def apply_automatic_compatibility_manifest(base, baseline_trace, control_windows):
+def apply_automatic_compatibility_manifest(base, baseline_trace, control_windows, release=False):
     """Replace stale historical summary fields with the compiled 1.1.0 feature set."""
-    base.update(automatic_compatibility_manifest_metadata(baseline_trace,control_windows))
-    base['ready_for_install']=False
+    base.update(automatic_compatibility_manifest_metadata(baseline_trace,control_windows,release))
+    base['ready_for_install']=bool(release)
     for key in ('awdl_backend_active','native_control_runtime_validated','native_control_only',
                 'active_behavior','remaining','colocated_scope_policy','association_policy_survey',
                 'dhcp_device_type_policy','original_driver_dependencies'):
         base.pop(key,None)
     return base
 
-def validate_automatic_compatibility_metadata(info, manifest):
+def validate_automatic_compatibility_metadata(info, manifest, release=False):
     expected_info=automatic_compatibility_info_metadata(
         bool(info.get('AirportBrcmBaselineTraceConfigured')),
-        bool(info.get('AirportBrcmControlRxWindowsConfigured')))
+        bool(info.get('AirportBrcmControlRxWindowsConfigured')), release)
     if any(info.get(key)!=value for key,value in expected_info.items()):
         raise ValueError('Automatic compatibility Info.plist policy mismatch')
     if manifest.get('minimum_darwin_kernel_version')!='23.0.0' or \
        manifest.get('runtime_validated') is not False or \
-       manifest.get('release_ready') is not False or \
-       manifest.get('ready_for_install') is not False:
+       manifest.get('release_ready') is not bool(release) or \
+       manifest.get('ready_for_install') is not bool(release):
         raise ValueError('Automatic compatibility cannot claim a wider OS range or runtime validation')
     expected_manifest=automatic_compatibility_manifest_metadata(
         bool(manifest.get('compiled_features',{}).get('baseline_control_rx_trace')),
-        bool(manifest.get('compiled_features',{}).get('control_rx_observation_windows')))
+        bool(manifest.get('compiled_features',{}).get('control_rx_observation_windows')), release)
     if any(manifest.get(key)!=value for key,value in expected_manifest.items()):
         raise ValueError('Automatic compatibility manifest policy mismatch')
     if ('AirportBrcmSupportedBuilds' in info or 'AirportBrcmKernelProfiles' in info or
@@ -253,6 +258,8 @@ def build_parser():
                         help='Compile/link experimental routes for offline review; router capability remains disabled')
     parser.add_argument('--automatic-compatibility',action='store_true',
                         help='Build the 1.1.0 candidate with automatic ABI probes, scan-multiple and strict SAE compatibility (the default mode)')
+    parser.add_argument('--release',action='store_true',
+                        help='Package the 1.1.0 release with offline-validation scope and the automatic compatibility feature set')
     parser.add_argument('--baseline-trace',action='store_true',
                         help='Include optional schema-2 numeric control-RX trace; requires automatic compatibility mode')
     parser.add_argument('--control-rx-windows',action='store_true',
@@ -264,7 +271,7 @@ def build_parser():
 def configure_build_mode(args):
     """Resolve CLI modes before touching toolchains or building an artifact."""
     review = args.event_pipe_components_review or args.event_pipe_routes_review
-    automatic = args.automatic_compatibility
+    automatic = args.automatic_compatibility or args.release
     if not automatic and not review and not args.baseline_trace and not args.control_rx_windows:
         # Keep an unqualified build on the current candidate path. Historical
         # component review modes remain explicit and cannot silently shadow it.
@@ -278,7 +285,8 @@ def configure_build_mode(args):
         args.automatic_compatibility = True
         args.event_pipe_routes_review = True
         args.event_pipe_components_review = True
-        return {'mode':'automatic-compatibility','version':'1.1.0','ready_for_install':False}
+        return {'mode':'release' if args.release else 'automatic-compatibility',
+                'version':'1.1.0','ready_for_install':bool(args.release)}
 
     if args.baseline_trace or args.control_rx_windows:
         raise ValueError('--baseline-trace and --control-rx-windows require --automatic-compatibility')
@@ -358,7 +366,7 @@ def main():
         info=bundle_info()
         info['AirportBrcmBuildFlavor']=args.build_flavor
         if args.automatic_compatibility:
-            info.update(automatic_compatibility_info_metadata(args.baseline_trace,args.control_rx_windows))
+            info.update(automatic_compatibility_info_metadata(args.baseline_trace,args.control_rx_windows,args.release))
         elif args.event_pipe_components_review:
             info['AirportBrcmDevelopmentStatus']=('EventPipe-Routes-CapabilityDisabled-Review'
                 if args.event_pipe_routes_review else 'EventPipe-Components-Unwired-Review')
@@ -402,12 +410,18 @@ def main():
                 'remaining':'Real IOUC selector/map/lifecycle routing and same-connection pipe reinitialization '
                     'are not installed. No event capability, AirDrop transfer or runtime safety claim.'})
         if args.automatic_compatibility:
-            apply_automatic_compatibility_manifest(manifest,args.baseline_trace,args.control_rx_windows)
-            validate_automatic_compatibility_metadata(info,manifest)
+            apply_automatic_compatibility_manifest(manifest,args.baseline_trace,args.control_rx_windows,args.release)
+            validate_automatic_compatibility_metadata(info,manifest,args.release)
         output.parent.mkdir(parents=True,exist_ok=True)
+        distribution = ([PROJECT/'LICENSE',PROJECT/'NOTICE.md',
+                         *sorted((PROJECT/'LICENSES').glob('*.txt'))] if args.release else [])
+        if distribution:
+            manifest['distribution_files']={str(path.relative_to(PROJECT)):
+                hashlib.sha256(path.read_bytes()).hexdigest() for path in distribution}
         with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as archive:
             for p in sorted(bundle.rglob('*')):
                 if p.is_file():archive.write(p,str(p.relative_to(work)))
+            for path in distribution:archive.write(path,str(path.relative_to(PROJECT)))
             archive.writestr('build-manifest.json',json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'output':str(output),'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
                       'single_kext':True,'ready_for_install':build_mode['ready_for_install'],

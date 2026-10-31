@@ -164,6 +164,27 @@ class BuildToolchainCLI(unittest.TestCase):
         self.assertEqual(routes['version'], '1.1.0')
         self.assertFalse(routes['ready_for_install'])
 
+    def test_release_mode_enables_full_feature_set_without_claiming_runtime_validation(self):
+        args=self.parse('--release')
+        mode=builder.configure_build_mode(args)
+        self.assertEqual(mode['mode'],'release')
+        self.assertTrue(mode['ready_for_install'])
+        self.assertTrue(args.automatic_compatibility and args.event_pipe_routes_review)
+        info=builder.bundle_info()
+        info.update(builder.automatic_compatibility_info_metadata(False,False,release=True))
+        manifest=builder.apply_automatic_compatibility_manifest({},False,False,release=True)
+        self.assertNotIn('candidate',manifest)
+        self.assertEqual(manifest['channel'],'release')
+        self.assertTrue(manifest['release_ready'] and manifest['ready_for_install'])
+        self.assertFalse(manifest['runtime_validated'])
+        self.assertTrue(builder.validate_automatic_compatibility_metadata(info,manifest,release=True))
+        manifest['runtime_validated']=True
+        with self.assertRaises(ValueError):builder.validate_automatic_compatibility_metadata(info,manifest,release=True)
+
+    def test_release_rejects_component_review_mode(self):
+        with self.assertRaises(ValueError):
+            builder.configure_build_mode(self.parse('--release','--event-pipe-components-review'))
+
     def test_automatic_metadata_has_probe_policy_strict_schemas_and_no_build_allowlist(self):
         info = builder.bundle_info()
         info.update(builder.automatic_compatibility_info_metadata(True, True))

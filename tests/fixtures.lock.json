@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "url": "https://github.com/GeekAudio/AirportBrcmCompat/releases/download/ci-fixtures-1/modern-wifi-ci-inputs.zip",
+  "sha256": "1e2097a040d962832923e587d5824db1384d2a3c13eafc66dbc5be2862a21f65",
+  "max_download_bytes": 20000000,
+  "files": {
+    "build/compatibility-profiles/sonoma14-dependencies.zip": "5e989665ddda369d2b01ca3dd52a8f0f33b0a64a3b54b490b541c48dad9fc52a",
+    "build/compatibility-profiles/sequoia15-dependencies.zip": "03e146963a6a754f4c80ce61f77b2f8184bde337d576b50f3c86cd9ff1920cb6",
+    "build/compatibility-profiles/tahoe26-dependencies.zip": "31978062aa501048d968341fd35ee427932d629bdea19e9794573b7e921ab26a",
+    "build/research/AirportBrcmFixup-2.2.1-RELEASE.zip": "2432c8a62445ad2cdadcc59b73928f01f8bf42bcd3f4386e49bc63a1c91db06f"
+  },
+  "scope": "Hash-pinned offline inputs for dependency-package, signing, driver-pin and chipmatch tests. No installers, full system images, machine logs or private device identities."
+}

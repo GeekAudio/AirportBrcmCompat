@@ -1,0 +1,51 @@
+name: Offline validation
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Tests and builds (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15-intel, macos-26-intel]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Prepare pinned build resources
+        run: python3 tools/prepare_dependencies.py
+      - name: Prepare all external test inputs
+        run: python3 tools/prepare_test_fixtures.py
+      - name: Check published source and binary hashes
+        run: shasum -a 256 --check SHA256SUMS.txt
+      - name: Run public offline tests
+        run: |
+          set -o pipefail
+          python3 tools/run_tests.py --require-all 2>&1 | tee offline-tests.log
+      - name: Build RELEASE
+        run: python3 tools/build_unified_kernel.py --release --build-flavor RELEASE --output build/ci-RELEASE.zip
+      - name: Build DEBUG
+        run: python3 tools/build_unified_kernel.py --release --baseline-trace --control-rx-windows --build-flavor DEBUG --output build/ci-DEBUG.zip
+      - name: Preserve test log and signed build artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: offline-${{ matrix.os }}
+          path: |
+            offline-tests.log
+            build/ci-*.zip
+          if-no-files-found: warn

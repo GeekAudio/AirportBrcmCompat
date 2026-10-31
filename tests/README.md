@@ -3,7 +3,9 @@
 Run the complete public suite from the repository root:
 
 ```sh
-python3 tools/run_tests.py
+python3 tools/prepare_dependencies.py
+python3 tools/prepare_test_fixtures.py
+python3 tools/run_tests.py --require-all
 ```
 
 Run one area, or combine areas:
@@ -14,6 +16,10 @@ python3 tools/run_tests.py --suite private-mac --suite awdl
 python3 tools/run_tests.py --suite build
 ```
 
-The suites require macOS, Python 3, and Xcode Command Line Tools (`xcrun`, Clang, and `nm`). They compile the checked-in production helpers and kernel components against synthetic inputs and host-side mocks. They do not need private driver images, research archives, EFI access, elevated privileges, a kernel load, or a Wi-Fi device. They cover scan adaptation and profile guards, private-address transaction policy (including disabled and candidate SAE handling), bounded event codecs, event ownership, queue lifecycle, numeric baseline tracing and control-RX windows, plus builder dependency-path/CLI behavior using synthetic SDK and resource-directory fixtures.
+The suites require macOS, Python 3, and Clang/`nm` from Xcode Command Line Tools. The runner tries xcrun, PATH and system tools, and supplies a named C++ driver alias when only clang is exposed. It restores PATH after completion. Tests compile the checked-in production helpers and kernel components against synthetic inputs and host-side mocks. They cover scan and association adaptation, private-address transactions, bounded event codecs, event ownership, queue lifecycle, numeric diagnostics and builder behavior.
+
+The external checks use three hash-pinned Sonoma/Sequoia/Tahoe dependency ZIPs and the official optional-component release ZIP, plus the locked build resources. `tests/fixtures.lock.json` records the sample hashes. The original 323-test suite had ten tests requiring these external inputs/resources; new regression cases also use them. CI prepares every input and runs `--require-all`, so a missing sample or skipped test fails the job. A plain `run_tests.py` remains available for a partial local run and reports skips normally.
+
+The CI matrix runs both tests and RELEASE/DEBUG builds on `macos-15-intel` and `macos-26-intel`, with logs and signed ZIPs retained as artifacts. No EFI access, elevated privileges, kernel load or Wi-Fi device is used.
 
 These tests establish offline behavior of the exercised code paths. They do not establish that a particular macOS build boots the kext, that private kernel ABI pins match a new OS build, or that Wi-Fi, sleep/wake, roaming, Handoff, or AirDrop work on hardware. Those claims still require a separately recorded build-specific boot and feature test.
