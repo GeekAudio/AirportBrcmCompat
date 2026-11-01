@@ -1,0 +1,69 @@
+{
+  "template_only": true,
+  "instructions": "Fill from actual hardware captures; do not import this blank template as a run.",
+  "run": {
+    "id": null,
+    "pci_id": null,
+    "macos_version": null,
+    "system_build": null,
+    "boot_session_alias": null,
+    "core": {
+      "version": "1.1.0",
+      "flavor": null,
+      "binary_sha256": null
+    },
+    "checks": {
+      "boot": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      },
+      "association": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      },
+      "private_address": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      },
+      "airdrop_to_peer": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      },
+      "airdrop_from_peer": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      },
+      "sleep_wake": {
+        "status": "not_run",
+        "evidence": [],
+        "observations": {}
+      }
+    },
+    "evidence": [],
+    "review": {
+      "method": null,
+      "reviewed_on": null
+    }
+  },
+  "failure_scenarios": {
+    "partial_hooks": {
+      "observed": false,
+      "before_evidence": null,
+      "after_evidence": null,
+      "recovery_action": null,
+      "recovery_result": "not_run"
+    },
+    "private_quarantine": {
+      "observed": false,
+      "before_evidence": null,
+      "after_evidence": null,
+      "same_boot_retry_result": "not_run",
+      "reboot_recovery_result": "not_run"
+    }
+  }
+}

@@ -26,6 +26,8 @@ jobs:
         os: [macos-15-intel, macos-26-intel]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
       - name: Prepare pinned build resources
         run: python3 tools/prepare_dependencies.py
       - name: Prepare all external test inputs
@@ -37,6 +39,8 @@ jobs:
           xcode-select -p
           xcrun --find clang++
           xcrun --sdk macosx --show-sdk-path
+      - name: Check hardware-record integrity (no hardware tests executed)
+        run: python3 tools/runtime_evidence.py
       - name: Run public offline tests
         run: |
           set -o pipefail

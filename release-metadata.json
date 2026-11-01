@@ -33,12 +33,12 @@
     }
   },
   "checks": {
-    "offline_tests_passed": 348,
-    "offline_test_seconds": 50.705,
+    "offline_tests_passed": 366,
+    "offline_test_seconds": 55.179,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "609e9539969ec7f9b103e878fa9fd5ce12759773d97ecc3eadc1d4cdac558b43",
+    "offline_test_log_sha256": "dd6bd5e2a0baad7b137cafd9bf1e254111f886c688e4192835ac5cacfd6982ab",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -76,7 +76,13 @@
     "host_sdk_selected_explicitly": true,
     "offline_delivery_flavor_system_combinations_checked": 12,
     "system_crypto_dependency_recognized": true,
-    "installation_zip_has_only_efi_payload": true
+    "installation_zip_has_only_efi_payload": true,
+    "runtime_matrix": "validation/runtime-matrix.json",
+    "runtime_matrix_cells": 18,
+    "runtime_matrix_qualified_cells": 0,
+    "hardware_tests_executed_by_ci": false,
+    "release_inventory_schema": 2,
+    "core_source_files_match_original_release_tag": true
   },
   "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
   "release_tag": "v1.1.0",
@@ -112,6 +118,8 @@
       "05-SHA256SUMS.txt",
       "06-VALIDATION.json",
       "07-LICENSES.md"
-    ]
+    ],
+    "lineage_documentation": "docs/RELEASE-VERIFICATION.md",
+    "runtime_record_documentation": "docs/RUNTIME-VALIDATION.md"
   }
 }

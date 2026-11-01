@@ -82,6 +82,8 @@ source commit and delivered hashes. `07-LICENSES.md` and `05-SHA256SUMS.txt` acc
 the downloads separately. Offline configuration/preflight tools remain in the
 source repository. See [tools/README.md](tools/README.md).
 
+The external inventory separates the immutable release tag, core binary/build identity, and repackaging checkout. Member hashes and installation paths can be checked with `brcmctl.py verify`; see [release verification](docs/RELEASE-VERIFICATION.md). CI checks hardware-record structure without executing or claiming hardware tests.
+
 [release-metadata.json](release-metadata.json) records the bundled 1.1.0
 release cores and their offline checks. Each fresh build carries its own
 manifest and hashes. The earlier 1.0.1-rc1 artifacts remain associated with

@@ -69,6 +69,9 @@ SUITES = {
         "test_prepare_test_fixtures",
         "test_brcmctl",
         "test_package_release",
+        "test_runtime_diagnostics",
+        "test_runtime_evidence",
+        "test_release_inventory",
     ),
 }
 

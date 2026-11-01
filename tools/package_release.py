@@ -11,6 +11,7 @@ import tempfile
 import zipfile
 
 from brcmctl import probe
+from release_inventory import inventory, lineage
 
 ROOT=Path(__file__).resolve().parents[1]
 sha=lambda data:hashlib.sha256(data).hexdigest()
@@ -86,7 +87,7 @@ def package(args):
     expected=json.loads((ROOT/'release-metadata.json').read_text())['checks']['offline_tests_passed']
     if result['passed']!=expected:raise ValueError('Test count differs from the source validation record')
     if args.output.exists():raise ValueError('Use a new distribution directory')
-    cores=[];core_manifests={}
+    cores=[];core_manifests={};core_sources={}
     for flavor,path in [('RELEASE',args.release_core),('DEBUG',args.debug_core)]:
         probe(path);files=read_files(path);manifest=json.loads(files['build-manifest.json'])
         if (manifest['version']!=version or manifest['build_flavor']!=flavor or
@@ -100,6 +101,9 @@ def package(args):
         verify_signatures(payload)
         cores.append((names[flavor],payload))
         core_manifests[flavor]=manifest
+        core_sources[flavor]={'manifest':manifest,'archive_sha256':sha(path.read_bytes()),
+            'manifest_sha256':sha(files['build-manifest.json']),
+            'binary':payload['AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat']}
     files=read_files(args.dependencies);manifest=json.loads(files['manifest.json'])
     for name,digest in manifest['kext_member_sha256'].items():
         if sha(files[name])!=digest:raise ValueError('Dependency member hash mismatch')
@@ -128,12 +132,16 @@ def package(args):
     (args.output/names['licenses']).write_text('# Distribution notices and licenses\n\n'+
         '\n\n'.join('## '+str(path.relative_to(ROOT))+'\n\n'+path.read_text() for path in notices)+'\n')
     commit=os.environ.get('GITHUB_SHA') or subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    validation={'version':version,'source_commit':commit,'scope':'offline','tests':result,
+    actual_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+    if commit!=actual_commit:raise ValueError('Packaging commit differs from the checked-out source')
+    tag=json.loads((ROOT/'release-metadata.json').read_text())['release_tag']
+    validation={'schema':2,'version':version,'source_commit':commit,'source_commit_role':'repackaging',
+                'lineage':lineage(ROOT,tag,core_sources,commit),'scope':'offline','tests':result,
                 'fixture_lock_sha256':sha((ROOT/'tests/fixtures.lock.json').read_bytes()),
                 'source_checksum_manifest_sha256':sha((ROOT/'SHA256SUMS.txt').read_bytes()),
                 'packaging':'EFI bundles and configuration fragments only',
                 'input_manifests':{'cores':core_manifests,'dependencies':manifest,'additional_cards':optional_manifest},
-                'artifacts':{p.name:{'sha256':sha(p.read_bytes()),'bytes':p.stat().st_size}
+                'artifacts':{p.name:{'sha256':sha(p.read_bytes()),'bytes':p.stat().st_size,**inventory(read_files(p))}
                              for p in sorted(args.output.glob('*.zip'))}}
     (args.output/names['validation']).write_text(json.dumps(validation,indent=2)+'\n')
     (args.output/names['checksums']).write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n'

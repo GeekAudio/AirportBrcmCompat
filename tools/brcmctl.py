@@ -168,13 +168,26 @@ def main(argv=None):
         if command=='collect':cli.add_argument('--output',type=Path,required=True)
     check=sub.add_parser('probe',help='Check a core ZIP against its manifest and optional published hash')
     check.add_argument('--core',type=Path,required=True);check.add_argument('--sha256')
+    diagnostic=sub.add_parser('diagnose',help='Interpret a saved XML/binary IORegistry plist without writing driver state')
+    diagnostic.add_argument('--ioreg',type=Path,required=True)
+    verify=sub.add_parser('verify',help='Check selected downloaded ZIPs and every installation member')
+    verify.add_argument('--directory',type=Path,required=True)
+    verify.add_argument('--checksums',default='05-SHA256SUMS.txt')
+    verify.add_argument('--validation',default='06-VALIDATION.json')
+    verify.add_argument('--asset',action='append')
     args=parser.parse_args(argv)
     try:
         if args.command=='configure':
             result=configure(load_plist(args.config),load_plist(args.fragment))
             write_new(args.output,plistlib.dumps(result,sort_keys=False))
             print(json.dumps({'output':str(args.output),'source_modified':False}));return 0
-        result=probe(args.core,args.sha256) if args.command=='probe' else preflight(args.oc_dir,args.darwin)
+        if args.command=='diagnose':
+            from runtime_diagnostics import diagnose
+            result=diagnose(args.ioreg)
+        elif args.command=='verify':
+            from release_inventory import verify as verify_downloads
+            result=verify_downloads(args.directory,args.checksums,args.validation,args.asset)
+        else:result=probe(args.core,args.sha256) if args.command=='probe' else preflight(args.oc_dir,args.darwin)
         payload=(json.dumps(result,indent=2)+'\n').encode()
         if args.command=='collect':write_new(args.output,payload)
         print(payload.decode(),end='');return 0 if result['passed'] else 1

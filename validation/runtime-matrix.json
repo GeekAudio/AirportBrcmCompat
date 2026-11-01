@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "target_release": "1.1.0",
+  "core_builds": {
+    "RELEASE": "d0db652211355a3c30cca4c6b5a448ed69f5607899021e342c45a36803c824a6",
+    "DEBUG": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36"
+  },
+  "scope": "Hardware records only. Offline tests and historical cores do not qualify these cells.",
+  "cells": [
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:43ba",
+      "chip": "BCM43602",
+      "runs": []
+    },
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:43a3",
+      "chip": "BCM4350",
+      "runs": []
+    },
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:43a0",
+      "chip": "BCM4360",
+      "runs": []
+    },
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:4357",
+      "chip": "BCM43225",
+      "runs": []
+    },
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:43b1",
+      "chip": "BCM4352",
+      "runs": []
+    },
+    {
+      "macos_major": 14,
+      "pci_id": "14e4:43b2",
+      "chip": "BCM4352 2.4 GHz",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:43ba",
+      "chip": "BCM43602",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:43a3",
+      "chip": "BCM4350",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:43a0",
+      "chip": "BCM4360",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:4357",
+      "chip": "BCM43225",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:43b1",
+      "chip": "BCM4352",
+      "runs": []
+    },
+    {
+      "macos_major": 15,
+      "pci_id": "14e4:43b2",
+      "chip": "BCM4352 2.4 GHz",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:43ba",
+      "chip": "BCM43602",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:43a3",
+      "chip": "BCM4350",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:43a0",
+      "chip": "BCM4360",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:4357",
+      "chip": "BCM43225",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:43b1",
+      "chip": "BCM4352",
+      "runs": []
+    },
+    {
+      "macos_major": 26,
+      "pci_id": "14e4:43b2",
+      "chip": "BCM4352 2.4 GHz",
+      "runs": []
+    }
+  ],
+  "historical_references": [
+    {
+      "id": "Test023r2",
+      "system_build": "25G332",
+      "loaded_core_version": "1.0.1",
+      "loaded_core_uuid": "5615944B-473F-37B0-9AB9-9434E6C2B888",
+      "pci_id_verified_in_retained_acceptance": false,
+      "reported_card": "BCM43602",
+      "directions": {
+        "mac_to_iphone": {
+          "window_generation": 1,
+          "recipient_confirmed_received_and_opened": true,
+          "endpoint_hash_verified": false
+        },
+        "iphone_to_mac": {
+          "window_generation": 2,
+          "recipient_confirmed_received": true,
+          "endpoint_hash_verified": true,
+          "bytes": 32768,
+          "hash_matches_source_transfer": true,
+          "later_native_clock_reconfirmation_is_after_window": true
+        }
+      },
+      "source_report_sha256": "4a872b2135625aa1951fd149b7322fdf6fc9237fd337eaf83495713f216eb0ec",
+      "source_kind": "retained private acceptance report; sanitized fields only",
+      "qualifies_target_release": false,
+      "boot_private_address_and_sleep_not_promoted": true
+    }
+  ]
+}

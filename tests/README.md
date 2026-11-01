@@ -23,3 +23,5 @@ The external checks use three hash-pinned Sonoma/Sequoia/Tahoe dependency ZIPs a
 The CI matrix runs both tests and RELEASE/DEBUG builds on `macos-15-intel` and `macos-26-intel`, with logs and signed ZIPs retained as artifacts. No EFI access, elevated privileges, kernel load or Wi-Fi device is used.
 
 These tests establish offline behavior of the exercised code paths. They do not establish that a particular macOS build boots the kext, that private kernel ABI pins match a new OS build, or that Wi-Fi, sleep/wake, roaming, Handoff, or AirDrop work on hardware. Those claims still require a separately recorded build-specific boot and feature test.
+
+The runtime-record and diagnostic tests are synthetic host-side checks. They reject mismatched PCI/build/core/boot evidence, sender-only AirDrop claims, unknown diagnostic stages and inconsistent inventories. They do not count as hardware-matrix runs. The matrix currently contains no current-release hardware results.

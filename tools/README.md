@@ -41,3 +41,7 @@ python3 tools/package_release.py --release-core build/ci-RELEASE.zip \
 ```
 
 输入构建包必须保留构建清单，并与当前源码哈希一致。工具复核签名、依赖字节、测试数量及零跳过结果，输出四份仅含 kext 和配置片段的安装 ZIP。完整构建清单移至独立的 `06-VALIDATION.json`，版权许可移至 `07-LICENSES.md`，下载校验值位于 `05-SHA256SUMS.txt`。CI 执行同一流程，保留日志和整套产物。
+
+## 查看诊断与核对安装文件
+
+`diagnose --ioreg saved.plist` 只解释留存的结构化 IORegistry 快照；`verify --directory downloads` 逐项核对下载的安装包。未观测阶段、未检查附件及未知恢复状态保持明确标注。步骤见[诊断与恢复](../docs/RUNTIME-VALIDATION.md)和[安装包核验](../docs/RELEASE-VERIFICATION.md)。
