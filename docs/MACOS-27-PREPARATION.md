@@ -13,6 +13,8 @@
 
 ## Intel 移植样本到手后
 
+检查工具在 [main 分支源码](https://github.com/GeekAudio/AirportBrcmCompat/tree/main/tools)的 `tools/` 目录。1.1.0 发布页的 Source code 对应固定 tag，不包含这次新增工具；安装 ZIP 也不包含工具。
+
 保留移植方案的仓库地址、提交号、完整系统构建号，以及该方案实际使用的 `BootKernelExtensions.kc`。只在 EFI 副本上运行：
 
 ```sh
@@ -44,6 +46,8 @@ python3 tools/brcmctl.py upgrade-check \
 [Apple's macOS 27 compatibility list](https://www.apple.com/os/macos/) lists Apple silicon models. This work prepares Wi-Fi checks for a community Intel port; it does not provide that OS port.
 
 The core has no OS-build/kernel-UUID allowlist or maximum OS version. Existing configuration selects the same NIC variant from Darwin 25 onward. Runtime ABI and request checks remain mandatory.
+
+Get the tools from the [main branch](https://github.com/GeekAudio/AirportBrcmCompat/tree/main/tools). The 1.1.0 release's Source code archives follow the fixed tag and do not include these new tools. Installation ZIPs contain no tools.
 
 Run the command above against an EFI copy and the **actual Intel port's BootKC**. Replace the example Darwin `26.0.0` with the target kernel's real `uname -r`; do not infer it from the macOS marketing version. The tool reads `_version`, rejects mismatched samples and ARM64 images, resolves kernel/networking symbols, and replays the production public-ioctl prefix and network-callback checks. Synthetic future-version regression fixtures are not hardware results.
 
