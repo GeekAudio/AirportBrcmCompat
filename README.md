@@ -9,7 +9,7 @@
 
 **正常安装下载 RELEASE 和「必装配套」。** BCM43225／BCM4352 再加补充包。
 
-[RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-RELEASE.zip) · [必装配套](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [BCM43225／BCM4352 补充包](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-DEBUG.zip)
+[01 RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/01-AirportBrcmCompat-1.1.0-RELEASE.zip) · [02 必装配套](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [03 BCM43225／BCM4352 补充包](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [04 DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/04-AirportBrcmCompat-1.1.0-DEBUG.zip)
 
 ![下载哪些包](docs/images/download-guide.png)
 
@@ -19,7 +19,7 @@
 
 ![kext 文件位置和配置添加方法](docs/images/install-layout.png)
 
-安装 ZIP 只放 kext 和配置文件；[校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/SHA256SUMS.txt)、验证记录和版权许可在发布页单独提供。
+安装 ZIP 只放 kext 和配置文件；[校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt)、验证记录和版权许可在发布页单独提供。
 
 ## 兼容表
 
@@ -44,7 +44,7 @@ AirportBrcmCompat provides Wi-Fi support for the Broadcom cards listed below thr
 
 **For everyday use, download RELEASE and Required Wi-Fi files.** BCM43225 / BCM4352 also need the add-on.
 
-[RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-RELEASE.zip) · [Required Wi-Fi files](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [BCM43225 / BCM4352 add-on](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-DEBUG.zip)
+[01 RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/01-AirportBrcmCompat-1.1.0-RELEASE.zip) · [02 Required Wi-Fi files](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [03 BCM43225 / BCM4352 add-on](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [04 DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/04-AirportBrcmCompat-1.1.0-DEBUG.zip)
 
 ![Which downloads to choose](docs/images/download-guide-en.png)
 
@@ -54,7 +54,7 @@ Back up your EFI first. Revert any existing OCLP wireless root patches. Follow t
 
 ![Kext locations and configuration steps](docs/images/install-layout-en.png)
 
-Installation ZIPs contain only kext bundles and configuration files. [Checksums](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/SHA256SUMS.txt), validation records and license notices are separate release attachments.
+Installation ZIPs contain only kext bundles and configuration files. [Checksums](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt), validation records and license notices are separate release attachments.
 
 ### Compatibility
 

@@ -2,13 +2,13 @@
 
 两个 plist 配套 **1.1.0 自动兼容核心**，需要合并到现有 EFI，不是完整 config.plist。RELEASE／DEBUG 的加载条目相同，核心只安装一个。1.0.1-rc1 使用其发布包内的配置片段。
 
-普通安装下载 `AirportBrcmCompat-1.1.0-RELEASE.zip` 和 `AirportBrcmCompat-1.1.0-WiFi-Pack.zip`。
+普通安装下载 `01-AirportBrcmCompat-1.1.0-RELEASE.zip` 和 `02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip`。
 将前者的 `AirportBrcmCompat.kext`、后者 `Kexts/` 下的四个 kext 复制到 `EFI/OC/Kexts/`，保留原名；两个 NIC 变体均复制。
 合并 `config-WiFi-RELEASE.example.plist` 的 `Kernel` 项，保留本机其他配置。DEBUG 只替换核心，并使用对应片段。
 
 加载顺序：AirportBrcmCompat → IOLegacyWFamily → IO80211FamilyLegacy → 对应的 AirPortBrcmNIC。
 
-BCM43225／BCM4352（PCI ID `14e4:4357`、`14e4:43b1`、`14e4:43b2`）还需 `AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip`。
+BCM43225／BCM4352（PCI ID `14e4:4357`、`14e4:43b1`、`14e4:43b2`）还需 `03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip`。
 复制整个 `AirportBrcmFixup.kext`，保留内部插件；将 `config.additional-cards.plist` 中的两个加载条目加入 `Kernel → Add`，放在两个 NIC 条目前，内部注入器排在主组件之后。
 BCM43602／BCM4350／BCM4360（`14e4:43ba`、`14e4:43a3`、`14e4:43a0`）使用前两份包即可。
 

@@ -13,7 +13,7 @@
       "compiler_debug_macro": false,
       "baseline_trace": false,
       "control_rx_windows": false,
-      "zip_filename": "AirportBrcmCompat-1.1.0-RELEASE.zip",
+      "zip_filename": "01-AirportBrcmCompat-1.1.0-RELEASE.zip",
       "zip_sha256": "5743e787657e22160131ba3edd910fbff197938a4dcd1e450485c0a63be1cdd5",
       "source_hashes_verified": 75,
       "artifact_hashes_verified": 3,
@@ -25,7 +25,7 @@
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "AirportBrcmCompat-1.1.0-DEBUG.zip",
+      "zip_filename": "04-AirportBrcmCompat-1.1.0-DEBUG.zip",
       "zip_sha256": "f17adae4b7bb42592b8ff657255dfc20760ac4a2df89bbf4a95c1fbdb718a4bc",
       "source_hashes_verified": 76,
       "artifact_hashes_verified": 3,
@@ -82,13 +82,13 @@
   "release_tag": "v1.1.0",
   "dependency_packages": {
     "automatic": {
-      "zip_filename": "AirportBrcmCompat-1.1.0-WiFi-Pack.zip",
+      "zip_filename": "02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip",
       "zip_sha256": "47c0011dd1b26ad4dcc361d8e2fbd818d8c80f808d134b8575a7703b5bc0d99c",
       "independent_native_samples": 3,
       "nic_variants_pin_checked": 2
     },
     "additional_cards": {
-      "zip_filename": "AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip",
+      "zip_filename": "03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip",
       "zip_sha256": "aa36abb105062cb5e91fbbe7c4f98f61c82ada8b74ac0d75fdfaaa43d4a8d735",
       "modern_pci_ids": 6,
       "additional_modern_pci_ids": 3
@@ -98,11 +98,20 @@
     "layout": "installation-only",
     "release_tag_commit": "a1b422a99037a8221f91919233fd847407949d1a",
     "separate_release_attachments": [
-      "VALIDATION.json",
-      "LICENSES.md",
-      "SHA256SUMS.txt"
+      "05-SHA256SUMS.txt",
+      "06-VALIDATION.json",
+      "07-LICENSES.md"
     ],
     "illustrated_guide": "README.md",
-    "english_guide_collapsed": true
+    "english_guide_collapsed": true,
+    "asset_order": [
+      "01-AirportBrcmCompat-1.1.0-RELEASE.zip",
+      "02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip",
+      "03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip",
+      "04-AirportBrcmCompat-1.1.0-DEBUG.zip",
+      "05-SHA256SUMS.txt",
+      "06-VALIDATION.json",
+      "07-LICENSES.md"
+    ]
   }
 }

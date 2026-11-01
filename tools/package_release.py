@@ -16,6 +16,17 @@ ROOT=Path(__file__).resolve().parents[1]
 sha=lambda data:hashlib.sha256(data).hexdigest()
 
 
+def release_filenames(version):
+    # GitHub renders the asset list in filename order.
+    return {'RELEASE':f'01-AirportBrcmCompat-{version}-RELEASE.zip',
+            'dependencies':f'02-AirportBrcmCompat-{version}-WiFi-Pack.zip',
+            'additional_cards':f'03-AirportBrcmCompat-{version}-BCM43225-BCM4352.zip',
+            'DEBUG':f'04-AirportBrcmCompat-{version}-DEBUG.zip',
+            'checksums':'05-SHA256SUMS.txt',
+            'validation':'06-VALIDATION.json',
+            'licenses':'07-LICENSES.md'}
+
+
 def read_files(path):
     files={};total=0
     with zipfile.ZipFile(path) as source:
@@ -70,6 +81,7 @@ def verify_signatures(files):
 
 def package(args):
     version=json.loads((ROOT/'release-metadata.json').read_text())['version']
+    names=release_filenames(version)
     result=test_result(args.test_log.read_text())
     expected=json.loads((ROOT/'release-metadata.json').read_text())['checks']['offline_tests_passed']
     if result['passed']!=expected:raise ValueError('Test count differs from the source validation record')
@@ -86,7 +98,7 @@ def package(args):
                 raise ValueError('Core source hash mismatch')
         payload=installation_files(files,('AirportBrcmCompat.kext',))
         verify_signatures(payload)
-        cores.append((f'AirportBrcmCompat-{version}-{flavor}.zip',payload))
+        cores.append((names[flavor],payload))
         core_manifests[flavor]=manifest
     files=read_files(args.dependencies);manifest=json.loads(files['manifest.json'])
     for name,digest in manifest['kext_member_sha256'].items():
@@ -108,12 +120,12 @@ def package(args):
     # Complete all input checks before creating the published artifact set.
     args.output.mkdir(parents=True)
     for name,data in cores:write_zip(args.output/name,data)
-    write_zip(args.output/f'AirportBrcmCompat-{version}-WiFi-Pack.zip',files)
-    write_zip(args.output/f'AirportBrcmCompat-{version}-BCM43225-BCM4352.zip',optional)
+    write_zip(args.output/names['dependencies'],files)
+    write_zip(args.output/names['additional_cards'],optional)
     # Binary redistribution notices accompany the downloads as a separate
     # release attachment, keeping installation ZIPs limited to EFI payloads.
     notices=[ROOT/'NOTICE.md',ROOT/'LICENSE',*sorted((ROOT/'LICENSES').glob('*.txt'))]
-    (args.output/'LICENSES.md').write_text('# Distribution notices and licenses\n\n'+
+    (args.output/names['licenses']).write_text('# Distribution notices and licenses\n\n'+
         '\n\n'.join('## '+str(path.relative_to(ROOT))+'\n\n'+path.read_text() for path in notices)+'\n')
     commit=os.environ.get('GITHUB_SHA') or subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     validation={'version':version,'source_commit':commit,'scope':'offline','tests':result,
@@ -123,9 +135,9 @@ def package(args):
                 'input_manifests':{'cores':core_manifests,'dependencies':manifest,'additional_cards':optional_manifest},
                 'artifacts':{p.name:{'sha256':sha(p.read_bytes()),'bytes':p.stat().st_size}
                              for p in sorted(args.output.glob('*.zip'))}}
-    (args.output/'VALIDATION.json').write_text(json.dumps(validation,indent=2)+'\n')
-    (args.output/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n'
-        for p in sorted(args.output.iterdir()) if p.is_file() and p.name!='SHA256SUMS.txt'))
+    (args.output/names['validation']).write_text(json.dumps(validation,indent=2)+'\n')
+    (args.output/names['checksums']).write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n'
+        for p in sorted(args.output.iterdir()) if p.is_file() and p.name!=names['checksums']))
     return validation
 
 

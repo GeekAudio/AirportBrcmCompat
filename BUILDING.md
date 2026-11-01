@@ -77,8 +77,8 @@ artifact and retaining a working recovery path.
 CI also combines the three locked dependency samples, prepares the optional
 modern-card package and runs `tools/package_release.py`. The resulting four
 versioned installation ZIPs contain only kext bundles and configuration
-fragments. `VALIDATION.json` retains the full input manifests, test result,
-source commit and delivered hashes. `LICENSES.md` and `SHA256SUMS.txt` accompany
+fragments. `06-VALIDATION.json` retains the full input manifests, test result,
+source commit and delivered hashes. `07-LICENSES.md` and `05-SHA256SUMS.txt` accompany
 the downloads separately. Offline configuration/preflight tools remain in the
 source repository. See [tools/README.md](tools/README.md).
 
