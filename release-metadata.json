@@ -33,12 +33,12 @@
     }
   },
   "checks": {
-    "offline_tests_passed": 366,
-    "offline_test_seconds": 55.179,
+    "offline_tests_passed": 376,
+    "offline_test_seconds": 57.154,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "dd6bd5e2a0baad7b137cafd9bf1e254111f886c688e4192835ac5cacfd6982ab",
+    "offline_test_log_sha256": "12eed4ce5f8de2f4b8dcf20bd0f0dcfe871d4af6746e867d235bc369d86f7ca0",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -70,7 +70,10 @@
       "probe",
       "configure",
       "preflight",
-      "collect"
+      "collect",
+      "diagnose",
+      "verify",
+      "upgrade-check"
     ],
     "complete_distribution_packager": "tools/package_release.py",
     "host_sdk_selected_explicitly": true,
@@ -82,7 +85,17 @@
     "runtime_matrix_qualified_cells": 0,
     "hardware_tests_executed_by_ci": false,
     "release_inventory_schema": 2,
-    "core_source_files_match_original_release_tag": true
+    "core_source_files_match_original_release_tag": true,
+    "macos27_preparation": {
+      "intel_target_sample_available": false,
+      "runtime_validated": false,
+      "synthetic_regression_cases": 10,
+      "reference_actual_darwin": "25.6.0",
+      "reference_collection_sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
+      "reference_host_contracts_passed": true,
+      "reference_scope": "Existing Tahoe baseline only; not macOS 27 qualification",
+      "documentation": "docs/MACOS-27-PREPARATION.md"
+    }
   },
   "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
   "release_tag": "v1.1.0",
