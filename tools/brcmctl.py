@@ -175,13 +175,21 @@ def main(argv=None):
     verify.add_argument('--checksums',default='05-SHA256SUMS.txt')
     verify.add_argument('--validation',default='06-VALIDATION.json')
     verify.add_argument('--asset',action='append')
+    upgrade=sub.add_parser('upgrade-check',help='Check an EFI copy and the actual Intel target BootKC before upgrade testing')
+    upgrade.add_argument('--oc-dir',type=Path,required=True)
+    upgrade.add_argument('--darwin',required=True)
+    upgrade.add_argument('--kernel-collection',type=Path)
+    upgrade.add_argument('--output',type=Path)
     args=parser.parse_args(argv)
     try:
         if args.command=='configure':
             result=configure(load_plist(args.config),load_plist(args.fragment))
             write_new(args.output,plistlib.dumps(result,sort_keys=False))
             print(json.dumps({'output':str(args.output),'source_modified':False}));return 0
-        if args.command=='diagnose':
+        if args.command=='upgrade-check':
+            from upgrade_check import assess
+            result=assess(preflight(args.oc_dir,args.darwin),version(args.darwin),args.kernel_collection)
+        elif args.command=='diagnose':
             from runtime_diagnostics import diagnose
             result=diagnose(args.ioreg)
         elif args.command=='verify':
@@ -189,7 +197,8 @@ def main(argv=None):
             result=verify_downloads(args.directory,args.checksums,args.validation,args.asset)
         else:result=probe(args.core,args.sha256) if args.command=='probe' else preflight(args.oc_dir,args.darwin)
         payload=(json.dumps(result,indent=2)+'\n').encode()
-        if args.command=='collect':write_new(args.output,payload)
+        if args.command=='collect' or (args.command=='upgrade-check' and args.output):
+            write_new(args.output,payload)
         print(payload.decode(),end='');return 0 if result['passed'] else 1
     except (OSError,ValueError,KeyError,TypeError,plistlib.InvalidFileException,zipfile.BadZipFile) as error:
         print('brcmctl: '+str(error),file=sys.stderr);return 2

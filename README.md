@@ -51,7 +51,7 @@ Vendor ID 均为 `14e4`。请按 PCI ID 确认自己的网卡。
 
 表内表示驱动与接口的离线检查通过。BCM43602 有 1.0.1-rc1 的 Tahoe 功能基线，逐卡状态见[兼容说明](COMPATIBILITY.md)。
 
-[实机矩阵](validation/RUNTIME-MATRIX.md) · [异常与恢复](docs/RUNTIME-VALIDATION.md) · [安装包核验](docs/RELEASE-VERIFICATION.md)
+[实机矩阵](validation/RUNTIME-MATRIX.md) · [异常与恢复](docs/RUNTIME-VALIDATION.md) · [安装包核验](docs/RELEASE-VERIFICATION.md) · [macOS 27 准备](docs/MACOS-27-PREPARATION.md)
 
 [配置检查工具](tools/README.md) · [构建说明](BUILDING.md) · [蓝牙作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext) · [版权与来源](NOTICE.md) · [BSD-3-Clause](LICENSE)
 
@@ -104,7 +104,7 @@ All PCI IDs use vendor `14e4`. Check your card's PCI ID before choosing a downlo
 
 The table records offline driver and interface checks. BCM43602 has a historical Tahoe functional baseline from 1.0.1-rc1. See [compatibility details](COMPATIBILITY.md) for the evidence scope.
 
-[Hardware matrix](validation/RUNTIME-MATRIX.md) · [Diagnostics and recovery](docs/RUNTIME-VALIDATION.md) · [Release verification](docs/RELEASE-VERIFICATION.md)
+[Hardware matrix](validation/RUNTIME-MATRIX.md) · [Diagnostics and recovery](docs/RUNTIME-VALIDATION.md) · [Release verification](docs/RELEASE-VERIFICATION.md) · [macOS 27 preparation](docs/MACOS-27-PREPARATION.md)
 
 [Configuration checks](tools/README.md) · [Build instructions](BUILDING.md) · [Bluetooth upstream](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext) · [Notices](NOTICE.md) · [BSD-3-Clause](LICENSE)
 

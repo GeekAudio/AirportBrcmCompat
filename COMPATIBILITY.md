@@ -49,6 +49,10 @@
 
 工具和输入要求见[构建说明](BUILDING.md#wi-fi-dependency-profiles)。上游组件许可与本项目自研代码许可分别适用，详见 [NOTICE](NOTICE.md)。
 
+## macOS 27 准备
+
+目前尚无目标 Intel 移植样本，不列入已检查系统。现有配置无未来版本上限；新增 `brcmctl.py upgrade-check` 将目标内核实际版本、架构和公开 KPI 备用路径的生产契约一起核对，缺少样本保持未完成。步骤和检查边界见 [macOS 27 升级准备](docs/MACOS-27-PREPARATION.md)。
+
 ## 实机与恢复记录
 
 [18 组实机矩阵](validation/RUNTIME-MATRIX.md)独立记录精确构建、PCI ID、核心哈希与启动会话，当前 1.1.0 实机项均未测试。历史 Test023r2 不迁移为当前通过项。[记录与异常恢复](docs/RUNTIME-VALIDATION.md)说明部分 hook、私人地址隔离及收件/睡眠的证据要求；源码策略与实机恢复结果分别标注。

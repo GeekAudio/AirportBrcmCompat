@@ -72,6 +72,7 @@ SUITES = {
         "test_runtime_diagnostics",
         "test_runtime_evidence",
         "test_release_inventory",
+        "test_upgrade_check",
     ),
 }
 

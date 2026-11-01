@@ -30,6 +30,10 @@ Sonoma 使用 Darwin 23，Sequoia 使用 24，Tahoe 使用 25。多系统 EFI �
 
 这些检查验证文件和配置的一致性。OpenCore 官方配置校验、实际加载及无线功能有各自的验证范围。
 
+## 新系统升级前检查
+
+`upgrade-check --oc-dir EFI-copy/OC --darwin <目标内核版本> --kernel-collection <目标BootKC> --output report.json` 同时检查 EFI 副本和目标 Intel 内核样本。实际版本不符、ARM64、缺少样本或契约不符均不能算通过；不安装驱动。完整步骤、结果解释和折叠英文见 [macOS 27 准备](../docs/MACOS-27-PREPARATION.md)。
+
 ## 维护者发包
 
 完整测试通过后，将对应的两种核心和两份依赖输入交给统一发包器：
