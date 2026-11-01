@@ -21,7 +21,7 @@ class DeliveryToolsTests(unittest.TestCase):
         for index,(name,identifier) in enumerate(zip(names,ids)):
             bundle=root/'Kexts'/(name+'.kext');(bundle/'Contents/MacOS').mkdir(parents=True)
             info={'CFBundleIdentifier':identifier,'CFBundleVersion':'1.1.0','CFBundleExecutable':name,
-                  'OSBundleLibraries':({tool.PROVIDER:'1.0'} if index==2 else {})}
+                  'OSBundleLibraries':({tool.PROVIDER:'1.0','com.apple.kec.corecrypto':'1.0'} if index==2 else {})}
             (bundle/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
             (bundle/'Contents/MacOS'/name).write_bytes(b'fictional offline executable')
             entries.append({'BundlePath':name+'.kext','PlistPath':'Contents/Info.plist',

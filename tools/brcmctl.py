@@ -99,7 +99,7 @@ def preflight(oc_dir,darwin):
                 if len(ids[dependency])!=1 or ids[dependency][0]['index']>=component['index']:
                     errors.append('Dependency must load first: '+dependency+' -> '+component['identifier'])
             elif dependency in REQUIRED or not dependency.startswith(
-                    ('com.apple.kpi.','com.apple.iokit.','com.apple.driver.')):
+                    ('com.apple.kpi.','com.apple.iokit.','com.apple.driver.','com.apple.kec.')):
                 errors.append('Missing EFI dependency: '+dependency)
     blocks=[entry for entry in kernel.get('Block',[]) if applies(entry,target)]
     if any(entry.get('Identifier')=='com.apple.iokit.IOSkywalkFamily' for entry in blocks):
