@@ -103,6 +103,16 @@ class DeliveryToolsTests(unittest.TestCase):
             with zipfile.ZipFile(archive,'w') as z:
                 z.writestr('core',b'changed');z.writestr('build-manifest.json',json.dumps(manifest))
             with self.assertRaisesRegex(ValueError,'Manifest hash'):tool.probe(archive)
+            info={'CFBundleIdentifier':tool.CORE,'CFBundleExecutable':'AirportBrcmCompat',
+                  'CFBundleVersion':'1.1.0','AirportBrcmBuildFlavor':'RELEASE'}
+            with zipfile.ZipFile(archive,'w') as z:
+                z.writestr('AirportBrcmCompat.kext/Contents/Info.plist',plistlib.dumps(info))
+                z.writestr('AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat',payload)
+                z.writestr('AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources',b'signature')
+            with self.assertRaisesRegex(ValueError,'published SHA-256'):tool.probe(archive)
+            result=tool.probe(archive,tool.sha(archive.read_bytes()))
+            self.assertTrue(result['passed']);self.assertEqual(result['files_verified'],3)
+            self.assertEqual(result['integrity_basis'],'published SHA-256')
 
 
 if __name__=='__main__':unittest.main()

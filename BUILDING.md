@@ -68,7 +68,7 @@ python3 tools/build_unified_kernel.py \
 Each output path must be new. The builder compiles, links, ad-hoc signs and
 verifies one kext, checks its compiled module identity, and records source/file
 hashes and feature flags in `build-manifest.json` inside the ZIP. These are
-offline checks. Configuration snippets in this source tree match this candidate.
+offline checks. Configuration snippets in this source tree match 1.1.0.
 
 These commands never install a kext or edit EFI, NVRAM, or the system volume.
 Use the release installation instructions only after reviewing the exact
@@ -76,9 +76,11 @@ artifact and retaining a working recovery path.
 
 CI also combines the three locked dependency samples, prepares the optional
 modern-card package and runs `tools/package_release.py`. The resulting four
-versioned ZIPs, `VALIDATION.json` and `SHA256SUMS.txt` record one source commit,
-the full test result and the delivered file hashes. The Wi-Fi dependency ZIP
-includes the offline configuration/preflight tools. See [tools/README.md](tools/README.md).
+versioned installation ZIPs contain only kext bundles and configuration
+fragments. `VALIDATION.json` retains the full input manifests, test result,
+source commit and delivered hashes. `LICENSES.md` and `SHA256SUMS.txt` accompany
+the downloads separately. Offline configuration/preflight tools remain in the
+source repository. See [tools/README.md](tools/README.md).
 
 [release-metadata.json](release-metadata.json) records the bundled 1.1.0
 release cores and their offline checks. Each fresh build carries its own

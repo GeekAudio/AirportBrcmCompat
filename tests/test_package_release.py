@@ -33,8 +33,16 @@ class ReleasePackagingTests(unittest.TestCase):
 
     def test_distribution_zip_is_deterministic_and_preserves_executable_permissions(self):
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);files={'LICENSE':b'license',
-                 'Core.kext/Contents/MacOS/Core':b'fictional executable'}
+            root=Path(directory);original={'LICENSE':b'license','README.txt':b'notes',
+                 'manifest.json':b'{}','tools/helper.py':b'code',
+                 'Core.kext/Contents/Info.plist':b'plist',
+                 'Core.kext/Contents/MacOS/Core':b'fictional executable',
+                 'config.plist':b'configuration'}
+            files=tool.installation_files(original,('Core.kext',),('config.plist',))
+            self.assertEqual(set(files),{'Core.kext/Contents/Info.plist',
+                                        'Core.kext/Contents/MacOS/Core','config.plist'})
+            with self.assertRaises(ValueError):tool.installation_files(original,('Missing.kext',))
+            with self.assertRaises(ValueError):tool.installation_files(original,('Core.kext',),('missing.plist',))
             tool.write_zip(root/'one.zip',files);tool.write_zip(root/'two.zip',files)
             self.assertEqual(hashlib.sha256((root/'one.zip').read_bytes()).digest(),
                              hashlib.sha256((root/'two.zip').read_bytes()).digest())

@@ -1,6 +1,7 @@
 # 离线交付工具
 
 `brcmctl.py` 使用 Python 3.9 及以上版本，针对提供的核心 ZIP、配置文件和 EFI 副本工作。
+工具位于源码仓库的 `tools/` 目录。安装 ZIP 只包含 kext 和配置片段；精简核心包使用发布页的 SHA-256 校验。
 
 核对核心包及发布页的 SHA-256：
 
@@ -39,4 +40,4 @@ python3 tools/package_release.py --release-core build/ci-RELEASE.zip \
   --additional-cards build/ci-additional.zip --test-log offline-tests.log --output build/distribution
 ```
 
-输入核心必须与当前源码哈希一致。工具复核签名、依赖字节、测试数量及零跳过结果，输出四份版本化 ZIP、记录源码提交的 `VALIDATION.json` 和下载校验值。CI 执行同一流程，保留日志和整套产物。
+输入构建包必须保留构建清单，并与当前源码哈希一致。工具复核签名、依赖字节、测试数量及零跳过结果，输出四份仅含 kext 和配置片段的安装 ZIP。完整构建清单移至独立的 `VALIDATION.json`，版权许可移至 `LICENSES.md`，下载校验值位于 `SHA256SUMS.txt`。CI 执行同一流程，保留日志和整套产物。

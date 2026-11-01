@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
-import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -48,6 +47,16 @@ def write_zip(path,files):
             output.writestr(info,data)
 
 
+def installation_files(files,bundles,fragments=()):
+    for bundle in bundles:
+        if bundle+'/Contents/Info.plist' not in files:
+            raise ValueError('Missing installation bundle: '+bundle)
+    if any(name not in files for name in fragments):
+        raise ValueError('Missing installation configuration fragment')
+    return {name:data for name,data in files.items()
+            if name in fragments or any(name.startswith(bundle+'/') for bundle in bundles)}
+
+
 def verify_signatures(files):
     with tempfile.TemporaryDirectory(prefix='brcm-distribution-',dir='/private/tmp') as temporary:
         root=Path(temporary)
@@ -65,7 +74,7 @@ def package(args):
     expected=json.loads((ROOT/'release-metadata.json').read_text())['checks']['offline_tests_passed']
     if result['passed']!=expected:raise ValueError('Test count differs from the source validation record')
     if args.output.exists():raise ValueError('Use a new distribution directory')
-    cores=[]
+    cores=[];core_manifests={}
     for flavor,path in [('RELEASE',args.release_core),('DEBUG',args.debug_core)]:
         probe(path);files=read_files(path);manifest=json.loads(files['build-manifest.json'])
         if (manifest['version']!=version or manifest['build_flavor']!=flavor or
@@ -75,37 +84,43 @@ def package(args):
             relative=PurePosixPath(name)
             if relative.is_absolute() or '..' in relative.parts or sha((ROOT/name).read_bytes())!=digest:
                 raise ValueError('Core source hash mismatch')
-        verify_signatures(files);cores.append((f'AirportBrcmCompat-{version}-{flavor}.zip',path.read_bytes()))
+        payload=installation_files(files,('AirportBrcmCompat.kext',))
+        verify_signatures(payload)
+        cores.append((f'AirportBrcmCompat-{version}-{flavor}.zip',payload))
+        core_manifests[flavor]=manifest
     files=read_files(args.dependencies);manifest=json.loads(files['manifest.json'])
     for name,digest in manifest['kext_member_sha256'].items():
         if sha(files[name])!=digest:raise ValueError('Dependency member hash mismatch')
-    manifest.update(status='OFFLINE_VALIDATED_DEPENDENCIES',release_version=version,channel='release',
-                    prototype=False,original_archive_sha256=sha(args.dependencies.read_bytes()))
-    files.pop('TESTING.txt',None)
-    files['manifest.json']=(json.dumps(manifest,indent=2)+'\n').encode()
-    files['README.txt']=b'Copy the shared dependencies and both NIC variants into EFI/OC/Kexts. Install one separate core and merge the matching example. See tools/README.md for package probing, configuration-copy merging and EFI preflight. Validation scope: offline.\n'
-    docs=[ROOT/'LICENSE',ROOT/'NOTICE.md',*(ROOT/'LICENSES').glob('*.txt'),
-          *(ROOT/'Examples').glob('*'),ROOT/'tools/brcmctl.py',ROOT/'tools/README.md',
-          ROOT/'validation/modern-card-coverage.json']
-    for path in docs:
-        if path.is_file():files[str(path.relative_to(ROOT))]=path.read_bytes()
+    for flavor in ('RELEASE','DEBUG'):
+        name=f'Examples/config-WiFi-{flavor}.example.plist'
+        files[name]=(ROOT/name).read_bytes()
+    files=installation_files(files,tuple('Kexts/'+name+'.kext' for name in
+        ('IOLegacyWFamily','IO80211FamilyLegacy','AirPortBrcmNIC-Sonoma-Sequoia','AirPortBrcmNIC-Tahoe')),
+        tuple(f'Examples/config-WiFi-{flavor}.example.plist' for flavor in ('RELEASE','DEBUG')))
     verify_signatures(files)
     optional=read_files(args.additional_cards);optional_manifest=json.loads(optional['manifest.json'])
     for name,digest in optional_manifest['files_sha256'].items():
         if sha(optional[name])!=digest:raise ValueError('Optional component hash mismatch')
     if len(optional_manifest['injector_match_pci_ids'])!=6 or len(optional_manifest['additional_pci_ids'])!=3:
         raise ValueError('Optional matching exceeds the modern NIC scope')
-    optional_manifest.update(status='OPTIONAL_MODERN_NIC_MATCHING',release_version=version,validation_scope='offline')
-    optional['manifest.json']=(json.dumps(optional_manifest,indent=2)+'\n').encode();verify_signatures(optional)
+    optional=installation_files(optional,('AirportBrcmFixup.kext',),('config.additional-cards.plist',))
+    verify_signatures(optional)
     # Complete all input checks before creating the published artifact set.
     args.output.mkdir(parents=True)
-    for name,data in cores:(args.output/name).write_bytes(data)
-    write_zip(args.output/f'AirportBrcmCompat-{version}-Dependencies-WiFi-Examples.zip',files)
-    write_zip(args.output/f'AirportBrcmCompat-{version}-Additional-Modern-Cards.zip',optional)
+    for name,data in cores:write_zip(args.output/name,data)
+    write_zip(args.output/f'AirportBrcmCompat-{version}-WiFi-Pack.zip',files)
+    write_zip(args.output/f'AirportBrcmCompat-{version}-BCM43225-BCM4352.zip',optional)
+    # Binary redistribution notices accompany the downloads as a separate
+    # release attachment, keeping installation ZIPs limited to EFI payloads.
+    notices=[ROOT/'NOTICE.md',ROOT/'LICENSE',*sorted((ROOT/'LICENSES').glob('*.txt'))]
+    (args.output/'LICENSES.md').write_text('# Distribution notices and licenses\n\n'+
+        '\n\n'.join('## '+str(path.relative_to(ROOT))+'\n\n'+path.read_text() for path in notices)+'\n')
     commit=os.environ.get('GITHUB_SHA') or subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     validation={'version':version,'source_commit':commit,'scope':'offline','tests':result,
                 'fixture_lock_sha256':sha((ROOT/'tests/fixtures.lock.json').read_bytes()),
                 'source_checksum_manifest_sha256':sha((ROOT/'SHA256SUMS.txt').read_bytes()),
+                'packaging':'EFI bundles and configuration fragments only',
+                'input_manifests':{'cores':core_manifests,'dependencies':manifest,'additional_cards':optional_manifest},
                 'artifacts':{p.name:{'sha256':sha(p.read_bytes()),'bytes':p.stat().st_size}
                              for p in sorted(args.output.glob('*.zip'))}}
     (args.output/'VALIDATION.json').write_text(json.dumps(validation,indent=2)+'\n')

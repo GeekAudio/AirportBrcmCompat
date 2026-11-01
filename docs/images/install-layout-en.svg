@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1390" viewBox="0 0 1440 1390" role="img">
+<rect width="1440" height="1390" fill="#f5f7fb"/>
+<text x="52" y="80" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="44" font-weight="700" fill="#183047">Where do the extracted files go?</text>
+<text x="52" y="128" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="27" font-weight="400" fill="#53657b">Copy the kext folders, then add Wi-Fi settings to your existing config.plist.</text>
+<rect x="48" y="168" width="1344" height="598" rx="22" fill="#ffffff" stroke="#dce4ef" stroke-width="2"/>
+<text x="80" y="220" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="32" font-weight="700" fill="#183047">1  Copy into EFI/OC/Kexts/. Keep folder names unchanged.</text>
+<rect x="80" y="252" width="1280" height="56" rx="10" fill="#f5f8fd" stroke="#f5f8fd" stroke-width="2"/>
+<text x="100" y="289" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">AirportBrcmCompat.kext</text>
+<text x="1050" y="289" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">from RELEASE</text>
+<rect x="80" y="318" width="1280" height="56" rx="10" fill="#f5f8fd" stroke="#f5f8fd" stroke-width="2"/>
+<text x="100" y="355" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">IOLegacyWFamily.kext</text>
+<text x="1050" y="355" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">from required files</text>
+<rect x="80" y="384" width="1280" height="56" rx="10" fill="#f5f8fd" stroke="#f5f8fd" stroke-width="2"/>
+<text x="100" y="421" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">IO80211FamilyLegacy.kext</text>
+<text x="1050" y="421" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">from required files</text>
+<rect x="80" y="450" width="1280" height="56" rx="10" fill="#f5f8fd" stroke="#f5f8fd" stroke-width="2"/>
+<text x="100" y="487" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">AirPortBrcmNIC-Sonoma-Sequoia.kext</text>
+<text x="1050" y="487" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">from required files</text>
+<rect x="80" y="516" width="1280" height="56" rx="10" fill="#f5f8fd" stroke="#f5f8fd" stroke-width="2"/>
+<text x="100" y="553" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">AirPortBrcmNIC-Tahoe.kext</text>
+<text x="1050" y="553" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">from required files</text>
+<rect x="80" y="598" width="1280" height="58" rx="10" fill="#fff9ed" stroke="#f1d8a8" stroke-width="2"/>
+<text x="100" y="637" font-family="Menlo, Consolas, monospace" font-size="26" font-weight="400" fill="#183047">AirportBrcmFixup.kext</text>
+<text x="800" y="637" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="25" font-weight="400" fill="#935009">BCM43225 / BCM4352 add-on only</text>
+<text x="80" y="702" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="27" font-weight="600" fill="#1d4ed8">Copy BOTH NIC folders. OpenCore selects one for the current OS.</text>
+<text x="80" y="741" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">Sonoma / Sequoia: first NIC. Tahoe: second NIC.</text>
+<rect x="48" y="800" width="1344" height="384" rx="22" fill="#ffffff" stroke="#dce4ef" stroke-width="2"/>
+<text x="80" y="852" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="32" font-weight="700" fill="#183047">2  Add Wi-Fi settings to your existing EFI/OC/config.plist</text>
+<text x="80" y="905" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="26" font-weight="600" fill="#2563eb">Required files / Examples</text>
+<text x="80" y="947" font-family="Menlo, Consolas, monospace" font-size="25" font-weight="400" fill="#183047">config-WiFi-RELEASE.example.plist</text>
+<text x="840" y="947" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="25" font-weight="400" fill="#183047">→ Merge the Kernel section</text>
+<text x="80" y="986" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="24" font-weight="400" fill="#53657b">Using DEBUG? Choose the DEBUG configuration from the same folder.</text>
+<text x="80" y="1034" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="26" font-weight="600" fill="#935009">BCM43225 / BCM4352 add-on</text>
+<text x="80" y="1076" font-family="Menlo, Consolas, monospace" font-size="25" font-weight="400" fill="#183047">config.additional-cards.plist</text>
+<text x="840" y="1076" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="25" font-weight="400" fill="#183047">→ Add its two load entries</text>
+<text x="80" y="1130" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="23" font-weight="400" fill="#53657b">Place both add-on entries before the NIC entries; the plug-in follows AirportBrcmFixup.</text>
+<rect x="48" y="1220" width="1344" height="124" rx="22" fill="#eaf1ff" stroke="#eaf1ff" stroke-width="2"/>
+<text x="80" y="1270" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="32" font-weight="700" fill="#1d4ed8">3  Check the files and config before updating your EFI</text>
+<text x="80" y="1318" font-family="-apple-system, BlinkMacSystemFont, &#x27;PingFang SC&#x27;, &#x27;Microsoft YaHei&#x27;, sans-serif" font-size="26" font-weight="400" fill="#53657b">Back up your EFI first. Keep all other settings in config.plist.</text>
+</svg>

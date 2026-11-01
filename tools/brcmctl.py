@@ -124,6 +124,22 @@ def probe(archive,expected_sha=None):
     with zipfile.ZipFile(archive) as package:
         names=package.namelist()
         if len(names)!=len(set(names)):raise ValueError('Duplicate ZIP members')
+        if 'build-manifest.json' not in names:
+            if not expected_sha:raise ValueError('Installation ZIP requires the published SHA-256')
+            required={'AirportBrcmCompat.kext/Contents/Info.plist',
+                      'AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat',
+                      'AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources'}
+            if not required.issubset(names) or any(not n.startswith('AirportBrcmCompat.kext/') for n in names):
+                raise ValueError('Unexpected installation ZIP layout')
+            if sum(member.file_size for member in package.infolist())>20*1024*1024:
+                raise ValueError('Core ZIP contents exceed size limit')
+            info=plistlib.loads(package.read('AirportBrcmCompat.kext/Contents/Info.plist'))
+            if info.get('CFBundleIdentifier')!=CORE or info.get('CFBundleExecutable')!='AirportBrcmCompat':
+                raise ValueError('Unexpected core bundle identity')
+            return {'schema':1,'scope':'offline core archive integrity','archive_sha256':digest,
+                    'version':info['CFBundleVersion'],'flavor':info['AirportBrcmBuildFlavor'],
+                    'files_verified':len(names),'expected_sha256_checked':True,
+                    'integrity_basis':'published SHA-256','passed':True}
         manifest=json.loads(package.read('build-manifest.json'))
         files={**manifest['files'],**manifest.get('distribution_files',{})}
         if not files:raise ValueError('Empty build manifest')
