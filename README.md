@@ -21,6 +21,25 @@
 
 安装 ZIP 只放 kext 和配置文件；[校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt)、验证记录和版权许可在发布页单独提供。
 
+<details>
+<summary>DEBUG 排查方法（点击展开）</summary>
+
+1. 下载 **04 DEBUG**，备份现有的 `AirportBrcmCompat.kext`，再用 DEBUG 包里的同名文件夹替换它。必装配套继续使用原来的文件。
+2. 在 OpenCore 的 `boot-args` 末尾用空格追加 `-brcmcompatdbg`，保留原有参数。
+3. 重启后复现问题，再打开终端执行下面两条命令。日志会保存在桌面：
+
+```sh
+sudo log show --last boot --style compact --info --debug \
+  --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' \
+  > ~/Desktop/AirportBrcmCompat-debug.log
+ioreg -r -l -w0 -c AirportBrcmCompat > ~/Desktop/AirportBrcmCompat-ioreg.log
+```
+
+反馈时提供系统版本、网卡 PCI ID 和这两份日志，分享前去掉个人信息。
+排查结束后，换回 **01 RELEASE** 的同名驱动，移除 `-brcmcompatdbg` 并重启。
+
+</details>
+
 ## 兼容表
 
 Vendor ID 均为 `14e4`。请按 PCI ID 确认自己的网卡。
@@ -55,6 +74,22 @@ Back up your EFI first. Revert any existing OCLP wireless root patches. Follow t
 ![Kext locations and configuration steps](docs/images/install-layout-en.png)
 
 Installation ZIPs contain only kext bundles and configuration files. [Checksums](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt), validation records and license notices are separate release attachments.
+
+### Troubleshooting with DEBUG
+
+1. Download **04 DEBUG**, back up your current `AirportBrcmCompat.kext`, then replace it with the folder from the DEBUG ZIP. Keep the required Wi-Fi files installed.
+2. Append `-brcmcompatdbg` to OpenCore's existing `boot-args`, separated by a space. Keep your other arguments.
+3. Restart, reproduce the issue, then run these commands in Terminal. Both files are saved to your Desktop:
+
+```sh
+sudo log show --last boot --style compact --info --debug \
+  --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' \
+  > ~/Desktop/AirportBrcmCompat-debug.log
+ioreg -r -l -w0 -c AirportBrcmCompat > ~/Desktop/AirportBrcmCompat-ioreg.log
+```
+
+When reporting an issue, include your macOS version, card PCI ID and both files. Remove personal information before sharing.
+After troubleshooting, restore the driver from **01 RELEASE**, remove `-brcmcompatdbg` and restart.
 
 ### Compatibility
 
