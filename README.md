@@ -6,20 +6,38 @@
 
 [![Offline validation](https://github.com/GeekAudio/AirportBrcmCompat/actions/workflows/ci.yml/badge.svg)](https://github.com/GeekAudio/AirportBrcmCompat/actions/workflows/ci.yml)
 
-## 下载
+## 下载与安装
 
-| 文件 | 用途 |
+**普通安装下载两份：`RELEASE.zip` ＋ `Dependencies-WiFi-Examples.zip`。**
+BCM43225／BCM4352 还需下载 `Additional-Modern-Cards.zip`。以下文件均为 **1.1.0**，按 PCI ID 选择：
+
+| 网卡 PCI ID（Vendor 为 `14e4`） | 下载哪些包 |
 | --- | --- |
-| [RELEASE 核心](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-RELEASE.zip) | 不含额外无线诊断 |
-| [DEBUG 核心](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-DEBUG.zip) | 含无线诊断功能的调试版本 |
-| [Wi-Fi 依赖与配置示例](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip) | 公共依赖、两个互斥的 NIC 变体及配置片段 |
-| [可选第三方网卡匹配](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-Additional-Modern-Cards.zip) | BCM43225／BCM4352 使用的附加匹配组件 |
+| `43ba`、`43a3`、`43a0`（BCM43602／BCM4350／BCM4360） | RELEASE 核心 ＋ Wi-Fi 依赖与配置示例 |
+| `4357`、`43b1`、`43b2`（BCM43225／BCM4352） | 上述两份 ＋ 可选第三方网卡匹配 |
 
-核心只安装一种。将核心与依赖包中的三个 kext 放入 EFI/OC/Kexts，再将对应版本包内的配置片段合并到自己的 config.plist，保留本机其他配置。
+| 下载文件 | 解压后安装什么 |
+| --- | --- |
+| [AirportBrcmCompat-1.1.0-RELEASE.zip](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-RELEASE.zip) | 普通用户选这份；复制 `AirportBrcmCompat.kext` |
+| [AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip) | 必需；复制 `Kexts/` 下的四个 kext，并合并 `Examples/` 中的配置片段 |
+| [AirportBrcmCompat-1.1.0-Additional-Modern-Cards.zip](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-Additional-Modern-Cards.zip) | 仅上表第二组需要；复制整个 `AirportBrcmFixup.kext`，保留内部插件，合并 `config.additional-cards.plist` |
+| [AirportBrcmCompat-1.1.0-DEBUG.zip](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/AirportBrcmCompat-1.1.0-DEBUG.zip) | 排查问题时替代 RELEASE 核心；二选一，其他依赖相同 |
 
-以前打过 OCLP 无线根补丁的先撤销补丁。三个定制无线依赖必须配套使用，不能替换成原版同名文件。
+安装步骤：
 
-依赖包附带[离线交付工具](tools/README.md)：核对核心包、生成合并后的配置副本、检查 EFI 文件与加载顺序，并导出不含机型身份信息的检查摘要。
+1. 备份现有 EFI。以前打过 OCLP 无线根补丁的，先撤销该补丁。
+2. 将核心包的 `AirportBrcmCompat.kext` 和依赖包 `Kexts/` 下的四个 kext 复制到 `EFI/OC/Kexts/`，保留文件夹原名。两个 NIC 变体都复制，OpenCore 按系统自动选择，每次只加载一个。
+3. 普通安装将依赖包中的 `Examples/config-WiFi-RELEASE.example.plist` 合并进现有 `EFI/OC/config.plist`；DEBUG 使用对应的 DEBUG 片段。片段不是完整配置，保留本机其他设置。加载顺序为：核心 → IOLegacyWFamily → IO80211FamilyLegacy → 对应 NIC。
+4. 需要第三方网卡匹配包时，再复制整个 `AirportBrcmFixup.kext`，并将 `config.additional-cards.plist` 的两个加载条目加入 `Kernel → Add`，放在两个 `AirPortBrcmNIC` 条目前；内部注入器保持在主组件之后。
+5. 在 EFI 副本上完成配置校验和[离线预检](tools/README.md)，再替换使用中的 EFI。
+
+| 系统 | 配置片段自动启用的 NIC |
+| --- | --- |
+| Sonoma 14、Sequoia 15 | `AirPortBrcmNIC-Sonoma-Sequoia.kext` |
+| Tahoe 26 | `AirPortBrcmNIC-Tahoe.kext` |
+
+三个定制无线依赖必须配套使用，不能替换成原版同名文件。下载页的 `SHA256SUMS.txt` 和 `VALIDATION.json` 用于校验，`Source code` 用于开发，这些文件都不复制进 EFI。
+依赖包附带[离线交付工具](tools/README.md)，支持核对核心包、生成配置副本、检查文件和加载顺序，以及导出检查摘要。
 
 ## 无线依赖
 

@@ -72,7 +72,7 @@
     ],
     "complete_distribution_packager": "tools/package_release.py",
     "host_sdk_selected_explicitly": true,
-    "offline_delivery_flavor_system_combinations_checked": 6,
+    "offline_delivery_flavor_system_combinations_checked": 12,
     "system_crypto_dependency_recognized": true
   },
   "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
@@ -80,7 +80,7 @@
   "dependency_packages": {
     "automatic": {
       "zip_filename": "AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip",
-      "zip_sha256": "9ea7432040f3af24a96cb5b15fbe8eeff22fe8547bb9b5906da4b4810a39fc12",
+      "zip_sha256": "37ae1390e66d38dd102872926ff21dd0ca3487c6ff8f5ffadb8d0a42260c7a77",
       "independent_native_samples": 3,
       "nic_variants_pin_checked": 2
     },
