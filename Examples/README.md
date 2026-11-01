@@ -18,3 +18,5 @@ NIC 条目按上表互斥选择。
 片段保留 DisableLinkeditJettison=true。版本字段含义见 [OpenCore 配置文档](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf)。
 
 DEBUG 调试参数为 `-brcmcompatdbg`，追加到已有 boot-args。分享日志前先脱敏。
+
+可使用随包 `tools/brcmctl.py configure` 生成合并后的新配置，再用 `preflight` 按目标 Darwin 版本检查 EFI 副本；命令见 [工具说明](../tools/README.md)。

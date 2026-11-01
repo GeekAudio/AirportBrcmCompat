@@ -19,6 +19,7 @@
 - Remove the unused RunAction fingerprint contract while preserving active synchronous lifecycle checks.
 - Add macOS Intel CI with pinned external samples, zero-skip test enforcement and RELEASE/DEBUG builds.
 - Resolve Clang through xcrun, PATH and system tools, including a C++ driver alias fallback.
+- Include offline package probing, configuration-copy merging, EFI preflight and privacy-filtered collection tools in the Wi-Fi dependency download.
 
 ## Source publication
 

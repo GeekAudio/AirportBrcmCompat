@@ -40,6 +40,22 @@ jobs:
         run: python3 tools/build_unified_kernel.py --release --build-flavor RELEASE --output build/ci-RELEASE.zip
       - name: Build DEBUG
         run: python3 tools/build_unified_kernel.py --release --baseline-trace --control-rx-windows --build-flavor DEBUG --output build/ci-DEBUG.zip
+      - name: Combine verified dependency profiles
+        run: |
+          python3 tools/combine_wifi_dependency_profiles.py \
+            --sonoma-sequoia build/compatibility-profiles/sonoma14-dependencies.zip \
+            --sequoia build/compatibility-profiles/sequoia15-dependencies.zip \
+            --tahoe build/compatibility-profiles/tahoe26-dependencies.zip \
+            --output build/ci-dependencies.zip
+          python3 tools/prepare_broadcom_injector.py \
+            --archive build/research/AirportBrcmFixup-2.2.1-RELEASE.zip \
+            --dependency-profile automatic --output build/ci-additional.zip
+      - name: Assemble complete versioned distribution
+        run: |
+          python3 tools/package_release.py \
+            --release-core build/ci-RELEASE.zip --debug-core build/ci-DEBUG.zip \
+            --dependencies build/ci-dependencies.zip --additional-cards build/ci-additional.zip \
+            --test-log offline-tests.log --output build/distribution
       - name: Preserve test log and signed build artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -48,4 +64,5 @@ jobs:
           path: |
             offline-tests.log
             build/ci-*.zip
+            build/distribution/*
           if-no-files-found: warn

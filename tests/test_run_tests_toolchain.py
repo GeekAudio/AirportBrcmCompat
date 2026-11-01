@@ -37,10 +37,18 @@ class ToolchainTests(unittest.TestCase):
         with mock.patch.object(runner.shutil,'which',side_effect=self.paths.get),mock.patch.object(runner.subprocess,'run',side_effect=find):
             with runner.ensure_macos_toolchain():
                 alias=Path(os.environ['PATH'].split(os.pathsep)[0])
-                self.assertEqual((alias/'clang++').resolve(),Path(self.paths['clang']).resolve())
-                self.assertEqual((alias/'nm').resolve(),Path(self.paths['nm']).resolve())
+                self.assertIn(self.paths['clang'],(alias/'clang++').read_text())
+                self.assertIn('--driver-mode=g++',(alias/'clang++').read_text())
+                self.assertIn(self.paths['nm'],(alias/'nm').read_text())
             self.assertFalse(alias.exists())
         self.assertEqual(os.environ.get('PATH'),before)
+
+    def test_forwarding_preserves_the_original_compiler_path(self):
+        Path(self.paths['clang++']).write_text('#!/bin/sh\nprintf "%s" "$0"\n')
+        with mock.patch.object(runner.shutil,'which',side_effect=lambda name:None if name=='xcrun' else self.paths.get(name)):
+            with runner.ensure_macos_toolchain():
+                result=subprocess.run(['clang++'],check=True,capture_output=True,text=True)
+                self.assertEqual(result.stdout,self.paths['clang++'])
 
     def test_failed_xcrun_uses_path_and_restores_after_test_failure(self):
         before=os.environ.get('PATH')

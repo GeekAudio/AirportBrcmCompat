@@ -31,12 +31,12 @@
     }
   },
   "checks": {
-    "offline_tests_passed": 338,
-    "offline_test_seconds": 54.221,
+    "offline_tests_passed": 348,
+    "offline_test_seconds": 71.19,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "dccb711053aba90087020f30d68f2ee98bb193709553b01a3b8b99374c5fa897",
+    "offline_test_log_sha256": "d9e83bbf885d7b2efdc1e9ffc3626e3e61543eeaa6c8897fc40d12f0b5211c8c",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -62,14 +62,22 @@
     "fixture_lock": "tests/fixtures.lock.json",
     "modern_card_coverage": "validation/modern-card-coverage.json",
     "ci_workflow": ".github/workflows/ci.yml",
-    "ci_requires_zero_skips": true
+    "ci_requires_zero_skips": true,
+    "compiler_fallback_preserves_toolchain_location": true,
+    "delivery_tools": [
+      "probe",
+      "configure",
+      "preflight",
+      "collect"
+    ],
+    "complete_distribution_packager": "tools/package_release.py"
   },
   "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
   "release_tag": "v1.1.0",
   "dependency_packages": {
     "automatic": {
       "zip_filename": "AirportBrcmCompat-1.1.0-Dependencies-WiFi-Examples.zip",
-      "zip_sha256": "ef70aff36e6a28e496fbf67f8fbcad64d932d7d3fac2a2d40a156cec2b680aab",
+      "zip_sha256": "9359541a9bec76ba11135463378b1f0b7ad5f9839f92994c9941252992d47ad3",
       "independent_native_samples": 3,
       "nic_variants_pin_checked": 2
     },

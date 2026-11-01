@@ -7,6 +7,7 @@ import importlib.util
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -66,6 +67,8 @@ SUITES = {
         "test_scoped_reset_contract",
         "test_run_tests_toolchain",
         "test_prepare_test_fixtures",
+        "test_brcmctl",
+        "test_package_release",
     ),
 }
 
@@ -91,8 +94,7 @@ def ensure_macos_toolchain():
             candidate = next((path for path in (shutil.which(tool), "/usr/bin/"+tool)
                               if _executable(path)), None)
         if not candidate and tool == "clang++":
-            # Clang selects its C++ driver mode from argv[0]. A named alias
-            # supplies clang++ even when xcrun exposes only the clang driver.
+            # A forwarding entry supplies clang++ even if only clang exists.
             candidate = resolved.get("clang")
         if not candidate:
             raise RuntimeError(f"Could not locate {tool} through xcrun, PATH or /usr/bin; install Xcode Command Line Tools.")
@@ -101,7 +103,13 @@ def ensure_macos_toolchain():
     old_path = os.environ.get("PATH")
     with tempfile.TemporaryDirectory(prefix="brcm-test-tools-") as aliases:
         for name, executable in resolved.items():
-            (Path(aliases)/name).symlink_to(executable)
+            # Execute the real pathname so Clang finds its installed C++
+            # headers beside the toolchain, rather than beside this temporary
+            # entry. Symlinks work on some CLT installs but break Xcode runners.
+            mode=' --driver-mode=g++' if name=='clang++' else ''
+            wrapper=Path(aliases)/name
+            wrapper.write_text('#!/bin/sh\nexec '+shlex.quote(executable)+mode+' "$@"\n')
+            wrapper.chmod(0o755)
         os.environ["PATH"] = aliases + (os.pathsep+old_path if old_path else "")
         try:
             yield resolved

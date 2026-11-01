@@ -74,6 +74,12 @@ These commands never install a kext or edit EFI, NVRAM, or the system volume.
 Use the release installation instructions only after reviewing the exact
 artifact and retaining a working recovery path.
 
+CI also combines the three locked dependency samples, prepares the optional
+modern-card package and runs `tools/package_release.py`. The resulting four
+versioned ZIPs, `VALIDATION.json` and `SHA256SUMS.txt` record one source commit,
+the full test result and the delivered file hashes. The Wi-Fi dependency ZIP
+includes the offline configuration/preflight tools. See [tools/README.md](tools/README.md).
+
 [release-metadata.json](release-metadata.json) records the bundled 1.1.0
 release cores and their offline checks. Each fresh build carries its own
 manifest and hashes. The earlier 1.0.1-rc1 artifacts remain associated with
