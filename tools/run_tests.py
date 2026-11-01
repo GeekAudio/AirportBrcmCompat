@@ -101,16 +101,26 @@ def ensure_macos_toolchain():
         resolved[tool] = str(Path(candidate).absolute())
 
     old_path = os.environ.get("PATH")
+    old_sdk = os.environ.get('SDKROOT')
+    sdk = old_sdk if old_sdk and Path(old_sdk).is_dir() else None
+    if not sdk and xcrun:
+        selected = subprocess.run([xcrun,'--sdk','macosx','--show-sdk-path'],
+                                  capture_output=True,text=True)
+        if selected.returncode==0 and Path(selected.stdout.strip()).is_dir() and selected.stdout.strip():
+            sdk=selected.stdout.strip()
     with tempfile.TemporaryDirectory(prefix="brcm-test-tools-") as aliases:
         for name, executable in resolved.items():
             # Execute the real pathname so Clang finds its installed C++
             # headers beside the toolchain, rather than beside this temporary
             # entry. Symlinks work on some CLT installs but break Xcode runners.
             mode=' --driver-mode=g++' if name=='clang++' else ''
+            if name in ('clang','clang++') and sdk:
+                mode+=' -isysroot '+shlex.quote(sdk)
             wrapper=Path(aliases)/name
             wrapper.write_text('#!/bin/sh\nexec '+shlex.quote(executable)+mode+' "$@"\n')
             wrapper.chmod(0o755)
         os.environ["PATH"] = aliases + (os.pathsep+old_path if old_path else "")
+        if sdk:os.environ['SDKROOT']=sdk
         try:
             yield resolved
         finally:
@@ -118,6 +128,8 @@ def ensure_macos_toolchain():
                 os.environ.pop("PATH", None)
             else:
                 os.environ["PATH"] = old_path
+            if old_sdk is None:os.environ.pop('SDKROOT',None)
+            else:os.environ['SDKROOT']=old_sdk
 
 
 def load_module(name):

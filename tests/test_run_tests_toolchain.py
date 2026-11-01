@@ -21,6 +21,7 @@ class ToolchainTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix='toolchain-fixture-')
         self.root=Path(self.temp.name)
+        (self.root/'SDK').mkdir()
         self.paths={}
         for tool in ('clang','clang++','nm','xcrun'):
             path=self.root/tool;path.write_text('#!/bin/sh\nexit 0\n');path.chmod(0o755)
@@ -30,7 +31,10 @@ class ToolchainTests(unittest.TestCase):
 
     def test_xcrun_success_aliases_exact_names_and_restores_environment(self):
         before=os.environ.get('PATH')
+        sdk_before=os.environ.get('SDKROOT')
         def find(args,**kwargs):
+            if args[-1]=='--show-sdk-path':
+                return subprocess.CompletedProcess(args,0,str(self.root/'SDK')+'\n','')
             # Some xcrun installations return the clang driver for clang++.
             tool='clang' if args[-1]=='clang++' else args[-1]
             return subprocess.CompletedProcess(args,0,self.paths[tool]+'\n','')
@@ -39,9 +43,12 @@ class ToolchainTests(unittest.TestCase):
                 alias=Path(os.environ['PATH'].split(os.pathsep)[0])
                 self.assertIn(self.paths['clang'],(alias/'clang++').read_text())
                 self.assertIn('--driver-mode=g++',(alias/'clang++').read_text())
+                self.assertIn('-isysroot',(alias/'clang++').read_text())
+                self.assertTrue(os.environ.get('SDKROOT'))
                 self.assertIn(self.paths['nm'],(alias/'nm').read_text())
             self.assertFalse(alias.exists())
         self.assertEqual(os.environ.get('PATH'),before)
+        self.assertEqual(os.environ.get('SDKROOT'),sdk_before)
 
     def test_forwarding_preserves_the_original_compiler_path(self):
         Path(self.paths['clang++']).write_text('#!/bin/sh\nprintf "%s" "$0"\n')

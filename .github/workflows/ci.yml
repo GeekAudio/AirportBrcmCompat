@@ -32,6 +32,11 @@ jobs:
         run: python3 tools/prepare_test_fixtures.py
       - name: Check published source and binary hashes
         run: shasum -a 256 --check SHA256SUMS.txt
+      - name: Inspect selected host SDK
+        run: |
+          xcode-select -p
+          xcrun --find clang++
+          xcrun --sdk macosx --show-sdk-path
       - name: Run public offline tests
         run: |
           set -o pipefail
