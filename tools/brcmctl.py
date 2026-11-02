@@ -126,14 +126,17 @@ def probe(archive,expected_sha=None):
         if len(names)!=len(set(names)):raise ValueError('Duplicate ZIP members')
         if 'build-manifest.json' not in names:
             if not expected_sha:raise ValueError('Installation ZIP requires the published SHA-256')
-            required={'AirportBrcmCompat.kext/Contents/Info.plist',
-                      'AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat',
-                      'AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources'}
-            if not required.issubset(names) or any(not n.startswith('AirportBrcmCompat.kext/') for n in names):
+            prefix='Kexts/' if 'config.plist' in names else ''
+            core=prefix+'AirportBrcmCompat.kext/'
+            required={core+'Contents/Info.plist',core+'Contents/MacOS/AirportBrcmCompat',
+                      core+'Contents/_CodeSignature/CodeResources'}
+            safe=lambda n: not PurePosixPath(n).is_absolute() and '..' not in PurePosixPath(n).parts and '\\' not in n
+            if not required.issubset(names) or any(not safe(n) or not (
+                    n.startswith('Kexts/') or n=='config.plist' if prefix else n.startswith(core)) for n in names):
                 raise ValueError('Unexpected installation ZIP layout')
             if sum(member.file_size for member in package.infolist())>20*1024*1024:
                 raise ValueError('Core ZIP contents exceed size limit')
-            info=plistlib.loads(package.read('AirportBrcmCompat.kext/Contents/Info.plist'))
+            info=plistlib.loads(package.read(core+'Contents/Info.plist'))
             if info.get('CFBundleIdentifier')!=CORE or info.get('CFBundleExecutable')!='AirportBrcmCompat':
                 raise ValueError('Unexpected core bundle identity')
             return {'schema':1,'scope':'offline core archive integrity','archive_sha256':digest,
@@ -172,8 +175,8 @@ def main(argv=None):
     diagnostic.add_argument('--ioreg',type=Path,required=True)
     verify=sub.add_parser('verify',help='Check selected downloaded ZIPs and every installation member')
     verify.add_argument('--directory',type=Path,required=True)
-    verify.add_argument('--checksums',default='05-SHA256SUMS.txt')
-    verify.add_argument('--validation',default='06-VALIDATION.json')
+    verify.add_argument('--checksums')
+    verify.add_argument('--validation')
     verify.add_argument('--asset',action='append')
     upgrade=sub.add_parser('upgrade-check',help='Check an EFI copy and the actual Intel target BootKC before upgrade testing')
     upgrade.add_argument('--oc-dir',type=Path,required=True)

@@ -1,0 +1,226 @@
+{
+  "schema": 1,
+  "tool": "verify_unified_nic",
+  "scope": "Offline comparison of the hash-pinned Sonoma and Tahoe NIC images. The Tahoe image is a packaging candidate for one shared NIC bundle; this report does not establish runtime compatibility.",
+  "inputs": [
+    {
+      "role": "sonoma",
+      "name": "sonoma14-dependencies.zip",
+      "sha256": "5e989665ddda369d2b01ca3dd52a8f0f33b0a64a3b54b490b541c48dad9fc52a",
+      "member": "Kexts/AirPortBrcmNIC-Sonoma-Sequoia.kext/Contents/MacOS/AirPortBrcmNIC",
+      "binary_sha256": "c43b8c5443c14d029c86459ea60502ede731bb94acb8de201fc210c99080f0d0"
+    },
+    {
+      "role": "tahoe",
+      "name": "tahoe26-dependencies.zip",
+      "sha256": "31978062aa501048d968341fd35ee427932d629bdea19e9794573b7e921ab26a",
+      "member": "Kexts/AirPortBrcmNIC-Tahoe.kext/Contents/MacOS/AirPortBrcmNIC",
+      "binary_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982"
+    }
+  ],
+  "candidate": {
+    "source": "pinned Tahoe AirPortBrcmNIC image",
+    "binary_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
+    "bundle_identifier": "com.apple.driver.AirPort.BrcmNIC",
+    "bundle_version": "1400.1.1",
+    "pci_personality_matches": [
+      "pci14e4,43a0",
+      "pci14e4,43a3",
+      "pci14e4,43ba"
+    ],
+    "chipmatch_table_ids": [
+      "14e4:43ba",
+      "14e4:43a3",
+      "14e4:43a0",
+      "14e4:4357",
+      "14e4:43b1",
+      "14e4:43b2"
+    ],
+    "kext_loaded": false
+  },
+  "static_evidence": {
+    "macho_uuid": "E4678FEB-1DC1-35CC-9306-48021083D04A",
+    "binary_size": 9010224,
+    "text_mapping": {
+      "image_vmaddr": "0x0",
+      "text_vmaddr": "0x0",
+      "text_fileoff": "0x0",
+      "text_section_size": "0x349110",
+      "text_segment_file_size": "0x559000"
+    },
+    "load_commands_identical": true,
+    "load_commands_sha256": "8cb5000e46ea8e3d7fdfbb0aef33184246d9e0e0f03d9336f10af92f4c9bc0eb",
+    "native_undefined_symbols_identical": true,
+    "native_undefined_symbol_count": 1107,
+    "native_undefined_symbols_sha256": "ca31c4e3fc716ab7af1b2bf7d4de583b962c49f9b69e12bfda80b0696e6893dd",
+    "cxx_vtable_symbols_identical": true,
+    "cxx_vtable_symbol_count": 16,
+    "cxx_vtable_symbols_sha256": "a20c44e73058d1faa04e0f704b3dc5d2e24e0349c49d37cc0f6b6ea6a1ec6968",
+    "stable_helper_symbols": {
+      "_bcm_decode_anqp_nai_realm_print": "0x1affb",
+      "_osl_dma_alloc_consistent": "0x1f8cd",
+      "_osl_dma_free_consistent": "0x1fbd0",
+      "_osl_dma_map": "0x21674",
+      "_osl_malloc": "0x1f534",
+      "_osl_mfree": "0x1f756",
+      "_osl_pktdata": "0x2203d",
+      "_osl_pktlen": "0x2204a",
+      "_osl_pktnext": "0x22092"
+    },
+    "matching_info_plist_identical": true,
+    "chipmatch_table_identical": true,
+    "chipmatch_table_sha256": "7db4bb2fc9cf9969f5a5fcf9b5ea6fae45c9bc4880d57505b8951c77179ccbb0",
+    "binary_delta": {
+      "changed_byte_count": 1412,
+      "code_region_changed_bytes": {
+        "dma_shim": 1191,
+        "dma_detach_hook": 5,
+        "tx_dma_hook": 8,
+        "rx_dma_hook": 10,
+        "rx_complete_hook": 8
+      },
+      "signature_changed_byte_count": 190,
+      "unlisted_changes": 0
+    },
+    "hook_and_rejoin_targets": [
+      {
+        "name": "dma_detach_hook",
+        "site": "0x2c1ae8",
+        "target": "0x1b47c",
+        "target_in_text": true,
+        "nop_padding_bytes": 0
+      },
+      {
+        "name": "tx_dma_hook",
+        "site": "0x2c2612",
+        "target": "0x1b17f",
+        "target_in_text": true,
+        "nop_padding_bytes": 3
+      },
+      {
+        "name": "rx_dma_hook",
+        "site": "0x2c3d78",
+        "target": "0x1b2b7",
+        "target_in_text": true,
+        "nop_padding_bytes": 5
+      },
+      {
+        "name": "rx_complete_hook",
+        "site": "0x2c4286",
+        "target": "0x1b2ea",
+        "target_in_text": true,
+        "nop_padding_bytes": 3
+      },
+      {
+        "name": "tx_dma_rejoin",
+        "site": "0x1b2b2",
+        "target": "0x2c261a",
+        "target_in_text": true
+      },
+      {
+        "name": "rx_dma_rejoin",
+        "site": "0x1b2e5",
+        "target": "0x2c3d82",
+        "target_in_text": true
+      },
+      {
+        "name": "rx_complete_rejoin",
+        "site": "0x1b356",
+        "target": "0x2c428e",
+        "target_in_text": true
+      }
+    ],
+    "shim_call_targets": [
+      {
+        "site": "0x1b0a3",
+        "target": "0x1f534",
+        "symbol": "_osl_malloc"
+      },
+      {
+        "site": "0x1b12d",
+        "target": "0x1f8cd",
+        "symbol": "_osl_dma_alloc_consistent"
+      },
+      {
+        "site": "0x1b1a4",
+        "target": "0x1affb",
+        "symbol": "_bcm_decode_anqp_nai_realm_print"
+      },
+      {
+        "site": "0x1b1e7",
+        "target": "0x2203d",
+        "symbol": "_osl_pktdata"
+      },
+      {
+        "site": "0x1b1fb",
+        "target": "0x2204a",
+        "symbol": "_osl_pktlen"
+      },
+      {
+        "site": "0x1b250",
+        "target": "0x22092",
+        "symbol": "_osl_pktnext"
+      },
+      {
+        "site": "0x1b2d6",
+        "target": "0x1affb",
+        "symbol": "_bcm_decode_anqp_nai_realm_print"
+      },
+      {
+        "site": "0x1b312",
+        "target": "0x1affb",
+        "symbol": "_bcm_decode_anqp_nai_realm_print"
+      },
+      {
+        "site": "0x1b32b",
+        "target": "0x2203d",
+        "symbol": "_osl_pktdata"
+      },
+      {
+        "site": "0x1b3fc",
+        "target": "0x1fbd0",
+        "symbol": "_osl_dma_free_consistent"
+      },
+      {
+        "site": "0x1b423",
+        "target": "0x1f756",
+        "symbol": "_osl_mfree"
+      },
+      {
+        "site": "0x1b4a6",
+        "target": "0x1b35b",
+        "symbol": null
+      },
+      {
+        "site": "0x1b4b6",
+        "target": "0x1b35b",
+        "symbol": null
+      },
+      {
+        "site": "0x2c260d",
+        "target": "0x21674",
+        "symbol": "_osl_dma_map"
+      },
+      {
+        "site": "0x2c3d73",
+        "target": "0x21674",
+        "symbol": "_osl_dma_map"
+      }
+    ],
+    "code_signature_blob": {
+      "offset": "0x882460",
+      "size": 88016,
+      "signature_verified": false
+    }
+  },
+  "not_established": [
+    "DMA allocation lifetime, concurrent teardown, or failure-path correctness",
+    "The Tahoe DMA shim behaving correctly on Sonoma or Sequoia hardware",
+    "Boot, association, packet transmission, private MAC, AirDrop, sleep, or wake",
+    "Code-signature acceptance or kext loading by any macOS release",
+    "Support for PCI IDs beyond the checked personality and chipmatch tables"
+  ],
+  "runtime_tested": false,
+  "driver_functions_invoked": false,
+  "kernel_kext_loaded": false
+}

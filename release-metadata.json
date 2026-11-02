@@ -14,10 +14,10 @@
       "baseline_trace": false,
       "control_rx_windows": false,
       "zip_filename": "01-AirportBrcmCompat-1.1.0-RELEASE.zip",
-      "zip_sha256": "5743e787657e22160131ba3edd910fbff197938a4dcd1e450485c0a63be1cdd5",
       "source_hashes_verified": 75,
       "artifact_hashes_verified": 3,
-      "internal_build_zip_sha256": "5b61ef7b5af6fd5f77a273bcc51a05b25f491802864a944b21bbe83e871c2ff8"
+      "internal_build_zip_sha256": "5b61ef7b5af6fd5f77a273bcc51a05b25f491802864a944b21bbe83e871c2ff8",
+      "zip_sha256": "c4e6e82ff95128b3ce20c28f9ff7c78828c0fadb111fdf4662cced46f49fab3b"
     },
     "DEBUG": {
       "binary_sha256": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36",
@@ -25,20 +25,20 @@
       "compiler_debug_macro": true,
       "baseline_trace": true,
       "control_rx_windows": true,
-      "zip_filename": "04-AirportBrcmCompat-1.1.0-DEBUG.zip",
-      "zip_sha256": "f17adae4b7bb42592b8ff657255dfc20760ac4a2df89bbf4a95c1fbdb718a4bc",
+      "zip_filename": "02-AirportBrcmCompat-1.1.0-DEBUG.zip",
       "source_hashes_verified": 76,
       "artifact_hashes_verified": 3,
-      "internal_build_zip_sha256": "0e6e9ef9179e37343852beeb428c492f60e708adb155ca3598a6c864c4dc4b59"
+      "internal_build_zip_sha256": "0e6e9ef9179e37343852beeb428c492f60e708adb155ca3598a6c864c4dc4b59",
+      "zip_sha256": "02494887b177e3a5e2d422ee64ad5e4df31811cef93ad6ade75d6152ea8d7ac4"
     }
   },
   "checks": {
-    "offline_tests_passed": 376,
-    "offline_test_seconds": 57.154,
+    "offline_tests_passed": 401,
+    "offline_test_seconds": 97.949,
     "offline_test_failures": 0,
     "offline_test_errors": 0,
     "offline_test_skips": 0,
-    "offline_test_log_sha256": "12eed4ce5f8de2f4b8dcf20bd0f0dcfe871d4af6746e867d235bc369d86f7ca0",
+    "offline_test_log_sha256": "b8d351af68e1d6c2e95da1cc94840817c5b0f790b2e4b715572f2b54c7c29714",
     "ifnet_evidence_kind": "Retained bounded function excerpts and recorded symbol/segment metadata",
     "ifnet_contracts_passed": 21,
     "rejected_ifnet_byte_mutations": 18240,
@@ -77,7 +77,7 @@
     ],
     "complete_distribution_packager": "tools/package_release.py",
     "host_sdk_selected_explicitly": true,
-    "offline_delivery_flavor_system_combinations_checked": 12,
+    "offline_delivery_flavor_system_combinations_checked": 16,
     "system_crypto_dependency_recognized": true,
     "installation_zip_has_only_efi_payload": true,
     "runtime_matrix": "validation/runtime-matrix.json",
@@ -94,45 +94,42 @@
       "reference_collection_sha256": "96c12f421a8e99580b5015dfd39877df38ecde9b9e056b8ccd28f15847bca35c",
       "reference_host_contracts_passed": true,
       "reference_scope": "Existing Tahoe baseline only; not macOS 27 qualification",
-      "documentation": "docs/MACOS-27-PREPARATION.md"
-    }
+      "documentation": "docs/MACOS-27-PREPARATION.md",
+      "official_sample_record": "validation/macos27-offline.json"
+    },
+    "unified_dependencies": "tools/unify_wifi_dependencies.py",
+    "unified_nic_evidence": "validation/unified-nic.json",
+    "installer": "tools/install.py",
+    "actual_package_temporary_installation_cases": 6
   },
   "compatibility_scope": "AirPortBrcmNIC on Darwin 23 and later; EFI/kext only",
   "release_tag": "v1.1.0",
   "dependency_packages": {
-    "automatic": {
-      "zip_filename": "02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip",
-      "zip_sha256": "47c0011dd1b26ad4dcc361d8e2fbd818d8c80f808d134b8575a7703b5bc0d99c",
-      "independent_native_samples": 3,
-      "nic_variants_pin_checked": 2
-    },
-    "additional_cards": {
-      "zip_filename": "03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip",
-      "zip_sha256": "aa36abb105062cb5e91fbbe7c4f98f61c82ada8b74ac0d75fdfaaa43d4a8d735",
+    "unified": {
+      "layout": "flat",
+      "nic_bundle": "AirPortBrcmNIC.kext",
+      "nic_binary_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
+      "independent_native_sample_records": 3,
       "modern_pci_ids": 6,
-      "additional_modern_pci_ids": 3
+      "validation_scope": "static evidence; DMA behavior on Sonoma/Sequoia is not runtime-qualified"
     }
   },
   "packaging": {
-    "layout": "installation-only",
+    "layout": "flat-unified-wifi",
     "release_tag_commit": "a1b422a99037a8221f91919233fd847407949d1a",
-    "separate_release_attachments": [
-      "05-SHA256SUMS.txt",
-      "06-VALIDATION.json",
-      "07-LICENSES.md"
-    ],
-    "illustrated_guide": "README.md",
+    "separate_release_attachments": [],
     "english_guide_collapsed": true,
     "asset_order": [
       "01-AirportBrcmCompat-1.1.0-RELEASE.zip",
-      "02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip",
-      "03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip",
-      "04-AirportBrcmCompat-1.1.0-DEBUG.zip",
-      "05-SHA256SUMS.txt",
-      "06-VALIDATION.json",
-      "07-LICENSES.md"
+      "02-AirportBrcmCompat-1.1.0-DEBUG.zip"
     ],
     "lineage_documentation": "docs/RELEASE-VERIFICATION.md",
-    "runtime_record_documentation": "docs/RUNTIME-VALIDATION.md"
+    "runtime_record_documentation": "docs/RUNTIME-VALIDATION.md",
+    "installation_guide": "docs/INSTALLATION.md",
+    "audit_record_location": "source validation records and Release notes; no extra release assets",
+    "dependency_sets": 1,
+    "nic_variants": 1,
+    "nested_bundles": false,
+    "final_inventory": "validation/unified-distribution.json"
   }
 }

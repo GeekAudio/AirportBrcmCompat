@@ -34,6 +34,7 @@ The full upstream checkouts retain their own licenses.
 
 ```sh
 python3 tools/prepare_test_fixtures.py
+python3 tools/prepare_runtime.py
 python3 tools/run_tests.py --require-all
 ```
 
@@ -74,13 +75,14 @@ These commands never install a kext or edit EFI, NVRAM, or the system volume.
 Use the release installation instructions only after reviewing the exact
 artifact and retaining a working recovery path.
 
-CI also combines the three locked dependency samples, prepares the optional
-modern-card package and runs `tools/package_release.py`. The resulting four
-versioned installation ZIPs contain only kext bundles and configuration
-fragments. `06-VALIDATION.json` retains the full input manifests, test result,
-source commit and delivered hashes. `07-LICENSES.md` and `05-SHA256SUMS.txt` accompany
-the downloads separately. Offline configuration/preflight tools remain in the
-source repository. See [tools/README.md](tools/README.md).
+CI prepares one shared dependency set from the three locked sample archives,
+checks the complete DMA-compatible NIC image and its unchanged imports/vtables,
+then builds two complete installation ZIPs. Each contains flat kext bundles in
+`Kexts/` and a `config.plist` fragment. `tools/package_release.py` keeps build
+manifests, per-member hashes, provenance and notices under `metadata/` outside
+the installation ZIPs. Only the RELEASE and DEBUG ZIPs are Release assets;
+checksums and links to source evidence/notices belong in the Release notes.
+See [tools/README.md](tools/README.md).
 
 The external inventory separates the immutable release tag, core binary/build identity, and repackaging checkout. Member hashes and installation paths can be checked with `brcmctl.py verify`; see [release verification](docs/RELEASE-VERIFICATION.md). CI checks hardware-record structure without executing or claiming hardware tests.
 
@@ -224,94 +226,41 @@ The offline facade mock is never linked into the kext.
 
 ## Wi-Fi dependency profiles
 
-The namespace builder accepts the pinned original wireless inputs and an
-explicit native Skywalk sample. It can read a native fileset member directly
-from a kernel collection, including systems whose on-disk kext lacks its binary:
+The source fixtures preserve the original profiles so old evidence remains
+reproducible. They are inputs to validation, not separate installation options.
+The current installer contains one `AirPortBrcmNIC.kext` and one common set of
+other dependencies. All entries start at Darwin 23 and have no maximum.
 
 ```sh
-python3 src/build_namespace.py \
-  --legacy-dir /path/to/original-wireless-kexts \
-  --dependency-profile sonoma-sequoia \
-  --native-kernel-collection /path/to/BootKernelExtensions.kc \
-  --output build/WiFi-Dependencies-Sonoma-Sequoia.zip
-```
-
-Build the independent Sequoia input with the same pinned dependency directory
-and profile, but use the Sequoia BootKC and a separate output path:
-
-```sh
-python3 src/build_namespace.py \
-  --legacy-dir /path/to/original-wireless-kexts \
-  --dependency-profile sonoma-sequoia \
-  --native-kernel-collection /path/to/Sequoia/BootKernelExtensions.kc \
-  --output build/WiFi-Dependencies-Sequoia.zip
-```
-
-`sonoma-sequoia` selects the original nested AirPortBrcmNIC for Darwin 23–24.
-`tahoe` selects the separate AirPortBrcmNIC-Tahoe input for Darwin 25 onward.
-Each output contains three Wi-Fi dependencies and a matching configuration
-fragment. The manifest records the actual collision-check sample and input
-hashes. Dependency selection is separate from core protocol compatibility;
-these profiles are development candidates, not an expanded support claim.
-
-To prepare both NIC variants in one EFI dependency package:
-
-```sh
-python3 tools/combine_wifi_dependency_profiles.py \
-  --sonoma-sequoia build/WiFi-Dependencies-Sonoma-Sequoia.zip \
-  --sequoia build/WiFi-Dependencies-Sequoia.zip \
-  --tahoe build/WiFi-Dependencies-Tahoe.zip \
-  --output build/WiFi-Dependencies-Automatic.zip
-```
-
-All three inputs are required. The combiner verifies the pinned Sonoma,
-Sequoia and Tahoe sample hashes as offline provenance and collision-check
-evidence; these are not runtime OS-version or kernel-UUID admission rules. It
-then requires the Sonoma and Sequoia shared
-dependencies and NIC payload to match byte-for-byte. It records all three
-sample hashes in the output manifest, deriving the Sequoia version/build from
-its pinned sample hash rather than its input label. The fragment still loads
-one NIC variant for Darwin 23–24 and the other from Darwin 25 onward; both
-variants are stored in EFI, and only one is loaded for a given system. The
-compatibility core is a separate download/build. This package contains no
-Bluetooth or system-volume patching components.
-
-To recheck that the bundled Sonoma/Sequoia and Tahoe NIC binaries satisfy the
-current private-driver pin contract without loading a kext or calling a driver
-function:
-
-```sh
-python3 tools/verify_modern_driver_pins.py \
-  --dependencies build/WiFi-Dependencies-Sonoma-Sequoia.zip \
-  --dependencies build/WiFi-Dependencies-Sequoia.zip \
-  --dependencies build/WiFi-Dependencies-Tahoe.zip \
-  --output-json build/research/modern-driver-pins-verification.json
-```
-
-This is an offline host check of the actual `initializeDriverPins` code. The
-tool maps each Mach-O by its load-command segment addresses, checks all six
-modern IDs against the actual device table and its lookup/success path, reports the
-dependency and executable hashes, and rejects conflicting same-profile
-executables. It does not change runtime OS selection.
-
-For the additional modern NIC PCI IDs `4357`, `43b1` and `43b2`,
-prepare the optional upstream core and NIC injector from the
-[official 2.2.1 RELEASE ZIP](https://github.com/acidanthera/AirportBrcmFixup/releases/download/2.2.1/AirportBrcmFixup-2.2.1-RELEASE.zip):
-
-```sh
+python3 tools/prepare_test_fixtures.py
+python3 tools/prepare_runtime.py
+python3 tools/unify_wifi_dependencies.py \
+  --sonoma build/compatibility-profiles/sonoma14-dependencies.zip \
+  --sequoia build/compatibility-profiles/sequoia15-dependencies.zip \
+  --tahoe build/compatibility-profiles/tahoe26-dependencies.zip \
+  --output build/ci-dependencies.zip
 python3 tools/prepare_broadcom_injector.py \
-  --archive /path/to/AirportBrcmFixup-2.2.1-RELEASE.zip \
-  --dependency-profile sonoma-sequoia \
-  --output build/Additional-Broadcom-Cards.zip
+  --archive build/research/AirportBrcmFixup-2.2.1-RELEASE.zip \
+  --dependency-profile automatic --output build/ci-additional.zip
 ```
 
-The tool verifies the upstream archive hash, keeps the NIC injector, and
-excludes the injector for the different AirPortBrcm4360 driver. Its fragment
-restricts both the core PCI personality and child injector to the three native
-NIC IDs and three third-party NIC IDs. The upstream executable sections remain
-unchanged; only the matching plists are narrowed and re-signed. Its fragment
-adds only the optional Wi-Fi components. PCI matching does not establish
-hardware functionality; use the same profile as the main dependency package.
-For a combined cross-version dependency package, select `automatic`; its two
-optional entries start at Darwin 23. The upstream component's own runtime
-compatibility checks still apply.
+`unify_wifi_dependencies.py` verifies all three original archives, their sample
+provenance, equal common dependencies and signatures. It selects the complete
+DMA-compatible NIC image, renaming its folder without modifying code. The
+static verifier checks every changed byte range against the original image,
+branch targets, helper calls, all imports and vtables. The private-driver pin
+checks continue to use the exact shipped image. No code is rewritten while the
+NIC is running. See [the architecture and evidence scope](docs/ARCHITECTURE.md).
+
+The final packager flattens the upstream NIC injector and signs its parent
+again, checking that executable sections did not change. It includes the
+pinned runtime dependency, preserving its x86_64 executable sections. All
+components have independent identities and the generated configuration gives
+one dependency order for every target OS. The installer preserves an existing
+compatible runtime dependency used by unrelated kexts.
+
+PCI matching and static ABI checks do not establish DMA lifetime, hardware
+operation, or compatibility with a future system. The combined NIC's behavior
+on Sonoma and Sequoia still needs hardware evidence. Original profile builders
+and their tests remain available to audit the older samples; their split
+archives are never shipped by the current packager.

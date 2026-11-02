@@ -73,6 +73,9 @@ SUITES = {
         "test_runtime_evidence",
         "test_release_inventory",
         "test_upgrade_check",
+        "test_unified_nic",
+        "test_install",
+        "test_unified_distribution",
     ),
 }
 

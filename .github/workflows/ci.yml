@@ -31,7 +31,9 @@ jobs:
       - name: Prepare pinned build resources
         run: python3 tools/prepare_dependencies.py
       - name: Prepare all external test inputs
-        run: python3 tools/prepare_test_fixtures.py
+        run: |
+          python3 tools/prepare_test_fixtures.py
+          python3 tools/prepare_runtime.py
       - name: Check published source and binary hashes
         run: shasum -a 256 --check SHA256SUMS.txt
       - name: Inspect selected host SDK
@@ -49,10 +51,10 @@ jobs:
         run: python3 tools/build_unified_kernel.py --release --build-flavor RELEASE --output build/ci-RELEASE.zip
       - name: Build DEBUG
         run: python3 tools/build_unified_kernel.py --release --baseline-trace --control-rx-windows --build-flavor DEBUG --output build/ci-DEBUG.zip
-      - name: Combine verified dependency profiles
+      - name: Build one common Wi-Fi dependency set
         run: |
-          python3 tools/combine_wifi_dependency_profiles.py \
-            --sonoma-sequoia build/compatibility-profiles/sonoma14-dependencies.zip \
+          python3 tools/unify_wifi_dependencies.py \
+            --sonoma build/compatibility-profiles/sonoma14-dependencies.zip \
             --sequoia build/compatibility-profiles/sequoia15-dependencies.zip \
             --tahoe build/compatibility-profiles/tahoe26-dependencies.zip \
             --output build/ci-dependencies.zip
@@ -64,6 +66,7 @@ jobs:
           python3 tools/package_release.py \
             --release-core build/ci-RELEASE.zip --debug-core build/ci-DEBUG.zip \
             --dependencies build/ci-dependencies.zip --additional-cards build/ci-additional.zip \
+            --runtime build/research/Lilu-1.7.2-RELEASE.zip \
             --test-log offline-tests.log --output build/distribution
       - name: Preserve test log and signed build artifacts
         if: always()
@@ -73,5 +76,5 @@ jobs:
           path: |
             offline-tests.log
             build/ci-*.zip
-            build/distribution/*
+            build/distribution/**
           if-no-files-found: warn

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 distribution update — 2026-11-03
+
+- Deliver two complete RELEASE/DEBUG ZIPs with one shared configuration and flat dependency set.
+- Use one complete DMA-compatible `AirPortBrcmNIC.kext` across the target systems; retain the original profiles as offline evidence inputs.
+- Verify NIC byte changes, branch targets, imports and vtables; keep DMA lifetime and Sonoma/Sequoia runtime qualification explicitly open.
+- Add a preview-first installer with backups, migration, concurrent-change checks and rollback; preserve unrelated devices and configuration.
+- Simplify bilingual installation instructions and remove illustrations. Put checksums and notices in the Release notes instead of extra attachments.
+- Keep the existing 1.1.0 core binaries and tag; record the packaging revision separately.
+
 ## 1.1.0 — 2026-11-01
 
 - Replace host build/UUID allowlists with structural kernel-image validation and per-feature interface checks.

@@ -10,9 +10,27 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
+				<string>Lilu.kext</string>
+				<key>Comment</key>
+				<string>Lilu</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/Lilu</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+				<key>MinKernel</key>
+				<string>23.0.0</string>
+				<key>MaxKernel</key>
+				<string></string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
 				<string>AirportBrcmCompat.kext</string>
 				<key>Comment</key>
-				<string>AirportBrcmCompat core (distributed separately)</string>
+				<string>AirportBrcmCompat</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -28,9 +46,27 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
+				<string>AirportBrcmFixup.kext</string>
+				<key>Comment</key>
+				<string>AirportBrcmFixup</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/AirportBrcmFixup</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+				<key>MinKernel</key>
+				<string>23.0.0</string>
+				<key>MaxKernel</key>
+				<string></string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
 				<string>IOLegacyWFamily.kext</string>
 				<key>Comment</key>
-				<string>IOLegacyWFamily.kext</string>
+				<string>IOLegacyWFamily</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -48,7 +84,7 @@
 				<key>BundlePath</key>
 				<string>IO80211FamilyLegacy.kext</string>
 				<key>Comment</key>
-				<string>IO80211FamilyLegacy.kext</string>
+				<string>IO80211FamilyLegacy</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -64,9 +100,27 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
-				<string>AirPortBrcmNIC-Sonoma-Sequoia.kext</string>
+				<string>AirPortBrcmNIC_Injector.kext</string>
 				<key>Comment</key>
-				<string>Wi-Fi dependency (sonoma-sequoia)</string>
+				<string>AirPortBrcmNIC_Injector</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+				<key>MinKernel</key>
+				<string>23.0.0</string>
+				<key>MaxKernel</key>
+				<string></string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
+				<string>AirPortBrcmNIC.kext</string>
+				<key>Comment</key>
+				<string>AirPortBrcmNIC</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -75,24 +129,6 @@
 				<string>Contents/Info.plist</string>
 				<key>MinKernel</key>
 				<string>23.0.0</string>
-				<key>MaxKernel</key>
-				<string>24.99.99</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>x86_64</string>
-				<key>BundlePath</key>
-				<string>AirPortBrcmNIC-Tahoe.kext</string>
-				<key>Comment</key>
-				<string>Wi-Fi dependency (tahoe)</string>
-				<key>Enabled</key>
-				<true/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/AirPortBrcmNIC</string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-				<key>MinKernel</key>
-				<string>25.0.0</string>
 				<key>MaxKernel</key>
 				<string></string>
 			</dict>

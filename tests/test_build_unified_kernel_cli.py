@@ -141,16 +141,17 @@ class BuildToolchainCLI(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'standalone candidate mode'):
                     builder.configure_build_mode(self.parse(*options))
 
-    def test_release_and_debug_examples_enable_core_from_sonoma_first(self):
+    def test_release_and_debug_examples_load_runtime_before_core_and_wireless(self):
         for flavor in ('RELEASE', 'DEBUG'):
             path = Path(__file__).resolve().parents[1] / 'Examples' / f'config-WiFi-{flavor}.example.plist'
             config = plistlib.loads(path.read_bytes())
             entries = config['Kernel']['Add']
-            self.assertEqual(entries[0]['BundlePath'], 'AirportBrcmCompat.kext')
-            self.assertEqual(entries[0]['ExecutablePath'], 'Contents/MacOS/AirportBrcmCompat')
-            self.assertEqual(entries[0]['MinKernel'], '23.0.0')
-            self.assertEqual(entries[1]['BundlePath'], 'IOLegacyWFamily.kext')
-            self.assertEqual(entries[1]['MinKernel'], '23.0.0')
+            paths=[entry['BundlePath'] for entry in entries]
+            self.assertLess(paths.index('Lilu.kext'),paths.index('AirportBrcmCompat.kext'))
+            self.assertLess(paths.index('AirportBrcmCompat.kext'),paths.index('IOLegacyWFamily.kext'))
+            core=entries[paths.index('AirportBrcmCompat.kext')]
+            self.assertEqual(core['ExecutablePath'], 'Contents/MacOS/AirportBrcmCompat')
+            self.assertTrue(all(e['MinKernel']=='23.0.0' and e['MaxKernel']=='' for e in entries))
             self.assertEqual(config['Kernel']['Block'][0]['MinKernel'], '23.0.0')
 
     def test_component_review_modes_keep_current_version_without_install_claims(self):

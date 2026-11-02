@@ -1,0 +1,444 @@
+{
+  "schema": 2,
+  "version": "1.1.0",
+  "layout": "flat-unified-wifi",
+  "runtime_validated": false,
+  "tests": {
+    "passed": 401,
+    "seconds": 97.949,
+    "skipped": 0,
+    "log_sha256": "b8d351af68e1d6c2e95da1cc94840817c5b0f790b2e4b715572f2b54c7c29714"
+  },
+  "artifacts": {
+    "01-AirportBrcmCompat-1.1.0-RELEASE.zip": {
+      "sha256": "c4e6e82ff95128b3ce20c28f9ff7c78828c0fadb111fdf4662cced46f49fab3b",
+      "bytes": 5112751,
+      "members": {
+        "Kexts/AirPortBrcmNIC.kext/Contents/Info.plist": {
+          "sha256": "9e3abd92fca600317ee9df158e8025752b3ff3ba9c984945be74a804b6d24783",
+          "bytes": 3014,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC": {
+          "sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
+          "bytes": 9010224,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "71f08f6b787d6691df97fe1a0ad0670ba8d1e37d022422074b4bcd4cfcd84bc5",
+          "bytes": 2428,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/version.plist": {
+          "sha256": "8e2d967e744d35653ff29269a81cffc2b0aaf5b8ce65aef0886b5e60c798b0e1",
+          "bytes": 475,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/version.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/Info.plist": {
+          "sha256": "d6c7845947ad40ee94b820e204481a0911c6ab05b30f75b188e1c6f544eb2610",
+          "bytes": 1492,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeDirectory": {
+          "sha256": "54acd0c4ce3d1bb28310fe3e54c844ba9881904601e99fc37db12466b9205089",
+          "bytes": 210,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeDirectory",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeRequirements": {
+          "sha256": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+          "bytes": 12,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeRequirements",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeSignature": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeSignature",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/Info.plist": {
+          "sha256": "6e767ef1d67967d4973fd1b07016c65dd70aa62e6fe5e327c855097447389271",
+          "bytes": 2500,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat": {
+          "sha256": "d0db652211355a3c30cca4c6b5a448ed69f5607899021e342c45a36803c824a6",
+          "bytes": 327408,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/Info.plist": {
+          "sha256": "6d2610cbf6a0a4281c8cbaad36ebe4f5ae9ecc0f493192f9630460b3e817b13f",
+          "bytes": 3214,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/MacOS/AirportBrcmFixup": {
+          "sha256": "af7847298c4372decfd90d98e1d6f723b6e0e1b1337eb2c889b36e4784654f91",
+          "bytes": 76016,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/MacOS/AirportBrcmFixup",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/Info.plist": {
+          "sha256": "1656e35cc3f51bcd775b9fb54689199bf6d657c82fe48f49f7c11d51f6521c25",
+          "bytes": 2504,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/MacOS/IO80211FamilyLegacy": {
+          "sha256": "919a0b05ef73bade44545164292d5b5ca17ef44d04756b73dae8757fc57d5487",
+          "bytes": 2119024,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/MacOS/IO80211FamilyLegacy",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/Info.plist": {
+          "sha256": "2bf91d8d51638b3855df26c706d2db8b7a78b6f2c6b142ac059b2b8a14826bae",
+          "bytes": 3306,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/MacOS/IOLegacyWFamily": {
+          "sha256": "301375974eb60d246d454e6ce8e806b98ecdbe15025c4d9adf9cb2530daf236d",
+          "bytes": 836336,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/MacOS/IOLegacyWFamily",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/Info.plist": {
+          "sha256": "f3bfe947f73b2c6d67f878cf6dc92adabbc1f5ddb75a360d23ddbd11ebfcdebb",
+          "bytes": 2334,
+          "install_path": "Kexts/Lilu.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/MacOS/Lilu": {
+          "sha256": "afd5a178923126f05150cbb059191420c9f24a74e99224dd43805d0345bcfaa8",
+          "bytes": 194240,
+          "install_path": "Kexts/Lilu.kext/Contents/MacOS/Lilu",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/Lilu.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "config.plist": {
+          "sha256": "50544e72e9a3e44f8729eb7df24784bf683e27e2db07fd92e1264526a1cb3020",
+          "bytes": 4122,
+          "install_path": null,
+          "action": "merge_configuration"
+        }
+      },
+      "bundles": [
+        {
+          "bundle_path": "AirPortBrcmNIC.kext",
+          "identifier": "com.apple.driver.AirPort.BrcmNIC",
+          "version": "1400.1.1",
+          "executable_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982"
+        },
+        {
+          "bundle_path": "AirPortBrcmNIC_Injector.kext",
+          "identifier": "as.lvs1974.AirportBrcmNICInjector",
+          "version": "1.0"
+        },
+        {
+          "bundle_path": "AirportBrcmCompat.kext",
+          "identifier": "org.geekaudio.AirportBrcmCompat",
+          "version": "1.1.0",
+          "executable_sha256": "d0db652211355a3c30cca4c6b5a448ed69f5607899021e342c45a36803c824a6",
+          "build_flavor": "RELEASE"
+        },
+        {
+          "bundle_path": "AirportBrcmFixup.kext",
+          "identifier": "as.lvs1974.AirportBrcmFixup",
+          "version": "2.2.1",
+          "executable_sha256": "af7847298c4372decfd90d98e1d6f723b6e0e1b1337eb2c889b36e4784654f91"
+        },
+        {
+          "bundle_path": "IO80211FamilyLegacy.kext",
+          "identifier": "com.apple.iokit.IO80211FamilyLegacy",
+          "version": "1200.12.2b1",
+          "executable_sha256": "919a0b05ef73bade44545164292d5b5ca17ef44d04756b73dae8757fc57d5487"
+        },
+        {
+          "bundle_path": "IOLegacyWFamily.kext",
+          "identifier": "org.geekaudio.IOLegacyWFamilyKC",
+          "version": "1.0",
+          "executable_sha256": "301375974eb60d246d454e6ce8e806b98ecdbe15025c4d9adf9cb2530daf236d"
+        },
+        {
+          "bundle_path": "Lilu.kext",
+          "identifier": "as.vit9696.Lilu",
+          "version": "1.7.2",
+          "executable_sha256": "afd5a178923126f05150cbb059191420c9f24a74e99224dd43805d0345bcfaa8"
+        }
+      ]
+    },
+    "02-AirportBrcmCompat-1.1.0-DEBUG.zip": {
+      "sha256": "02494887b177e3a5e2d422ee64ad5e4df31811cef93ad6ade75d6152ea8d7ac4",
+      "bytes": 5122931,
+      "members": {
+        "Kexts/AirPortBrcmNIC.kext/Contents/Info.plist": {
+          "sha256": "9e3abd92fca600317ee9df158e8025752b3ff3ba9c984945be74a804b6d24783",
+          "bytes": 3014,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC": {
+          "sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982",
+          "bytes": 9010224,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/MacOS/AirPortBrcmNIC",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "71f08f6b787d6691df97fe1a0ad0670ba8d1e37d022422074b4bcd4cfcd84bc5",
+          "bytes": 2428,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC.kext/Contents/version.plist": {
+          "sha256": "8e2d967e744d35653ff29269a81cffc2b0aaf5b8ce65aef0886b5e60c798b0e1",
+          "bytes": 475,
+          "install_path": "Kexts/AirPortBrcmNIC.kext/Contents/version.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/Info.plist": {
+          "sha256": "d6c7845947ad40ee94b820e204481a0911c6ab05b30f75b188e1c6f544eb2610",
+          "bytes": 1492,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeDirectory": {
+          "sha256": "54acd0c4ce3d1bb28310fe3e54c844ba9881904601e99fc37db12466b9205089",
+          "bytes": 210,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeDirectory",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeRequirements": {
+          "sha256": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+          "bytes": 12,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeRequirements",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeSignature": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "install_path": "Kexts/AirPortBrcmNIC_Injector.kext/Contents/_CodeSignature/CodeSignature",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/Info.plist": {
+          "sha256": "db4436644a39ad4082840d680ce48ce0b83e1cc9d3194f3c0077ffb3037655a7",
+          "bytes": 2498,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat": {
+          "sha256": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36",
+          "bytes": 359440,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirportBrcmCompat.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/Info.plist": {
+          "sha256": "6d2610cbf6a0a4281c8cbaad36ebe4f5ae9ecc0f493192f9630460b3e817b13f",
+          "bytes": 3214,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/MacOS/AirportBrcmFixup": {
+          "sha256": "af7847298c4372decfd90d98e1d6f723b6e0e1b1337eb2c889b36e4784654f91",
+          "bytes": 76016,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/MacOS/AirportBrcmFixup",
+          "action": "copy"
+        },
+        "Kexts/AirportBrcmFixup.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/AirportBrcmFixup.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/Info.plist": {
+          "sha256": "1656e35cc3f51bcd775b9fb54689199bf6d657c82fe48f49f7c11d51f6521c25",
+          "bytes": 2504,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/MacOS/IO80211FamilyLegacy": {
+          "sha256": "919a0b05ef73bade44545164292d5b5ca17ef44d04756b73dae8757fc57d5487",
+          "bytes": 2119024,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/MacOS/IO80211FamilyLegacy",
+          "action": "copy"
+        },
+        "Kexts/IO80211FamilyLegacy.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/IO80211FamilyLegacy.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/Info.plist": {
+          "sha256": "2bf91d8d51638b3855df26c706d2db8b7a78b6f2c6b142ac059b2b8a14826bae",
+          "bytes": 3306,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/MacOS/IOLegacyWFamily": {
+          "sha256": "301375974eb60d246d454e6ce8e806b98ecdbe15025c4d9adf9cb2530daf236d",
+          "bytes": 836336,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/MacOS/IOLegacyWFamily",
+          "action": "copy"
+        },
+        "Kexts/IOLegacyWFamily.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/IOLegacyWFamily.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/Info.plist": {
+          "sha256": "f3bfe947f73b2c6d67f878cf6dc92adabbc1f5ddb75a360d23ddbd11ebfcdebb",
+          "bytes": 2334,
+          "install_path": "Kexts/Lilu.kext/Contents/Info.plist",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/MacOS/Lilu": {
+          "sha256": "afd5a178923126f05150cbb059191420c9f24a74e99224dd43805d0345bcfaa8",
+          "bytes": 194240,
+          "install_path": "Kexts/Lilu.kext/Contents/MacOS/Lilu",
+          "action": "copy"
+        },
+        "Kexts/Lilu.kext/Contents/_CodeSignature/CodeResources": {
+          "sha256": "6686de10a28a2fe11b36cbb86dcbacc827cfc4ea116b4dabf1845e5aee629e9b",
+          "bytes": 2200,
+          "install_path": "Kexts/Lilu.kext/Contents/_CodeSignature/CodeResources",
+          "action": "copy"
+        },
+        "config.plist": {
+          "sha256": "50544e72e9a3e44f8729eb7df24784bf683e27e2db07fd92e1264526a1cb3020",
+          "bytes": 4122,
+          "install_path": null,
+          "action": "merge_configuration"
+        }
+      },
+      "bundles": [
+        {
+          "bundle_path": "AirPortBrcmNIC.kext",
+          "identifier": "com.apple.driver.AirPort.BrcmNIC",
+          "version": "1400.1.1",
+          "executable_sha256": "999c1a5b6a0d18baba2050520c1d429b49edfd99bfc8d71299b639334f263982"
+        },
+        {
+          "bundle_path": "AirPortBrcmNIC_Injector.kext",
+          "identifier": "as.lvs1974.AirportBrcmNICInjector",
+          "version": "1.0"
+        },
+        {
+          "bundle_path": "AirportBrcmCompat.kext",
+          "identifier": "org.geekaudio.AirportBrcmCompat",
+          "version": "1.1.0",
+          "executable_sha256": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36",
+          "build_flavor": "DEBUG"
+        },
+        {
+          "bundle_path": "AirportBrcmFixup.kext",
+          "identifier": "as.lvs1974.AirportBrcmFixup",
+          "version": "2.2.1",
+          "executable_sha256": "af7847298c4372decfd90d98e1d6f723b6e0e1b1337eb2c889b36e4784654f91"
+        },
+        {
+          "bundle_path": "IO80211FamilyLegacy.kext",
+          "identifier": "com.apple.iokit.IO80211FamilyLegacy",
+          "version": "1200.12.2b1",
+          "executable_sha256": "919a0b05ef73bade44545164292d5b5ca17ef44d04756b73dae8757fc57d5487"
+        },
+        {
+          "bundle_path": "IOLegacyWFamily.kext",
+          "identifier": "org.geekaudio.IOLegacyWFamilyKC",
+          "version": "1.0",
+          "executable_sha256": "301375974eb60d246d454e6ce8e806b98ecdbe15025c4d9adf9cb2530daf236d"
+        },
+        {
+          "bundle_path": "Lilu.kext",
+          "identifier": "as.vit9696.Lilu",
+          "version": "1.7.2",
+          "executable_sha256": "afd5a178923126f05150cbb059191420c9f24a74e99224dd43805d0345bcfaa8"
+        }
+      ]
+    }
+  },
+  "core_builds": {
+    "RELEASE": {
+      "binary_sha256": "d0db652211355a3c30cca4c6b5a448ed69f5607899021e342c45a36803c824a6",
+      "macho_uuid": "8125E9F4-4094-3CA1-926A-F34A5757766C",
+      "input_build_zip_sha256": "5b61ef7b5af6fd5f77a273bcc51a05b25f491802864a944b21bbe83e871c2ff8",
+      "build_manifest_sha256": "ed96769938a4cb804b8ad89e3eb84c84515fffb53a9bbd778e5851b44591afa8",
+      "builder_recorded_source_commit": null,
+      "source_identity_basis": "per-file SHA-256, not an inferred build time",
+      "source_files_checked": 75,
+      "source_files_match_tag": true,
+      "mismatched_source_paths": []
+    },
+    "DEBUG": {
+      "binary_sha256": "67032b57b127b0dbaeb568b85754a00797bdb0c0ce8daef8b6bd4bf1ff0d5a36",
+      "macho_uuid": "C8758DC4-3742-3575-851A-A8B230EAE503",
+      "input_build_zip_sha256": "0e6e9ef9179e37343852beeb428c492f60e708adb155ca3598a6c864c4dc4b59",
+      "build_manifest_sha256": "98617824208e62da57e36a3160960521c56662179f65e1321bc291ebc1701df4",
+      "builder_recorded_source_commit": null,
+      "source_identity_basis": "per-file SHA-256, not an inferred build time",
+      "source_files_checked": 76,
+      "source_files_match_tag": true,
+      "mismatched_source_paths": []
+    }
+  },
+  "source_tag": {
+    "tag": "v1.1.0",
+    "tag_commit": "a1b422a99037a8221f91919233fd847407949d1a",
+    "tag_resolved": true
+  },
+  "record_role": "Reproducible installation payload inventory; actual repackaging commit is recorded in Release notes and final build metadata."
+}

@@ -191,12 +191,11 @@ class UpgradeChecksTests(unittest.TestCase):
             for target in ('23.0.0','24.99.99','25.0.0','26.0.0','26.99.99','27.0.0','99.0.0'):
                 with self.subTest(flavor=name,target=target):
                     active=[e for e in config['Kernel']['Add'] if brcmctl.applies(e,brcmctl.version(target))]
-                    nic=[e for e in active if 'AirPortBrcmNIC-' in e['BundlePath']]
+                    nic=[e for e in active if e['BundlePath']=='AirPortBrcmNIC.kext']
                     self.assertEqual(len(nic),1)
-                    self.assertEqual(len(active),4)
-                    if brcmctl.version(target)>=(25,0,0):
-                        self.assertEqual(nic[0]['BundlePath'],'AirPortBrcmNIC-Tahoe.kext')
-                        self.assertEqual(nic[0]['MaxKernel'],'')
+                    self.assertEqual(len(active),7)
+                    self.assertTrue(all(e['MinKernel']=='23.0.0' and e['MaxKernel']=='' for e in active))
+                    self.assertFalse(any('/PlugIns/' in e['BundlePath'] for e in active))
 
 
 if __name__=='__main__':unittest.main()

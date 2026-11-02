@@ -8,8 +8,10 @@ Apple 无线组件版权归 Apple。OCLP 的 BSD-4-Clause 许可不替代 Apple 
 
 额外现代网卡匹配工具使用 [AirportBrcmFixup 2.2.1](https://github.com/acidanthera/AirportBrcmFixup/releases/tag/2.2.1)
 的官方二进制和 NIC injector，版权归 lvs1974 及上游贡献者，适用
-[上游 BSD-3-Clause 许可证](LICENSES/AirportBrcmFixup-LICENSE.txt)。这部分是可选依赖，不属于自研驱动代码。
+[上游 BSD-3-Clause 许可证](LICENSES/AirportBrcmFixup-LICENSE.txt)。这部分作为配套依赖随完整安装包分发，不属于自研驱动代码。
 
 构建依赖由 `dependencies.lock.json` 固定到上游提交，通过 `tools/prepare_dependencies.py` 获取到本地 `vendor/`。构建方式见 [BUILDING](BUILDING.md)。
 
 发布包不包含完整 EFI、用户配置、USB 端口映射、身份信息或实机日志。
+
+完整安装包的第三方许可随 Release 说明提供；根目录 `LICENSES` 保存对应文本。网卡 DMA 兼容二进制仍来自已固定的 OCLP 资源，统一文件名不改变其版权归属。

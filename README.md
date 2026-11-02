@@ -1,111 +1,100 @@
 # AirportBrcmCompat
 
-为下表中的博通网卡提供 Wi-Fi 支持，通过 EFI 加载，不修改系统卷。
-**1.1.0 · Intel x86_64 · Sonoma 14 / Sequoia 15 / Tahoe 26**
+为指定的博通 PCIe 网卡提供 macOS Wi-Fi 兼容支持。驱动从 OpenCore EFI 加载，不修改 macOS 系统卷。
 
-[![Offline validation](https://github.com/GeekAudio/AirportBrcmCompat/actions/workflows/ci.yml/badge.svg)](https://github.com/GeekAudio/AirportBrcmCompat/actions/workflows/ci.yml)
+**1.1.0 · 目标系统：Sonoma 14、Sequoia 15、Tahoe 26**
 
 ## 下载
 
-**正常安装下载 RELEASE 和「必装配套」。** BCM43225／BCM4352 再加补充包。
+从 [GitHub Releases](https://github.com/GeekAudio/AirportBrcmCompat/releases) 选择一个完整安装包：
 
-[01 RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/01-AirportBrcmCompat-1.1.0-RELEASE.zip) · [02 必装配套](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [03 BCM43225／BCM4352 补充包](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [04 DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/04-AirportBrcmCompat-1.1.0-DEBUG.zip)
+- **01 RELEASE**：日常安装和使用。
+- **02 DEBUG**：仅在排查问题时使用；包含相同的安装组件和配置。
 
-![下载哪些包](docs/images/download-guide.png)
+文件名：`01-AirportBrcmCompat-1.1.0-RELEASE.zip` 或 `02-AirportBrcmCompat-1.1.0-DEBUG.zip`。
+
+每个包提供同一套文件，不需要按 macOS 版本挑选 kext。包内有 `Kexts/` 和 `config.plist`；源码仓库、工具和说明文件不放进安装包。
 
 ## 安装
 
-先备份 EFI；以前打过 OCLP 无线根补丁的，先撤销该补丁。按图放文件、添加配置，保留原有的其他设置。
+先备份 EFI。解压所选 ZIP，把 `Kexts/` 中的 kext 复制到 `EFI/OC/Kexts/`，保留文件夹名称和内部结构。然后将包内 `config.plist` 的 `Kernel` 项合并到 EFI 现有配置中；保留原有条目，不要用这个片段覆盖整份配置。逐步操作见[安装说明](docs/INSTALLATION.md)。
 
-![kext 文件位置和配置添加方法](docs/images/install-layout.png)
+从旧版升级时，移除旧的 `AirPortBrcmNIC-Sonoma-Sequoia.kext` 和 `AirPortBrcmNIC-Tahoe.kext` 文件及对应的 OpenCore 条目，避免同时加载旧、新两套依赖。以前通过 OCLP 修改过系统无线文件的，先用 OCLP 恢复系统，再使用 EFI 安装方式。
 
-安装 ZIP 只放 kext 和配置文件；[校验值](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt)、验证记录和版权许可在发布页单独提供。
+## 适用网卡与验证状态
 
-<details>
-<summary>DEBUG 排查方法（点击展开）</summary>
+以下 PCI ID 使用同一份安装包。离线检查通过只表示源码、依赖接口和配置经过静态核对；本版本尚无逐卡实机验证记录。
 
-1. 下载 **04 DEBUG**，备份现有的 `AirportBrcmCompat.kext`，再用 DEBUG 包里的同名文件夹替换它。必装配套继续使用原来的文件。
-2. 在 OpenCore 的 `boot-args` 末尾用空格追加 `-brcmcompatdbg`，保留原有参数。
-3. 重启后复现问题，再打开终端执行下面两条命令。日志会保存在桌面：
+| 网卡 | PCI ID（Vendor `14e4`） | 目标系统 |
+| --- | --- | --- |
+| BCM43602 / BCM4350 / BCM4360 | `43ba` / `43a3` / `43a0` | Sonoma 14、Sequoia 15、Tahoe 26 |
+| BCM43225 / BCM4352 | `4357` / `43b1` / `43b2` | Sonoma 14、Sequoia 15、Tahoe 26 |
+
+核对完整边界和证据见[兼容说明](COMPATIBILITY.md)及[实机验证矩阵](validation/RUNTIME-MATRIX.md)。
+
+## 排查问题
+
+下载 **02 DEBUG**，按同一安装步骤替换 RELEASE 整套文件。需要收集日志时，在现有 OpenCore `boot-args` 末尾追加 `-brcmcompatdbg`，重启并复现问题，然后运行：
 
 ```sh
-sudo log show --last boot --style compact --info --debug \
-  --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' \
-  > ~/Desktop/AirportBrcmCompat-debug.log
+sudo log show --last boot --style compact --info --debug --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' > ~/Desktop/AirportBrcmCompat-debug.log
 ioreg -r -l -w0 -c AirportBrcmCompat > ~/Desktop/AirportBrcmCompat-ioreg.log
 ```
 
-反馈时提供系统版本、网卡 PCI ID 和这两份日志，分享前去掉个人信息。
-排查结束后，换回 **01 RELEASE** 的同名驱动，移除 `-brcmcompatdbg` 并重启。
+反馈时附上 macOS 版本、PCI ID 和两份日志；分享前删去个人信息。排查后换回 RELEASE 整套文件，移除 `-brcmcompatdbg` 并重启。更多恢复边界见[异常与恢复](docs/RUNTIME-VALIDATION.md)。
 
-</details>
+## 项目资料
 
-## 兼容表
-
-Vendor ID 均为 `14e4`。请按 PCI ID 确认自己的网卡。
-
-| 网卡 | PCI Device ID | Sonoma 14 | Sequoia 15 | Tahoe 26 |
-| --- | --- | --- | --- | --- |
-| BCM43602／BCM4350／BCM4360 | `43ba`、`43a3`、`43a0` | 离线验证 | 离线验证 | 离线验证 |
-| BCM43225／BCM4352 | `4357`、`43b1`、`43b2` | 离线验证 | 离线验证 | 离线验证 |
-
-表内表示驱动与接口的离线检查通过。BCM43602 有 1.0.1-rc1 的 Tahoe 功能基线，逐卡状态见[兼容说明](COMPATIBILITY.md)。
-
-[实机矩阵](validation/RUNTIME-MATRIX.md) · [异常与恢复](docs/RUNTIME-VALIDATION.md) · [安装包核验](docs/RELEASE-VERIFICATION.md) · [macOS 27 准备](docs/MACOS-27-PREPARATION.md)
-
-[配置检查工具](tools/README.md) · [构建说明](BUILDING.md) · [蓝牙作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext) · [版权与来源](NOTICE.md) · [BSD-3-Clause](LICENSE)
+[安装说明](docs/INSTALLATION.md) · [下载核验](docs/RELEASE-VERIFICATION.md) · [macOS 27 离线准备](docs/MACOS-27-PREPARATION.md) · [构建说明](BUILDING.md) · [版权与来源](NOTICE.md) · [BSD-3-Clause](LICENSE) · [蓝牙作者项目](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext)
 
 <details>
 <summary>English</summary>
 
-AirportBrcmCompat provides Wi-Fi support for the Broadcom cards listed below through EFI/kext loading, without modifying the system volume.
-**1.1.0 · Intel x86_64 · Sonoma 14 / Sequoia 15 / Tahoe 26**
+AirportBrcmCompat adds Wi-Fi compatibility for the Broadcom PCIe cards listed above. It loads through OpenCore EFI and does not modify the macOS system volume.
+
+**1.1.0 · Target systems: Sonoma 14, Sequoia 15 and Tahoe 26**
 
 ### Downloads
 
-**For everyday use, download RELEASE and Required Wi-Fi files.** BCM43225 / BCM4352 also need the add-on.
+Choose one complete package from [GitHub Releases](https://github.com/GeekAudio/AirportBrcmCompat/releases):
 
-[01 RELEASE](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/01-AirportBrcmCompat-1.1.0-RELEASE.zip) · [02 Required Wi-Fi files](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip) · [03 BCM43225 / BCM4352 add-on](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/03-AirportBrcmCompat-1.1.0-BCM43225-BCM4352.zip) · [04 DEBUG](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/04-AirportBrcmCompat-1.1.0-DEBUG.zip)
+- **01 RELEASE** for normal installation and use.
+- **02 DEBUG** for troubleshooting. It contains the same installation files and configuration.
 
-![Which downloads to choose](docs/images/download-guide-en.png)
+The filenames are `01-AirportBrcmCompat-1.1.0-RELEASE.zip` and `02-AirportBrcmCompat-1.1.0-DEBUG.zip`.
 
-### Installation
+Both packages use the same files across the listed macOS versions. There is no OS-specific kext choice. Each package contains `Kexts/` and `config.plist`; source code, tools and documentation are kept out of the installer.
 
-Back up your EFI first. Revert any existing OCLP wireless root patches. Follow the diagram to copy the files and add Wi-Fi settings to your existing configuration.
+### Install
 
-![Kext locations and configuration steps](docs/images/install-layout-en.png)
+Back up your EFI first. Extract the selected ZIP and copy the kexts in `Kexts/` to `EFI/OC/Kexts/`, keeping their folder names and contents intact. Merge the package's `Kernel` section from `config.plist` into your existing OpenCore configuration. Keep your existing entries; this is not a full replacement configuration. See the [installation guide](docs/INSTALLATION.md) for the steps.
 
-Installation ZIPs contain only kext bundles and configuration files. [Checksums](https://github.com/GeekAudio/AirportBrcmCompat/releases/download/v1.1.0/05-SHA256SUMS.txt), validation records and license notices are separate release attachments.
+When upgrading from an older package, remove the old `AirPortBrcmNIC-Sonoma-Sequoia.kext` and `AirPortBrcmNIC-Tahoe.kext` files and their OpenCore entries so the old and new dependency sets are not loaded together. If OCLP previously patched the system wireless files, revert those patches with OCLP before using the EFI installation.
 
-### Troubleshooting with DEBUG
+### Cards and validation
 
-1. Download **04 DEBUG**, back up your current `AirportBrcmCompat.kext`, then replace it with the folder from the DEBUG ZIP. Keep the required Wi-Fi files installed.
-2. Append `-brcmcompatdbg` to OpenCore's existing `boot-args`, separated by a space. Keep your other arguments.
-3. Restart, reproduce the issue, then run these commands in Terminal. Both files are saved to your Desktop:
+The PCI IDs below use the same installer. Passing offline checks means the source, dependency interfaces and configuration were reviewed offline. This release has no per-card hardware test records.
+
+| Cards | PCI IDs (vendor `14e4`) | Target systems |
+| --- | --- | --- |
+| BCM43602 / BCM4350 / BCM4360 | `43ba` / `43a3` / `43a0` | Sonoma 14, Sequoia 15, Tahoe 26 |
+| BCM43225 / BCM4352 | `4357` / `43b1` / `43b2` | Sonoma 14, Sequoia 15, Tahoe 26 |
+
+See [compatibility details](COMPATIBILITY.md) and the [hardware validation matrix](validation/RUNTIME-MATRIX.md) for scope and evidence.
+
+### Troubleshooting
+
+Download **02 DEBUG** and replace the complete RELEASE file set using the same installation steps. To collect logs, append `-brcmcompatdbg` to your existing OpenCore `boot-args`, restart, reproduce the issue, and run:
 
 ```sh
-sudo log show --last boot --style compact --info --debug \
-  --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' \
-  > ~/Desktop/AirportBrcmCompat-debug.log
+sudo log show --last boot --style compact --info --debug --predicate 'process == "kernel" AND eventMessage CONTAINS[c] "AirportBrcmCompat"' > ~/Desktop/AirportBrcmCompat-debug.log
 ioreg -r -l -w0 -c AirportBrcmCompat > ~/Desktop/AirportBrcmCompat-ioreg.log
 ```
 
-When reporting an issue, include your macOS version, card PCI ID and both files. Remove personal information before sharing.
-After troubleshooting, restore the driver from **01 RELEASE**, remove `-brcmcompatdbg` and restart.
+Include your macOS version, PCI ID and both logs when reporting an issue. Remove personal information before sharing. After troubleshooting, restore the complete RELEASE files, remove `-brcmcompatdbg` and restart. See [diagnostics and recovery](docs/RUNTIME-VALIDATION.md) for recovery limits.
 
-### Compatibility
+### Project information
 
-All PCI IDs use vendor `14e4`. Check your card's PCI ID before choosing a download.
-
-| Cards | PCI Device IDs | Sonoma 14 | Sequoia 15 | Tahoe 26 |
-| --- | --- | --- | --- | --- |
-| BCM43602 / BCM4350 / BCM4360 | `43ba`, `43a3`, `43a0` | Offline checks | Offline checks | Offline checks |
-| BCM43225 / BCM4352 | `4357`, `43b1`, `43b2` | Offline checks | Offline checks | Offline checks |
-
-The table records offline driver and interface checks. BCM43602 has a historical Tahoe functional baseline from 1.0.1-rc1. See [compatibility details](COMPATIBILITY.md) for the evidence scope.
-
-[Hardware matrix](validation/RUNTIME-MATRIX.md) · [Diagnostics and recovery](docs/RUNTIME-VALIDATION.md) · [Release verification](docs/RELEASE-VERIFICATION.md) · [macOS 27 preparation](docs/MACOS-27-PREPARATION.md)
-
-[Configuration checks](tools/README.md) · [Build instructions](BUILDING.md) · [Bluetooth upstream](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext) · [Notices](NOTICE.md) · [BSD-3-Clause](LICENSE)
+[Installation guide](docs/INSTALLATION.md) · [Download verification](docs/RELEASE-VERIFICATION.md) · [macOS 27 offline preparation](docs/MACOS-27-PREPARATION.md) · [Build instructions](BUILDING.md) · [Notices](NOTICE.md) · [BSD-3-Clause](LICENSE) · [Bluetooth upstream](https://github.com/acidanthera/BrcmPatchRAM#bluetoolfixupkext)
 
 </details>

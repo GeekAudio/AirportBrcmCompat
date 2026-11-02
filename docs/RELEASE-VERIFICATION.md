@@ -1,44 +1,72 @@
-# 核对 tag、核心构建和安装包
+# 核验下载包
 
-这三层身份分别记录，不能互相替代：
+每个版本发布两份完整安装 ZIP：**01 RELEASE** 用于日常安装，**02 DEBUG** 用于排查。选择其中一个即可，不再另下 Wi-Fi 依赖包或网卡补充包。两个包应包含同一套 kext 和 `config.plist`，DEBUG 只用于诊断。
 
-| 层级 | `06-VALIDATION.json` 中的位置 | 表示什么 |
-| --- | --- | --- |
-| 发布 tag | `lineage.release.tag`、`tag_commit` | Git 标签指向的提交。没有本地 tag 时明确记录未解析，不猜 HEAD。 |
-| 核心构建 | `lineage.core_builds.RELEASE/DEBUG` | 实际核心的 SHA-256、Mach-O UUID、内部构建 ZIP/清单哈希及源码逐文件核对结果。 |
-| 最终附件重打包 | `lineage.repackaging`、`artifacts` | 打包工具所在提交、工作区是否有改动、四份最终 ZIP 及包内每个文件的哈希和安装位置。 |
+## 安装前核对
 
-旧核心构建器没有写入当时的提交号，`builder_recorded_source_commit` 因而保留 `null`。`source_files_match_tag=true` 只表示清单里的每份源码都与该 tag 相同，不能反推构建时刻或唯一构建提交。原有 `source_commit` 是重打包提交，另有明确的 `source_commit_role=repackaging`。
+1. 确认下载名含有正确的版本和 `RELEASE` 或 `DEBUG` 标记。
+2. 在 GitHub Release 说明中找到对应 ZIP 公布的 SHA-256，再本地核对：
 
-GitHub 自动附带的 Source code ZIP 对应 tag。重打包工具、文档或清单在 tag 之后更新时，以 `repackaging.source_commit` 查看对应程序，不能把 tag 和主分支当成同一个快照。历史公开下载记录的脱敏索引在 [release-lineage.json](../validation/release-lineage.json)；当前附件以其 `06-VALIDATION.json` 为准。
+   ```sh
+   shasum -a 256 01-AirportBrcmCompat-1.1.0-RELEASE.zip
+   ```
 
-## 安装前怎么核对
+3. 解压后确认包内有 `Kexts/` 和 `config.plist`。应使用同一个 `AirPortBrcmNIC.kext`；不应出现旧的 `AirPortBrcmNIC-Sonoma-Sequoia.kext`、`AirPortBrcmNIC-Tahoe.kext` 或按系统区分的依赖 ZIP。
+4. `config.plist` 是 OpenCore 配置片段。只合并它列出的设置，保留现有 EFI 的其他内容。
+5. 有源码仓库时，可先对 EFI 副本运行[安装预览工具](../tools/README.md#offline-install-preview)。默认模式只检查并显示计划变更，不写入 EFI。
 
-普通安装下载 01 RELEASE、02 必装配套，以及单独提供的 05 校验值和 06 验证记录。其它型号包和 DEBUG 按需要选择，不必为了检查而下载它们。
+安装 ZIP 只包含用户安装所需的 kext 和配置片段。验证记录、工具、文档、源码以及单独的 TXT 文件不放进这两个 ZIP。GitHub 页面自动提供的源码归档不是安装包。
 
-```sh
-python3 tools/brcmctl.py verify --directory /path/to/downloads \
-  --asset 01-AirportBrcmCompat-1.1.0-RELEASE.zip \
-  --asset 02-AirportBrcmCompat-1.1.0-WiFi-Pack.zip
-```
+## 发布身份记录
 
-工具先用 05 文件核对 06，再核对指定 ZIP、完整文件列表、每个文件的大小和 SHA-256，以及核心二进制与核心构建身份的一致性。省略 `--asset` 时，只检查目录中已存在的安装 ZIP；输出 `not_checked` 明确列出没检查的包，不会把两份包说成整套四份都通过。
+公开发布时，分别核对下列三项；它们说明不同环节：
 
-`artifacts.<ZIP>.members` 可逐项核对。`install_path` 从 `EFI/OC/` 开始；`action=copy` 的文件属于 kext，整包复制并保留内部文件。配置文件标成 `merge_configuration`，应加入自己的配置，不能整份覆盖。`bundles` 列出标识符、版本和可执行文件哈希。
+| 项目 | 核对内容 |
+| --- | --- |
+| Git tag | tag 名和指向的提交，确定发布源码快照 |
+| RELEASE / DEBUG 核心 | 每个实际核心二进制的 SHA-256、Mach-O UUID 和对应构建清单 |
+| 最终安装 ZIP | 重打包提交、归档 SHA-256、包内文件清单及签名核对结果 |
 
-这些检查确认下载及清单的一致性，不认证发布者，也不证明实际启动、关联或收件。安装 ZIP 仍只含 kext 与配置；完整清单、版权许可、实机记录均在 ZIP 外。
+[当前统一包清单](../validation/unified-distribution.json)记录文件哈希与核心构建；[统一网卡核验](../validation/unified-nic.json)记录静态差异范围。
 
-## 维护者
+源码归档使用 GitHub 的 tag 快照。打包器或文档若在 tag 之后更新，应记录实际使用的重打包提交；不能把 tag、核心构建和最终 ZIP 当成同一个版本身份。发布流程应在 Release 说明中列出两份最终 ZIP 的 SHA-256，便于下载者逐一核对。
 
-CI 获取 tag 历史并生成同一份分层清单。发布前必须检查 tag 是否已解析、核心源码是否匹配预期引用、重打包工作区是否干净，然后公开下载核对最终附件。若 tag 尚未创建或核心源码与旧 tag 不同，清单明确保留未解析/不匹配，不能改字段伪造一致。
+校验值一致能证明本地下载与发布记录一致；它不证明发布者身份，也不代表网卡已经在实机上通过启动、联网或 AirDrop 验证。兼容目标和证据范围见[兼容说明](../COMPATIBILITY.md)及[实机验证矩阵](../validation/RUNTIME-MATRIX.md)。
 
 <details>
 <summary>English</summary>
 
-Release tags, core builds and final repackaging have separate identities. `lineage.release` records the resolved tag; `lineage.core_builds` records each actual core's binary hash, UUID, input build ZIP/manifest hashes and source-file comparison; `lineage.repackaging` records the packaging checkout and dirty state. The legacy `source_commit` field means repackaging.
+Each release provides two complete installer ZIPs: **01 RELEASE** for normal use and **02 DEBUG** for troubleshooting. Choose one; there is no separate Wi-Fi dependency or card add-on download. Both packages should contain the same kext set and `config.plist`; DEBUG is for diagnosis.
 
-Older builders did not record a build commit, so that value stays null. Source files matching a tag do not establish a unique historical build commit or time. GitHub's automatic Source code downloads follow the tag; use the recorded repackaging commit for later packaging-tool changes.
+### Before installing
 
-For a normal installation, download packages 01 and 02 plus checksums 05 and inventory 06, then run the command above. The verifier checks inventory/ZIP checksums, the exact member list, member sizes/hashes and the selected core's identity. Missing optional packages remain explicitly unverified. `install_path` is relative to `EFI/OC/`; configuration files must be merged. These are integrity checks, not author authentication or runtime hardware proof. Installation ZIPs remain limited to kexts and configurations.
+1. Check the version and `RELEASE` or `DEBUG` label in the filename.
+2. Find the matching SHA-256 in the GitHub Release notes and compare it with the local file:
+
+   ```sh
+   shasum -a 256 01-AirportBrcmCompat-1.1.0-RELEASE.zip
+   ```
+
+3. After extraction, confirm that the package contains `Kexts/` and `config.plist`. It should use one `AirPortBrcmNIC.kext`, with no old Sonoma/Sequoia or Tahoe NIC variants and no OS-specific dependency ZIPs.
+4. `config.plist` is an OpenCore fragment. Merge only its listed settings and keep the rest of your EFI configuration.
+5. If you have the source checkout, run the [installer preview](../tools/README.md#offline-install-preview) against an EFI copy first. Its default mode displays planned changes without writing to EFI.
+
+Installer ZIPs contain only the kexts and configuration fragment needed for installation. Validation records, tools, documentation, source code and standalone TXT files stay outside these two ZIPs. GitHub's automatically generated source archives are not installer packages.
+
+### Release identity
+
+Check these three records separately:
+
+| Record | What it identifies |
+| --- | --- |
+| Git tag | The source snapshot selected for the release |
+| RELEASE / DEBUG core | Each actual core binary's SHA-256, Mach-O UUID and build manifest |
+| Final installer ZIP | The repackaging commit, archive SHA-256, member inventory and signature checks |
+
+The [unified package inventory](../validation/unified-distribution.json) records member hashes and core builds; [NIC evidence](../validation/unified-nic.json) records the static delta checks.
+
+GitHub's source archive follows the tag. If packaging code or documentation changes after the tag, record the actual repackaging commit; the tag, core build and final ZIP are separate identities. The release process should publish the SHA-256 of both final ZIPs in the Release notes.
+
+A matching hash shows that a local download matches its release record. It does not authenticate the publisher or prove that a card passed boot, networking or AirDrop tests on hardware. See the [compatibility details](../COMPATIBILITY.md) and the [hardware validation matrix](../validation/RUNTIME-MATRIX.md) for evidence scope.
 
 </details>

@@ -1,13 +1,19 @@
 # macOS 27 升级准备
 
-**当前状态：已准备未来系统的检查流程，尚无 macOS 27 Intel 移植样本。** 1.1.0 的下载包和实机矩阵仍按原有范围记录。
+**当前状态：已复用官方 27.2（26B123）安装器做离线检查，尚无 Intel 移植内核样本。** 1.1.0 的下载包和实机矩阵仍按原有范围记录。
 
 [苹果的 macOS 27 兼容列表](https://www.apple.com/os/macos/)只列出 Apple silicon 机型。这里准备的是社区 Intel 移植系统上的 Wi-Fi 检查；本项目本身不提供 Intel 系统移植。
+
+## 本次实际检查
+
+复用了共享安装器及其 14 份内核清单，清单内均为 ARM。博通侧独立解封、解压并复核了其中的 `mac14j` 内核：`arm64e`，与安装预检清单的 SHA-384 一致；`_version` 与 `_osrelease` 均给出 `27.2.0`。网络回调名称仍在，但指令架构与本项目的 x86_64 适配不同，生产升级检查已按预期拒绝该样本。
+
+这份安装器的 1699 个 SHA-256 分块和 Apple 包签名通过，博通侧另抽查了 18 个首尾及分段边界块。目录整包 SHA-1 与实际文件不一致，原值和差异保留在[离线记录](../validation/macos27-offline.json)中。此记录不确认 Intel 移植内核的 ABI 或无线请求格式，兼容表继续保持原有范围。
 
 ## 已准备什么
 
 - 核心没有系统构建号或内核 UUID 白名单，也没有最高系统版本限制。
-- 现有配置从 Darwin 25 起选用同一份 NIC 驱动，不需要为下个版本再添加一条配置。新系统仍须通过实际接口检查。
+- 统一配置从 Darwin 23 起共用同一份 NIC 和依赖，不需要为下个版本再添加一条配置。新系统仍须通过实际接口检查。
 - `upgrade-check` 会核对 EFI 副本，并直接读取目标 BootKC 中的 x86_64 内核、实际 Darwin 版本及 `IONetworkingFamily`，使用生产代码的检查函数验证公开 ioctl 入口和网络回调。不会按文件名猜测系统，也不会为通过检查而修改偏移。
 - 新的合成回归用例覆盖未来版本号、未知 UUID、错误架构、旧样本冒充新系统、入口变化和错误调用目标。合成输入始终不计入实机矩阵。
 
@@ -41,11 +47,15 @@ python3 tools/brcmctl.py upgrade-check \
 <details>
 <summary>English</summary>
 
-**Status: future-system checks are prepared; no macOS 27 Intel-port sample is available.** Existing 1.1.0 downloads and hardware records retain their original scope.
+**Status: the shared official 27.2 (26B123) installer has been inspected offline; no Intel-port kernel sample is available.** Existing 1.1.0 downloads and hardware records retain their original scope.
 
 [Apple's macOS 27 compatibility list](https://www.apple.com/os/macos/) lists Apple silicon models. This work prepares Wi-Fi checks for a community Intel port; it does not provide that OS port.
 
-The core has no OS-build/kernel-UUID allowlist or maximum OS version. Existing configuration selects the same NIC variant from Darwin 25 onward. Runtime ABI and request checks remain mandatory.
+The shared scan lists 14 shipped ARM kernels. This project independently decoded and checked the `mac14j` sample: `arm64e`, matching the preflight manifest's SHA-384, with `27.2.0` in both kernel version symbols. Networking callback names are present, which does not establish x86_64 instruction or C++ ABI compatibility. The production upgrade reader rejected this ARM sample as expected.
+
+All 1,699 SHA-256 chunks and the Apple package signature passed in the shared verification; this project additionally checked 18 boundary chunks. The catalog's whole-package SHA-1 mismatch is retained in the [offline record](../validation/macos27-offline.json). No Intel-port ABI or wireless request format is qualified by this assessment.
+
+The core has no OS-build/kernel-UUID allowlist or maximum OS version. The unified configuration uses the same NIC and dependencies from Darwin 23 onward. Runtime ABI and request checks remain mandatory.
 
 Get the tools from the [main branch](https://github.com/GeekAudio/AirportBrcmCompat/tree/main/tools). The 1.1.0 release's Source code archives follow the fixed tag and do not include these new tools. Installation ZIPs contain no tools.
 

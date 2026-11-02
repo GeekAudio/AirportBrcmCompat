@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "assessment": "OFFICIAL_ARM_SAMPLE_INSPECTED_INTEL_PORT_PENDING",
+  "target": {
+    "macos_version": "27.2",
+    "build": "26B123",
+    "darwin_from_kernel_version_and_osrelease": "27.2.0"
+  },
+  "scope": "Shared official installer metadata and shipped kernel collection; no macOS 27 Intel port or Broadcom hardware run",
+  "installer": {
+    "url": "https://swcdn.apple.com/content/downloads/52/46/142-50055-A_O5SYDX5BLY/c72meffi1hj2eaf9fgtakkgwds73ujrr5u/InstallAssistant.pkg",
+    "bytes": 17807147403,
+    "sha256": "26bee623af06bf6c78a57e62ea6f188e678b841d9d30f25415fe73cf8444183a",
+    "actual_sha1": "62b59f9382927e2b3a15079dbec7c6b58468c49c",
+    "catalog_sha1": "33d474b5f2819530c7c730f881cd1089b027b913",
+    "catalog_sha1_matches": false,
+    "integrity_data_url": "https://swcdn.apple.com/content/downloads/52/46/142-50055-A_O5SYDX5BLY/c72meffi1hj2eaf9fgtakkgwds73ujrr5u/InstallAssistant.pkg.integrityDataV1",
+    "integrity_data_sha256": "648966e4acd10ac64bfcffc6452173f97541f648f57a777e3b87c1e534e346c3",
+    "shared_sha256_chunks_checked": 1699,
+    "shared_bad_chunks": 0,
+    "independent_boundary_chunks_checked": 18,
+    "independent_boundary_chunk_mismatches": 0,
+    "package_signature": "signed Apple Software",
+    "signature_chain": [
+      "Software Update",
+      "Apple Software Update Certification Authority",
+      "Apple Root CA"
+    ],
+    "verification_origin": "Reused shared full chunk scan and pkgutil signature; independently checked boundary chunks and decoded the selected kernel",
+    "catalog_digest_discrepancy_preserved": true
+  },
+  "shared_scan": {
+    "source": "https://github.com/GeekAudio/intel-i225-macos27-compat/blob/a9d71cb8b9c83ff809d5d5feb15266649b00307e/evidence/2026-11-01/kernel-architectures.json",
+    "source_sha256": "8b75672abf22d479ce3c65cecae6ec0432635e7decfa17ce38f378f345d52894",
+    "source_commit": "a9d71cb8b9c83ff809d5d5feb15266649b00307e",
+    "scope": "Kernel entries in this specific shipped MobileAsset archive, not a boot test",
+    "kernel_count": 14,
+    "architectures": [
+      "arm64",
+      "arm64e"
+    ],
+    "x86_64_kernel_entries": 0
+  },
+  "independent_kernel": {
+    "archive_entry": "AssetData/boot/kernelcache.release.mac14j",
+    "wrapped_bytes": 33495550,
+    "wrapped_sha256": "dac97c356dd1c0b338551632f2cdcaedeca8bb92196f0e5d48315fcd550d503f",
+    "manifest_kernelcache_sha384": "9f838e1ae52b29aa26a312a40c3430eed3734516624934cf3768a4bb8416d51bb74389e6dae5e1162ea50c237cd79ab2",
+    "preflight_manifest_sha256": "1470683b45f5226d2b8db1935b1f8029aefb8dd75c254ffd5676a31a18517ee0",
+    "matches_manifest_kernelcache_digest": true,
+    "container": "IM4P",
+    "compression": "lzfse",
+    "decoded_bytes": 125353984,
+    "decoded_sha256": "2d6520798a32bee6e377a2906d3dd02a788d4ed396ae9c6c5884dbe909d8a47e",
+    "independent_decode_matches_shared_file": true,
+    "architecture": "arm64e",
+    "fileset_entries": 353,
+    "members": [
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 2,
+        "uuid": "46F7C32E-5812-3DCD-8B07-C8FD512E0E5D",
+        "identifier": "com.apple.kernel",
+        "symbol_table_present": true,
+        "named_symbols_found": [
+          "__ZNK9IOService10isInactiveEv",
+          "_ifnet_ioctl",
+          "_ifnet_softc",
+          "_osrelease",
+          "_version"
+        ]
+      },
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 11,
+        "uuid": "8E85EC3B-B94E-3FD6-9E0B-E512E804FA59",
+        "identifier": "com.apple.driver.AppleBCMWLANBusInterfacePCIe",
+        "symbol_table_present": true,
+        "named_symbols_found": []
+      },
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 11,
+        "uuid": "48E9DF1A-5F28-34FB-B30B-4C9073859360",
+        "identifier": "com.apple.driver.AppleBCMWLANCore",
+        "symbol_table_present": true,
+        "named_symbols_found": []
+      },
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 11,
+        "uuid": "D4C313D8-4AE9-3B44-AA8D-1A17EFA0C880",
+        "identifier": "com.apple.iokit.IO80211Family",
+        "symbol_table_present": true,
+        "named_symbols_found": []
+      },
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 11,
+        "uuid": "6D6673F0-D592-36F4-B789-A5A6632C33B2",
+        "identifier": "com.apple.iokit.IONetworkingFamily",
+        "symbol_table_present": true,
+        "named_symbols_found": [
+          "__ZN18IONetworkInterface14if_set_bpf_tapEP7__ifnetjPFiS1_P6__mbufE",
+          "__ZN18IONetworkInterface15initIfnetParamsEP17ifnet_init_params",
+          "__ZN18IONetworkInterface8if_ioctlEP7__ifnetmPv",
+          "__ZN18IONetworkInterface9if_detachEP7__ifnet",
+          "__ZN18IONetworkInterface9if_outputEP7__ifnetP6__mbuf"
+        ]
+      },
+      {
+        "architecture": "arm64e",
+        "cputype": 16777228,
+        "cpusubtype": 3221225474,
+        "filetype": 11,
+        "uuid": "88787B87-2842-31AF-BEE1-E805CE14CE1B",
+        "identifier": "com.apple.iokit.IOSkywalkFamily",
+        "symbol_table_present": true,
+        "named_symbols_found": []
+      }
+    ]
+  },
+  "production_check": {
+    "entry": "tools/upgrade_check.py:read_sample",
+    "result": "rejected",
+    "reason": "target outer: not x86_64 (cputype 0x100000c)",
+    "rejection_expected_for_arm_sample": true,
+    "implementation_source_sha256": "882769a650591581257127254f1f798287addbcbe3a2afdcf4ace690d3cead5c"
+  },
+  "compatibility": {
+    "provided_intel_port_sample_available": false,
+    "intel_abi_validated": false,
+    "wifi_request_and_event_formats_validated_for_intel27": false,
+    "runtime_validated": false,
+    "qualified_for_readme_support_table": false,
+    "next_required_input": "The actual x86_64 kernel and networking components used by a specific Intel macOS 27 port; wireless request samples if its protocol changes"
+  },
+  "limits": [
+    "Matching symbol names across CPU architectures does not establish instruction or C++ ABI compatibility.",
+    "The shipped kernel inventory is specific to this 27.2 / 26B123 installer, not all possible Intel community ports.",
+    "Installer integrity and host-side checks do not establish Wi-Fi, private address, AirDrop or sleep/wake operation."
+  ]
+}

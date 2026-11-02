@@ -85,8 +85,10 @@ def lineage(root,tag,cores,packaging_commit):
                 'working_tree_dirty':bool(subprocess.check_output(['git','status','--porcelain'],cwd=root,text=True).strip())}}
 
 
-def verify(directory,checksums='05-SHA256SUMS.txt',validation='06-VALIDATION.json',assets=None):
+def verify(directory,checksums=None,validation=None,assets=None):
     root=Path(directory).resolve()
+    checksums=checksums or ('metadata/SHA256SUMS.txt' if (root/'metadata/SHA256SUMS.txt').is_file() else '05-SHA256SUMS.txt')
+    validation=validation or ('metadata/VALIDATION.json' if (root/'metadata/VALIDATION.json').is_file() else '06-VALIDATION.json')
     def read(name):
         path=root.joinpath(*relative(name).parts)
         if not path.resolve().is_relative_to(root):raise ValueError('Inventory file escapes download directory')
@@ -117,7 +119,9 @@ def verify(directory,checksums='05-SHA256SUMS.txt',validation='06-VALIDATION.jso
             for bundle in record['bundles']:
                 if bundle['identifier']=='org.geekaudio.AirportBrcmCompat':
                     core=manifest['lineage']['core_builds'][bundle['build_flavor']]
-                    binary=package.read('AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat')
+                    core_path='AirportBrcmCompat.kext/Contents/MacOS/AirportBrcmCompat'
+                    if 'Kexts/'+core_path in names:core_path='Kexts/'+core_path
+                    binary=package.read(core_path)
                     if sha(binary)!=core['binary_sha256'] or macho_uuid(binary)!=core['macho_uuid']:
                         raise ValueError('Core build lineage does not match the selected ZIP')
         verified.append({'name':name,'members_checked':len(record['members']),'bundles':record['bundles']})
